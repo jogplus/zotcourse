@@ -181,3 +181,22 @@ function isCourseAdded(courseCode, callback) {
 	});
 	return isAdded;
 }
+
+$( "#left" ).resizable({
+	start: function(){
+		$("#right").each(function (index, element) {
+            var d = $('<div class="iframeCover" style="zindex:99;position:absolute;width:100%;top:0px;left:0px;height:' + $(element).height() + 'px"></div>');
+            $(element).append(d);
+        });
+	},
+	stop: function () {
+        $('.iframeCover').remove();
+	},
+	resize: function() {
+		$("#right").outerWidth($("body").innerWidth() - $("#left").outerWidth());
+	},
+	maxWidth:$("body").innerWidth()-30,
+	minWidth:30,
+	maxHeight:$("body").innerHeight(),
+	minHeight:$("body").innerHeight(),
+});

@@ -39,12 +39,14 @@
       </div>
       <div id="cal"></div>
     </div>
+    <div hidden style="background-color: black; height: 100%; float: left; width:10px;"></div>
     <div id="right">
       <iframe src="{{url_for('websoc_search_form')}}" id="soc" frameborder="0"></iframe>
     </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
+    <script src="{{url_for('static', filename="js/jquery.ui.touch-punch.min.js")}}"></script>
     <script src="{{url_for('static', filename="js/jquery.weekcalendar.js")}}"></script>
     <script src="{{url_for('static', filename="js/antplanner2.js")}}"></script>
     <script>
