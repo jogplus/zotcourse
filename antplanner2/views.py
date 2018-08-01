@@ -9,12 +9,12 @@ LOG = logging.getLogger(__name__)
 dev_mode = env.get('SERVER_SOFTWARE', '').startswith('Development')
 use_memcache = env['USE_MEMCACHE'].lower() == 'true'
 
-
 @app.route('/')
 def index():
+    myyear = websoc.get_yearterm()
     index_html = memcache.get('index')
     if not index_html:
-        index_html = render_template('index.html')
+        index_html = render_template('index.html', year=myyear[0], defaultyear=myyear[1])
         if use_memcache:
             memcache.add('index', index_html, 60 * 60 * 24)
     return index_html
@@ -27,7 +27,6 @@ def websoc_search_form():
         form_html = websoc.get_search()
         if use_memcache:
             memcache.add('search', form_html, 60 * 60 * 24)
-
     return render_template('websoc/search.html', form_content=form_html)
 
 

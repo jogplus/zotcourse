@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{{url_for('static', filename="css/jquery.weekcalendar.css")}}">
     <link rel="stylesheet" href="{{url_for('static', filename="css/reset.css")}}">
     <link rel="stylesheet" href="{{url_for('static', filename="css/main.css")}}">
+    <link rel="stylesheet" href="{{url_for('static', filename="css/dropdown.css")}}">
     {% if not dev_mode %}
       <script type="text/javascript">
         var _gaq = _gaq || [];
@@ -41,14 +42,52 @@
     </div>
     <div hidden style="background-color: black; height: 100%; float: left; width:10px;"></div>
     <div id="right">
-      <iframe src="{{url_for('websoc_search_form')}}" id="soc" frameborder="0"></iframe>
+      <div style="height: 50px"></div>
+      <div class="drop-down">
+        <div id="dropDown" class="drop-down__button">
+            <span class="drop-down__name">{{defaultyear | safe}}</span>
+        </div>
+        <div class="drop-down__menu-box">
+          <ul class="drop-down__menu scrollable-menu" role="menu">
+            {{year | safe}}
+          </ul>
+        </div>
+      </div>
+      <div style="height: 20px"></div>
+      <div class="drop-down">
+        <div id="dropDown2" style="width: 600px" class="drop-down__button">
+            <span class="drop-down__name">Do not filter for General Education (GE) categories</span>
+        </div>
+        <div class="drop-down__menu-box">
+          <ul class="drop-down__menu scrollable-menu" role="menu">
+            <li value="ANY" class="drop-down__item">Do not filter for General Education (GE) categories</li>
+            <li value="GE-1A" class="drop-down__item">GE Ia: Lower Division Writing</li>
+            <li value="GE-1B" class="drop-down__item">GE Ib: Upper Division Writing</li>
+            <li value="GE-2" class="drop-down__item">GE II: Science and Technology</li>
+            <li value="GE-3" class="drop-down__item">GE III: Social and Behavioral Sciences</li>
+            <li value="GE-4" class="drop-down__item">GE IV: Arts and Humanities</li>
+            <li value="GE-5A" class="drop-down__item">GE Va: Quantitative Literacy (starting Fall 2012)</li>
+            <li value="GE-5B" class="drop-down__item">GE Vb: Formal Reasoning (starting Fall 2012)</li>
+            <li value="GE-6" class="drop-down__item">GE VI: Language other than English</li>
+            <li value="GE-7" class="drop-down__item">GE VII: Multicultural Studies</li>
+            <li value="GE-8" class="drop-down__item">GE VIII: International/Global Issues</li>
+          </ul>
+        </div>
+      </div>
+      <div>
+          
+    
+      <!-- <iframe src="{{url_for('websoc_search_form')}}" id="soc" frameborder="0"></iframe> -->
     </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
+    <script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.js"></script>
+    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.css">
     <script src="{{url_for('static', filename="js/jquery.ui.touch-punch.min.js")}}"></script>
     <script src="{{url_for('static', filename="js/jquery.weekcalendar.js")}}"></script>
     <script src="{{url_for('static', filename="js/antplanner2.js")}}"></script>
+    <script src="{{url_for('static', filename="js/dropdown.js")}}"></script>
     <script>
       $(document).ready(function() {
         $('#cal').weekCalendar({
