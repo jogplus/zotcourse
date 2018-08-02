@@ -23,7 +23,14 @@ def get_yearterm():
         inner[i]['class'] = 'drop-down__item'
         del inner[i]['style']
         inner[i] = str(inner[i])
-    return ("".join(inner), default_year)
+    inner2 = BeautifulSoup(html, 'lxml').find(
+        'select', {"name":"Dept"}).find_all('option')
+    for i in range(len(inner2)):
+        inner2[i].name = 'li'
+        inner2[i]['class'] = 'drop-down__item'
+        del inner2[i]['style']
+        inner2[i] = str(inner2[i])
+    return ("".join(inner), default_year, "".join(inner2))
 
 def get_listing(form_data):
     encoded = urllib.urlencode(form_data)

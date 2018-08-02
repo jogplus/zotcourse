@@ -14,7 +14,7 @@ def index():
     myyear = websoc.get_yearterm()
     index_html = memcache.get('index')
     if not index_html:
-        index_html = render_template('index.html', year=myyear[0], defaultyear=myyear[1])
+        index_html = render_template('index.html', year=myyear[0], defaultyear=myyear[1], dept=myyear[2])
         if use_memcache:
             memcache.add('index', index_html, 60 * 60 * 24)
     return index_html
