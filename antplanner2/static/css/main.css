@@ -81,6 +81,7 @@ a {
 #cal {
 	position: relative;
 }
+
 #soc {
 	height: 100%;
 	width: 100%;
@@ -113,4 +114,10 @@ a {
 		font-size: 10px !important;
 		border: 1px solid black;
 	}
+}
+
+.ui-resizable-e {
+	width: 7px;
+	background-color: #286090;
+	cursor: ew-resize;
 }

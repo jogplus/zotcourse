@@ -220,10 +220,12 @@
         $('#resize-btn').toggle(function() {
           $(this).addClass('active');
           $('#soc').hide();
-          $('#cal').animate({width: '200%'});
+          $('.ui-resizable-e').hide();
+          $('#cal').animate({width: $(document).width()});
         }, function() {
           $('#cal').animate({width: '100%'});
           $('#soc').show();
+          $('.ui-resizable-e').show();
           $(this).removeClass('active');
         });
       });

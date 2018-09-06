@@ -181,3 +181,26 @@ function isCourseAdded(courseCode, callback) {
 	});
 	return isAdded;
 }
+
+//Workaround to implementing a resizable iframe
+//Wraps a div around the iframe and then removes it once it is done moving. 
+$( "#left" ).resizable({
+	start: function(){
+		$("#right").each(function (index, element) {
+            var d = $('<div class="iframeCover" style="zindex:99;position:absolute;width:100%;top:0px;left:0px;height:' + $(element).height() + 'px"></div>');
+            $(element).append(d);
+		});
+	},
+	stop: function () {
+        $('.iframeCover').remove();
+	},
+	maxWidth:$(document).width()-30,
+	minWidth:30,
+	height: $(document).height(),
+	handles: "e"
+});
+ //Whenever the left panel changes sizes, resizes the right panel.
+//Also accounts for when the user zooms in/out
+$(window).resize(function() {
+	$("#right").outerWidth($("body").innerWidth() - $("#left").outerWidth()-1);
+});
