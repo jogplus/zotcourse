@@ -2,6 +2,8 @@ from google.appengine.api import urlfetch
 from bs4 import BeautifulSoup
 import urllib
 import logging
+import json
+import re
 
 LOG = logging.getLogger(__name__)
 
@@ -27,3 +29,12 @@ def get_listing(form_data):
     else:
         # We come here if course-list was not found
         return unicode(BeautifulSoup(html).encode(formatter='html'))
+
+def get_backup_from_antplanner(username):
+    raw = urlfetch.fetch("https://antplanner.appspot.com/schedule/load?username="+username).content
+    clean = json.loads(raw)
+    for value in clean.values():
+        logging.info(value)
+        re.sub(r'<br>', '', value)
+    logging.info(clean)
+    return clean

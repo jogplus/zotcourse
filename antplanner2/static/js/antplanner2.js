@@ -199,8 +199,10 @@ $( "#left" ).resizable({
 	height: $(document).height(),
 	handles: "e"
 });
- //Whenever the left panel changes sizes, resizes the right panel.
+
+//Whenever the left panel changes sizes, resizes the right panel.
 //Also accounts for when the user zooms in/out
+//Subtracts 20 from total right width to account for when scroll bar is present
 $(window).resize(function() {
-	$("#right").outerWidth($("body").innerWidth() - $("#left").outerWidth()-1);
+	$("#right").outerWidth($(document).width() - $("#left").outerWidth()-20);
 });

@@ -15,11 +15,12 @@ a {
 }
 
 #right {
-	width: 50%;
+	width: calc(50% - 5px);
 	height: 100%;
 	float: left;
 	overflow: auto;
 	-webkit-overflow-scrolling: touch; /* for iOS */
+	margin-left: 5px;
 }
 
 #upper {

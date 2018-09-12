@@ -2,12 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Antplanner - A better WebSOC for UCI</title>
+    <title>Zotcourse</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/themes/smoothness/jquery-ui.css">
     <link rel="stylesheet" href="{{url_for('static', filename="css/jquery.weekcalendar.css")}}">
     <link rel="stylesheet" href="{{url_for('static', filename="css/reset.css")}}">
     <link rel="stylesheet" href="{{url_for('static', filename="css/main.css")}}">
+    <link rel="icon" type="image/png" href="{{url_for('static', filename="favicon.png")}}">
     {% if not dev_mode %}
       <script type="text/javascript">
         var _gaq = _gaq || [];
@@ -26,7 +27,7 @@
     <div id="left">
       <div id="upper">
         <div id="main-nav">
-            <h1>Antplanner</h1>
+            <h1>Zotcourse - a slightly better copy of Antplanner</h1>
             <a target="_blank" href="https://github.com/gumho/antplanner2/wiki/AntPlanner-FAQ">?</a>
         </div>
         <div id="cal-ctrl">
