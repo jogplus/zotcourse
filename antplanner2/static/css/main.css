@@ -15,11 +15,12 @@ a {
 }
 
 #right {
-	width: 50%;
+	width: calc(50% - 5px);
 	height: 100%;
 	float: left;
 	overflow: auto;
 	-webkit-overflow-scrolling: touch; /* for iOS */
+	margin-left: 5px;
 }
 
 #upper {
@@ -81,6 +82,7 @@ a {
 #cal {
 	position: relative;
 }
+
 #soc {
 	height: 100%;
 	width: 100%;
@@ -113,4 +115,10 @@ a {
 		font-size: 10px !important;
 		border: 1px solid black;
 	}
+}
+
+.ui-resizable-e {
+	width: 7px;
+	background-color: #286090;
+	cursor: ew-resize;
 }
