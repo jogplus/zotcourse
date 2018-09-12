@@ -62,7 +62,7 @@ def load_schedule():
     else:
         schedule_json = websoc.get_backup_from_antplanner(username)
         if schedule_json:
-            return jsonify(success=True, data=schedule_json)
+            return jsonify(schedule_json)
         return jsonify(success=False)
 
 

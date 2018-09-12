@@ -33,8 +33,8 @@ def get_listing(form_data):
 def get_backup_from_antplanner(username):
     raw = urlfetch.fetch("https://antplanner.appspot.com/schedule/load?username="+username).content
     clean = json.loads(raw)
-    for value in clean.values():
-        logging.info(value)
-        re.sub(r'<br>', '', value)
+    # for value in clean.values():
+    #     logging.info(value)
+    #     re.sub(r'<br>', '', value)
     logging.info(clean)
     return clean
