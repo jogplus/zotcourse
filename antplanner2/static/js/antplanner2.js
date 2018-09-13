@@ -182,27 +182,210 @@ function isCourseAdded(courseCode, callback) {
 	return isAdded;
 }
 
-//Workaround to implementing a resizable iframe
-//Wraps a div around the iframe and then removes it once it is done moving. 
-$( "#left" ).resizable({
-	start: function(){
-		$("#right").each(function (index, element) {
-            var d = $('<div class="iframeCover" style="zindex:99;position:absolute;width:100%;top:0px;left:0px;height:' + $(element).height() + 'px"></div>');
-            $(element).append(d);
+$(document).ready(function() {
+	$('#cal').weekCalendar({
+	  businessHours: {start: 6, end: 24, limitDisplay: true},
+	  showHeader: false,
+	  showColumnHeaderDate: false,
+	  timeslotsPerHour: 3,
+	  daysToShow:5,
+	  readonly: true,
+	  useShortDayNames: true,
+	  allowCalEventOverlap: true,
+	  overlapEventsSeparate: true,
+	  buttons: false,
+	  height: function($calendar){
+		return $(window).height() - $('#upper').outerHeight();
+	  },
+	  draggable : function(calEvent, element) { return false; },
+	  resizable : function(calEvent, element) { return false; },
+	  eventClick : function(calEvent, element) {
+		var delCode = calEvent.groupId;
+		$('.wc-cal-event').each(function(index, el) {
+		  var c = $(el).data().calEvent
+		  if( c.groupId == delCode ) {
+			$('#cal').weekCalendar('removeEvent', c.id);
+		  }
 		});
-	},
-	stop: function () {
-        $('.iframeCover').remove();
-	},
-	maxWidth:$(document).width()-30,
-	minWidth:30,
-	height: $(document).height(),
-	handles: "e"
-});
+	  }
+	});
 
-//Whenever the left panel changes sizes, resizes the right panel.
-//Also accounts for when the user zooms in/out
-//Subtracts 20 from total right width to account for when scroll bar is present
-$(window).resize(function() {
-	$("#right").outerWidth($(document).width() - $("#left").outerWidth()-20);
+	$('#cal').weekCalendar('gotoWeek', new Date(APP_YEAR, APP_MONTH, APP_DAY));
+
+	$('#soc').bind('load', function(){
+	  var $listingContext = $('.course-list', $('#soc').contents());
+	  var $courseRow = $("tr[valign*='top']:not([bgcolor='#fff0ff'])", $listingContext);
+
+		// FIXME: hover() deprecated
+		$courseRow.hover(
+		  function() {
+			$(this).css({'color': '#ff0000', 'cursor': 'pointer'});
+		  },
+		  function() {
+			$(this).css({'color': '#000000', 'cursor': 'default'});
+		  }
+		);
+
+		$courseRow.on('click', function() {
+		  var timeString = $(this).find('td').eq(LISTING_TIME_INDEX).html();
+
+		  // Ignore if course is "TBA"
+		  if(timeString.indexOf('TBA') != -1) {
+			alert('Course is TBA');
+			return;
+		  }
+
+		  var courseCode = $(this).find('td').eq(LISTING_CODE_INDEX).text();
+
+		  // Ignore if course already added
+		  if(isCourseAdded(courseCode)) {
+			alert('You have already added that course!');
+			return;
+		  }
+
+		  var courseName = $.trim( $(this).prevAll().find('.CourseTitle:last').html().split('<font')[0].replace(/&nbsp;/g, '') )
+		  var courseTimes = new CourseTimeStringParser(timeString)
+		  var roomString = $(this).find('td').eq(LISTING_ROOM_INDEX).html();
+		  var rooms = parseRoomString(roomString);
+
+		  // Iterate through course times (a course may have different meeting times)
+		  for(var i in courseTimes) {
+			var parsed = courseTimes[i];
+			$('#cal').weekCalendar('scrollToHour', parsed.beginHour, true);
+
+			if (i in rooms && rooms[i].length > 0) {
+				var room = rooms[i];
+			} else {
+				// Is there a possibility that there is only one room listed for all times (in the case of multiple times)?
+				var room = "TBA";
+			}
+
+			for(var i in parsed.days) {
+			  var day = parsed.days[i];
+
+			  calEvent = {
+				id: S4(),
+				groupId: courseCode,
+				start: new Date(APP_YEAR, APP_MONTH, day, parsed.beginHour, parsed.beginMin),
+				end: new Date(APP_YEAR, APP_MONTH, day, parsed.endHour, parsed.endMin),
+				title: courseName + ' at ' + room + '<br>(' + courseCode + ')'
+			  }
+			  $('#cal').weekCalendar("updateEvent", calEvent);
+			}
+		  }
+
+		  // Assign a color to the courses
+		  var colorPair = getRandomColorPair();
+		  $('.wc-cal-event').each(function(index, el) {
+			var c = $(el).data().calEvent
+			if( c.groupId.indexOf(courseCode) != -1 ) {
+			  colorEvent(el, colorPair);
+			}
+		  });
+		});
+	});
+
+	$('#save-btn').on('click', function() {
+	  var calData  = JSON.stringify( $('#cal').weekCalendar('serializeEvents') );
+
+	  var defaultName = localStorage.username ? localStorage.username : '';
+	  var username = prompt('Please enter a unique username (e.g. Student ID): ', defaultName);
+
+	  // Validation
+	  if(username == null) {
+		return;
+	  }
+
+	  if(username.length < 5) {
+		alert('Username must be at least 5 characters.')
+		return;
+	  }
+
+	  // Save to server
+	  $.ajax({
+		url: "{{url_for('save_schedule')}}",
+		type: 'post',
+		data: {
+		  username: username,
+		  data: calData
+		},
+		success: function(data) {
+		  if(data.success) {
+			alert('Schedule successfully saved!');
+			localStorage.username = username;
+		  }
+		  else {
+			alert('Problem saving schedule');
+		  }
+		}
+	  });
+	});
+
+	$('#load-btn').on('click', function() {
+	  var defaultName = localStorage.username ? localStorage.username : '';
+	  var username = prompt('Please enter your username', defaultName);
+
+	  if(username == '') {
+		return;
+	  }
+
+	  $.ajax({
+		url: '/schedule/load',
+		data: { username: username },
+		success: function(data) {
+		  if(data.success) {
+			$('#cal').weekCalendar('clear');
+			$('#cal').weekCalendar("loadEvents", JSON.parse(data.data));
+			groupColorize();
+			alert('Schedule successfully loaded!');
+		  }
+		  else {
+			alert('Problem loading schedule');
+		  }
+		}
+	  });
+	});
+
+	$('#clear-cal-btn').on('click', function() {
+	  $('#cal').weekCalendar('clear');
+	});
+
+	// TODO: toggle() deprecated
+	$('#resize-btn').toggle(function() {
+	  $(this).addClass('active');
+	  $('#soc').hide();
+	  $('.ui-resizable-e').hide();
+	  $('#cal').animate({width: $(document).width()});
+	}, function() {
+	  $('#cal').animate({width: '100%'});
+	  $('#soc').show();
+	  $('.ui-resizable-e').show();
+	  $(this).removeClass('active');
+	});
+	
+	//Workaround to implementing a resizable iframe
+	//Wraps a div around the iframe and then removes it once it is done moving. 
+	$( "#left" ).resizable({
+		start: function(){
+			$("#right").each(function (index, element) {
+				var d = $('<div class="iframeCover" style="zindex:99;position:absolute;width:100%;top:0px;left:0px;height:' +
+					$(element).height() + 'px"></div>');
+				$(element).append(d);
+			});
+		},
+		stop: function () {
+			$('.iframeCover').remove();
+		},
+		maxWidth:$(document).width()-30,
+		minWidth:30,
+		height: $(document).height(),
+		handles: "e"
+	});
+
+	//Whenever the left panel changes sizes, resizes the right panel.
+	//Also accounts for when the user zooms in/out
+	//Subtracts 20 from total right width to account for when scroll bar is present
+	$(window).resize(function() {
+		$("#right").outerWidth($(document).width() - $("#left").outerWidth()-20);
+	});
 });
