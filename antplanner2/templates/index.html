@@ -1,51 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>Zotcourse</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/themes/smoothness/jquery-ui.css">
-    <link rel="stylesheet" href="{{url_for('static', filename="css/jquery.weekcalendar.css")}}">
-    <link rel="stylesheet" href="{{url_for('static', filename="css/reset.css")}}">
-    <link rel="stylesheet" href="{{url_for('static', filename="css/main.css")}}">
-    <link rel="icon" type="image/png" href="{{url_for('static', filename="favicon.png")}}">
-    {% if not dev_mode %}
-      <script type="text/javascript">
-        var _gaq = _gaq || [];
-        _gaq.push(['_setAccount', 'UA-16581503-1']);
-        _gaq.push(['_trackPageview']);
-
-        (function() {
-          var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-          ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-          var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-        })();
-      </script>
-    {% endif %}
-  </head>
-  <body>
-    <div id="left">
-      <div id="upper">
-        <div id="main-nav">
-            <h1>Zotcourse - a slightly better copy of Antplanner</h1>
-            <a target="_blank" href="https://github.com/jogplus/zotcourse">?</a>
-        </div>
-        <div id="cal-ctrl">
-          <button type="button" class="btn" onclick="javascript:print()">Print</button>
-          <button type="button" id="save-btn" class="btn">Save</button>
-          <button type="button" id="load-btn" class="btn">Load</button>
-          <button type="button" id="clear-cal-btn" class="btn">Clear</button>
-          <button type="button" id="resize-btn" class="btn">Size</button>
-        </div>
+<head>
+  <title>Zotcourse</title>
+  <link rel="stylesheet" href="{{url_for('static', filename="css/fullcalendar.css")}}">
+  <link rel="stylesheet" href="{{url_for('static', filename="css/reset.css")}}">
+  <link rel="stylesheet" href="{{url_for('static', filename="css/main.css")}}">
+  <link rel="icon" type="image/png" href="{{url_for('static', filename="favicon.png")}}">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
+  <script src="{{url_for('static', filename="js/fullcalendar.js")}}"></script>
+  <script src="{{url_for('static', filename="js/antplanner2.js")}}"></script>
+</head>
+<body>
+  <div id="left">
+    <div id="upper">
+      <div id="main-nav">
+          <h1>Zotcourse - a slightly better copy of Antplanner</h1>
+          <a target="_blank" href="https://github.com/jogplus/zotcourse">?</a>
       </div>
-      <div id="cal"></div>
+      <div id="cal-ctrl">
+        <button type="button" class="btn" onclick="javascript:print()">Print</button>
+        <button type="button" id="save-btn" class="btn">Save</button>
+        <button type="button" id="load-btn" class="btn">Load</button>
+        <button type="button" id="clear-cal-btn" class="btn">Clear</button>
+        <button type="button" id="resize-btn" class="btn">Size</button>
+      </div>
     </div>
-    <div id="right">
-      <iframe src="{{url_for('websoc_search_form')}}" id="soc" frameborder="0"></iframe>
-    </div>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
-    <script src="{{url_for('static', filename="js/jquery.weekcalendar.js")}}"></script>
-    <script src="{{url_for('static', filename="js/antplanner2.js")}}"></script>
-  </body>
-</html>
+    <div id="cal"></div>
+  </div>
+  <div id="right">
+    <iframe src="{{url_for('websoc_search_form')}}" id="soc" frameborder="0"></iframe>
+  </div>
+</body>
