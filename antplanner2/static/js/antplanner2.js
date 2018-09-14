@@ -303,7 +303,7 @@ $(document).ready(function() {
 
 	  // Save to server
 	  $.ajax({
-		url: "{{url_for('save_schedule')}}",
+		url: "/schedules/add",
 		type: 'post',
 		data: {
 		  username: username,
