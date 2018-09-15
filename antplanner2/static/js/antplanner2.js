@@ -1,6 +1,8 @@
-window.APP_YEAR  = 2012;
-window.APP_MONTH = 9;
-window.APP_DAY   = 1;
+var today = new Date();
+
+window.APP_YEAR  = today.getFullYear();
+window.APP_MONTH = today.getMonth();
+window.APP_DAY   = today.getDate();
 
 window.MON = 1;
 window.TUE = 2;
@@ -183,34 +185,83 @@ function isCourseAdded(courseCode, callback) {
 }
 
 $(document).ready(function() {
-	$('#cal').weekCalendar({
-	  businessHours: {start: 6, end: 24, limitDisplay: true},
-	  showHeader: false,
-	  showColumnHeaderDate: false,
-	  timeslotsPerHour: 3,
-	  daysToShow:5,
-	  readonly: true,
-	  useShortDayNames: true,
-	  allowCalEventOverlap: true,
-	  overlapEventsSeparate: true,
-	  buttons: false,
-	  height: function($calendar){
-		return $(window).height() - $('#upper').outerHeight();
-	  },
-	  draggable : function(calEvent, element) { return false; },
-	  resizable : function(calEvent, element) { return false; },
-	  eventClick : function(calEvent, element) {
-		var delCode = calEvent.groupId;
-		$('.wc-cal-event').each(function(index, el) {
-		  var c = $(el).data().calEvent
-		  if( c.groupId == delCode ) {
-			$('#cal').weekCalendar('removeEvent', c.id);
-		  }
-		});
-	  }
+	//Workaround to implementing a resizable iframe
+	//Wraps a div around the iframe and then removes it once it is done moving. 
+	$( "#left" ).resizable({
+		start: function(){
+			$("#right").each(function (index, element) {
+				var d = $('<div class="iframeCover" style="zindex:99;position:absolute;width:100%;top:0px;left:0px;height:' +
+					$(element).height() + 'px"></div>');
+				$(element).append(d);
+			});
+		},
+		stop: function () {
+			$('.iframeCover').remove();
+		},
+		maxWidth:$(document).width()-30,
+		minWidth:30,
+		height: $(document).height(),
+		handles: "e"
 	});
 
-	$('#cal').weekCalendar('gotoWeek', new Date(APP_YEAR, APP_MONTH, APP_DAY));
+	//Whenever the left panel changes sizes, resizes the right panel.
+	//Also accounts for when the user zooms in/out
+	//Subtracts 20 from total right width to account for when scroll bar is present
+	$(window).resize(function() {
+		$("#right").outerWidth($(document).width() - $("#left").outerWidth()-20);
+		$('.fc-time-grid .fc-slats td').css({
+			'height': ($('#left').outerHeight() - $('#upper').outerHeight()) / 31,
+		})
+		$('#cal').fullCalendar('option', 'height', $('#left').outerHeight() - $('#upper').outerHeight());
+	});
+
+	$('#cal').fullCalendar({
+		weekends: false,
+		header: false,
+		themeSystem: 'bootstrap4',
+		defaultView: 'agendaWeek',
+		allDaySlot: false,
+		minTime: '07:00:00',
+		maxTime: '22:00:00',
+		columnHeaderFormat: 'ddd',
+		height: $('#left').outerHeight() - $('#upper').outerHeight(),
+		eventRender: function(event, element, view) {
+			element.popover({
+				html:true,
+				title: '{FULL TITLE}',
+				content:'<table style="width:200px">\
+									<tr>\
+										<td>Course Code</td>\
+										<td>'+event.groupId+'</td>\
+									</tr>\
+									<tr>\
+										<td>Location</td>\
+										<td>'+event.location+'</td>\
+									</tr>\
+									<tr>\
+										<td>Color</td>\
+										<td>'+event.color+'</td>\
+									</tr>\
+									</table>\
+									<button>Delete</button>',
+				trigger:'focus',
+				placement:'right',
+				container:'body'
+			})
+		},
+		eventClick: function(calEvent, jsEvent, view) {
+			$this = $(this);
+			$this.popover('toggle');
+		}
+	})
+
+	//The left div height subtracted by the upper header
+	//31 comes from the 30 cells + 1 for column headers
+	$('.fc-time-grid .fc-slats td').css({
+		'height': ($('#left').outerHeight() - $('#upper').outerHeight()) / 31,
+	})
+
+	// $('#cal').weekCalendar('gotoWeek', new Date(APP_YEAR, APP_MONTH, APP_DAY));
 
 	$('#soc').bind('load', function(){
 	  var $listingContext = $('.course-list', $('#soc').contents());
@@ -243,81 +294,86 @@ $(document).ready(function() {
 			return;
 		  }
 
-		  var courseName = $.trim( $(this).prevAll().find('.CourseTitle:last').html().split('<font')[0].replace(/&nbsp;/g, '') )
+		  var courseName = $.trim( $(this).prevAll().find('.CourseTitle:last').html().split('<font')[0].replace(/&nbsp;/g, '').replace(/&amp;/g, '&') )
 		  var courseTimes = new CourseTimeStringParser(timeString)
 		  var roomString = $(this).find('td').eq(LISTING_ROOM_INDEX).html();
 		  var rooms = parseRoomString(roomString);
 
 		  // Iterate through course times (a course may have different meeting times)
 		  for(var i in courseTimes) {
-			var parsed = courseTimes[i];
-			$('#cal').weekCalendar('scrollToHour', parsed.beginHour, true);
+				var parsed = courseTimes[i];
 
-			if (i in rooms && rooms[i].length > 0) {
-				var room = rooms[i];
-			} else {
-				// Is there a possibility that there is only one room listed for all times (in the case of multiple times)?
-				var room = "TBA";
-			}
-
-			for(var i in parsed.days) {
-			  var day = parsed.days[i];
-
-			  calEvent = {
-				id: S4(),
-				groupId: courseCode,
-				start: new Date(APP_YEAR, APP_MONTH, day, parsed.beginHour, parsed.beginMin),
-				end: new Date(APP_YEAR, APP_MONTH, day, parsed.endHour, parsed.endMin),
-				title: courseName + ' at ' + room + '<br>(' + courseCode + ')'
-			  }
-			  $('#cal').weekCalendar("updateEvent", calEvent);
-			}
+				if (i in rooms && rooms[i].length > 0) {
+					var room = rooms[i];
+				} else {
+					// Is there a possibility that there is only one room listed for all times (in the case of multiple times)?
+					var room = "TBA";
+				}
+				var colorPair = getRandomColorPair();
+				$('#cal').fullCalendar("renderEvent",{
+					id:	S4(),
+					groupId: courseCode,
+					start: parsed.beginHour + ':' + parsed.beginMin,
+					end: parsed.endHour + ':' + parsed.endMin,
+					title: courseName,
+					dow: parsed.days,
+					color: colorPair.color,
+					daysOfTheWeek: parsed.days,
+					location: room
+				})
 		  }
-
-		  // Assign a color to the courses
-		  var colorPair = getRandomColorPair();
-		  $('.wc-cal-event').each(function(index, el) {
-			var c = $(el).data().calEvent
-			if( c.groupId.indexOf(courseCode) != -1 ) {
-			  colorEvent(el, colorPair);
-			}
-		  });
 		});
 	});
 
 	$('#save-btn').on('click', function() {
-	  var calData  = JSON.stringify( $('#cal').weekCalendar('serializeEvents') );
-
+		var calRawData  = $('#cal').fullCalendar('clientEvents');
+		var calCleanData = []
+		var usedGroupIds = []
+		for (var i in calRawData){
+			if (!(usedGroupIds.indexOf(calRawData[i].groupId) >= 0)) {
+				var calEventData = {
+					id: calRawData[i].id,
+					groupId: calRawData[i].groupId,
+					title: calRawData[i].title,
+					start: calRawData[i].start.format('HH:mm'),
+					end: calRawData[i].end.format('HH:mm'),
+					color: calRawData[i].color,
+					dow: calRawData[i].daysOfTheWeek
+				}
+				calCleanData.push(calEventData)
+				usedGroupIds.push(calRawData[i].groupId)
+			}
+		}
 	  var defaultName = localStorage.username ? localStorage.username : '';
 	  var username = prompt('Please enter a unique username (e.g. Student ID): ', defaultName);
 
 	  // Validation
 	  if(username == null) {
-		return;
+			return;
 	  }
 
 	  if(username.length < 5) {
-		alert('Username must be at least 5 characters.')
-		return;
-	  }
-
+			alert('Username must be at least 5 characters.')
+			return;
+		}
+		
 	  // Save to server
 	  $.ajax({
-		url: "/schedules/add",
-		type: 'post',
-		data: {
-		  username: username,
-		  data: calData
-		},
-		success: function(data) {
-		  if(data.success) {
-			alert('Schedule successfully saved!');
-			localStorage.username = username;
-		  }
-		  else {
-			alert('Problem saving schedule');
-		  }
-		}
+			url: "/schedules/add",
+			type: 'POST',
+			data: {
+				username: username,
+				data: JSON.stringify(calCleanData)
+			},
+			success: function(data) {
+				if(data.success) {
+					alert('Schedule successfully saved!');
+					localStorage.username = username;
+				}
+				else {
+					alert('Problem saving schedule');
+				}
+			}
 	  });
 	});
 
@@ -326,66 +382,69 @@ $(document).ready(function() {
 	  var username = prompt('Please enter your username', defaultName);
 
 	  if(username == '') {
-		return;
+			return;
 	  }
 
 	  $.ajax({
-		url: '/schedule/load',
-		data: { username: username },
-		success: function(data) {
-		  if(data.success) {
-			$('#cal').weekCalendar('clear');
-			$('#cal').weekCalendar("loadEvents", JSON.parse(data.data));
-			groupColorize();
-			alert('Schedule successfully loaded!');
-		  }
-		  else {
-			alert('Problem loading schedule');
-		  }
-		}
+			url: '/schedule/load',
+			data: { username: username },
+			success: function(data) {
+				console.log(data)
+				if(data.success) {
+					$('#cal').fullCalendar('removeEvents');
+					$('#cal').fullCalendar('renderEvents', JSON.parse(data.data));
+					alert('Schedule successfully loaded!');
+				}
+				else {
+					alert('Problem loading schedule');
+				}
+			}
+	  });
+	});
+
+	$('#load-ap-btn').on('click', function() {
+	  var defaultName = localStorage.username ? localStorage.username : '';
+	  var username = prompt('Please enter your Antplanner username', defaultName);
+
+	  if(username == '') {
+			return;
+	  }
+
+	  $.ajax({
+			url: '/schedule/loadap',
+			data: { username: username },
+			success: function(data) {
+				console.log(data)
+				if(data.success) {
+					$('#cal').fullCalendar('removeEvents');
+					$('#cal').fullCalendar('renderEvents',data.data);
+					alert('Schedule successfully loaded!');
+				}
+				else {
+					alert('Problem loading schedule');
+				}
+			}
 	  });
 	});
 
 	$('#clear-cal-btn').on('click', function() {
-	  $('#cal').weekCalendar('clear');
+	  $('#cal').fullCalendar('removeEvents');
 	});
 
-	// TODO: toggle() deprecated
-	$('#resize-btn').toggle(function() {
-	  $(this).addClass('active');
-	  $('#soc').hide();
-	  $('.ui-resizable-e').hide();
-	  $('#cal').animate({width: $(document).width()});
-	}, function() {
-	  $('#cal').animate({width: '100%'});
-	  $('#soc').show();
-	  $('.ui-resizable-e').show();
-	  $(this).removeClass('active');
+	$('#resize-btn').click(function() {
+		if ($(this).hasClass('active')) {
+			$('#cal').animate({width: '100%'});
+			$('#soc').show();
+			$('.ui-resizable-e').show();
+			$(this).removeClass('active');
+		}
+		else {
+			$(this).addClass('active');
+			$('#soc').hide();
+			$('.ui-resizable-e').hide();
+			$('#cal').animate({width: $(document).width()});
+		}
 	});
 	
-	//Workaround to implementing a resizable iframe
-	//Wraps a div around the iframe and then removes it once it is done moving. 
-	$( "#left" ).resizable({
-		start: function(){
-			$("#right").each(function (index, element) {
-				var d = $('<div class="iframeCover" style="zindex:99;position:absolute;width:100%;top:0px;left:0px;height:' +
-					$(element).height() + 'px"></div>');
-				$(element).append(d);
-			});
-		},
-		stop: function () {
-			$('.iframeCover').remove();
-		},
-		maxWidth:$(document).width()-30,
-		minWidth:30,
-		height: $(document).height(),
-		handles: "e"
-	});
 
-	//Whenever the left panel changes sizes, resizes the right panel.
-	//Also accounts for when the user zooms in/out
-	//Subtracts 20 from total right width to account for when scroll bar is present
-	$(window).resize(function() {
-		$("#right").outerWidth($(document).width() - $("#left").outerWidth()-20);
-	});
 });

@@ -12,6 +12,7 @@ a {
 #left {
 	width: 50%;
 	float: left;
+	height: 100%;
 }
 
 #right {
@@ -121,4 +122,9 @@ a {
 	width: 7px;
 	background-color: #286090;
 	cursor: ew-resize;
+}
+
+.fc-today
+{
+  background-color:inherit !important;
 }

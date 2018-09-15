@@ -47,6 +47,7 @@ def save_schedule():
     username = request.form.get('username')
     data = request.form.get('data')
     try:
+        logging.info(data)
         Schedule(key_name=username, data=data).put()
         return jsonify(success=True)
     except:
@@ -59,11 +60,15 @@ def load_schedule():
     schedule = Schedule.get_by_key_name(username)
     if schedule:
         return jsonify(success=True, data=schedule.data)
-    else:
-        schedule_json = websoc.get_backup_from_antplanner(username)
-        if schedule_json:
-            return jsonify(schedule_json)
-        return jsonify(success=False)
+    return jsonify(success=False)
+
+@app.route('/schedule/loadap')
+def load_ap_schedule():
+    username = request.args.get('username')
+    schedule_json = websoc.get_backup_from_antplanner(username)
+    if schedule_json:
+        return jsonify(schedule_json)
+    return jsonify(success=False)
 
 
 @app.route('/test')
