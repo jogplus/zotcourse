@@ -316,8 +316,8 @@ $(document).ready(function() {
 				return;
 		  }
 			console.log($(this));
-			var courseName = $.trim( $(this).prevAll().find('.CourseTitle:last').html().split('<font')[0].replace(/&nbsp;/g, '').replace(/&amp;/g, '&') )
-			var fullCourseName = $(this).prevAll().find('.CourseTitle:last').find('b').html();
+			var courseName = $.trim( $(this).prevAll().find('.CourseTitle').last().html().split('<font')[0].replace(/&nbsp;/g, '').replace(/&amp;/g, '&') )
+			var fullCourseName = $(this).prevAll().find('.CourseTitle').last().find('b').html();
 			var classType = $(this).find('td').eq(LISTING_TYPE_INDEX).html();
 			var instructor = $(this).find('td').eq(LISTING_INSTRUCTOR_INDEX).html();
 		  var courseTimes = new CourseTimeStringParser(timeString)
