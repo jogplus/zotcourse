@@ -15,6 +15,7 @@ window.LISTING_TYPE_INDEX = 1;
 window.LISTING_INSTRUCTOR_INDEX = 4;
 window.LISTING_TIME_INDEX = 5;
 window.LISTING_ROOM_INDEX = 6;
+window.LISTING_FINAL_INDEX = 7;
 
 function S4() {
    return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
@@ -236,33 +237,34 @@ $(document).ready(function() {
 			element.popover({
 				html:true,
 				title: (event.fullName) ? event.fullName : '',
-				content:'<table style="width:200px">\
+				content:'<table style="width:100%">\
 									<tr>\
-										<td>Course Code</td>\
-										<td>'+event.groupId+'</td>\
+										<td>Code</td>\
+										<td align="right">'+event.groupId+'</td>\
 									</tr>\
 									<tr>\
 										<td>Location</td>\
-										<td>'+((event.location) ? event.location : '')+'</td>\
+										<td align="right">'+((event.location) ? event.location : '')+'</td>\
 									</tr>\
 									<tr>\
 										<td>Instructor</td>\
-										<td>'+((event.instructor) ? event.instructor : '')+'</td>\
+										<td align="right">'+((event.instructor) ? event.instructor : '')+'</td>\
 									</tr>\
 									<tr>\
 										<td>Final</td>\
-										<td></td>\
+										<td align="right">'+((event.final) ? event.final : '')+'</td>\
 									</tr>\
 									<tr>\
 										<td>Color</td>\
-										<td>'+((event.color) ? event.color : '')+'</td>\
+										<td align="right">'+((event.color) ? event.color : '')+'</td>\
 									</tr>\
 									</table>\
 									<input type="button" class="delete-event" value="Delete">',
 				trigger:'focus',
-				placement:'right',
-				container:'body',
+				placement:'auto',
+				container:'body'
 			})
+
 		},
 		eventClick: function(event, jsEvent, view) {
 			// Necessary to keep the $(this) of eventClick in $(".delete-event").click
@@ -321,7 +323,8 @@ $(document).ready(function() {
 			var classType = $(this).find('td').eq(LISTING_TYPE_INDEX).html();
 			var instructor = $(this).find('td').eq(LISTING_INSTRUCTOR_INDEX).html();
 		  var courseTimes = new CourseTimeStringParser(timeString)
-		  var roomString = $(this).find('td').eq(LISTING_ROOM_INDEX).html();
+			var roomString = $(this).find('td').eq(LISTING_ROOM_INDEX).html();
+			var final = $(this).find('td').eq(LISTING_FINAL_INDEX).html();
 		  var rooms = parseRoomString(roomString);
 		  // Iterate through course times (a course may have different meeting times)
 		  for(var i in courseTimes) {
@@ -345,7 +348,8 @@ $(document).ready(function() {
 					daysOfTheWeek: parsed.days,
 					location: room,
 					fullName: fullCourseName,
-					instructor: instructor
+					instructor: instructor,
+					final: final
 				})
 		  }
 		});
@@ -367,7 +371,8 @@ $(document).ready(function() {
 					location: calRawData[i].location,
 					fullName: calRawData[i].fullName,
 					instructor: calRawData[i].instructor,
-					dow: calRawData[i].daysOfTheWeek
+					final: calRawData[i].final,
+					dow: calRawData[i].daysOfTheWeek,
 				}
 				calCleanData.push(calEventData)
 				usedGroupIds.push(calRawData[i].groupId)
@@ -446,6 +451,13 @@ $(document).ready(function() {
 				console.log(data)
 				if(data.success) {
 					$('#cal').fullCalendar('removeEvents');
+					for (var i=0; i< data.data.length; i++) {
+						data.data[i]['color'] = getRandomColorPair().color;
+						var courseCodeSplit = data.data[i]['title'].split('<br>')[0];
+						var locationSplit = courseCodeSplit.split(' at ');
+						data.data[i]['location'] = locationSplit[1];
+						data.data[i]['title'] = locationSplit[0].replace('&amp;', '&');
+					}
 					$('#cal').fullCalendar('renderEvents',data.data);
 					alert('Schedule successfully loaded!');
 				}
@@ -461,6 +473,9 @@ $(document).ready(function() {
 	});
 
 	$('#resize-btn').click(function() {
+		$('.popover').each(function () {
+			$(this).popover('hide');
+		});
 		if ($(this).hasClass('active')) {
 			$('#cal').animate({width: '100%'});
 			$('#soc').show();
