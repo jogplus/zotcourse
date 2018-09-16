@@ -12,16 +12,18 @@ $(document).ready(function() {
             var instructorLinks = [];
             for (i = 0; i < instructorNames.length; i++) {
                 var instructorName = instructorNames[i].trim();
-
                 // Ignore STAFF instructors
                 if (instructorName == 'STAFF') {
                     instructorLinks.push('STAFF');
                     continue;
                 }
 
-                // Build the link to EaterEvals
-                var lastName = instructorName.split(',')[0];
-                var link = "https://eaterevals.eee.uci.edu/browse/instructor#"+lastName;
+                // Build the link to RateMyProfessors
+                var instructorLastName = instructorName.split(',')[0];
+                if (instructorLastName.indexOf('-') !== -1) {
+                    instructorLastName = instructorName.split('-')[0]
+                }
+                var link = "https://www.ratemyprofessors.com/search.jsp?queryoption=HEADER&queryBy=teacherName&schoolName=University+of+California+Irvine&schoolID=1074&query="+instructorLastName;
                 instructorLinks.push('<a class="instructor-link" href="'+link+'" target="_blank">'+instructorName+'</a>');
             }
             element.html(instructorLinks.join('<br />'));

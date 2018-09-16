@@ -12,6 +12,7 @@ window.FRI = 5;
 
 window.LISTING_CODE_INDEX = 0;
 window.LISTING_TYPE_INDEX = 1;
+window.LISTING_INSTRUCTOR_INDEX = 4;
 window.LISTING_TIME_INDEX = 5;
 window.LISTING_ROOM_INDEX = 6;
 
@@ -213,6 +214,9 @@ $(document).ready(function() {
 			'height': ($('#left').outerHeight() - $('#upper').outerHeight()) / 31,
 		})
 		$('#cal').fullCalendar('option', 'height', $('#left').outerHeight() - $('#upper').outerHeight());
+		$('.popover').each(function () {
+			$(this).popover('hide');
+		});
 	});
 
 	$('#cal').fullCalendar({
@@ -226,9 +230,12 @@ $(document).ready(function() {
 		columnHeaderFormat: 'ddd',
 		height: $('#left').outerHeight() - $('#upper').outerHeight(),
 		eventRender: function(event, element, view) {
+			$('.popover').each(function () {
+				$(this).popover('hide');
+			});
 			element.popover({
 				html:true,
-				title: '{FULL TITLE}',
+				title: (event.fullName) ? event.fullName : '',
 				content:'<table style="width:200px">\
 									<tr>\
 										<td>Course Code</td>\
@@ -236,24 +243,39 @@ $(document).ready(function() {
 									</tr>\
 									<tr>\
 										<td>Location</td>\
-										<td>'+event.location+'</td>\
+										<td>'+((event.location) ? event.location : '')+'</td>\
+									</tr>\
+									<tr>\
+										<td>Instructor</td>\
+										<td>'+((event.instructor) ? event.instructor : '')+'</td>\
+									</tr>\
+									<tr>\
+										<td>Final</td>\
+										<td></td>\
 									</tr>\
 									<tr>\
 										<td>Color</td>\
-										<td>'+event.color+'</td>\
+										<td>'+((event.color) ? event.color : '')+'</td>\
 									</tr>\
 									</table>\
-									<button>Delete</button>',
+									<input type="button" class="delete-event" value="Delete">',
 				trigger:'focus',
 				placement:'right',
-				container:'body'
+				container:'body',
 			})
 		},
-		eventClick: function(calEvent, jsEvent, view) {
+		eventClick: function(event, jsEvent, view) {
+			// Necessary to keep the $(this) of eventClick in $(".delete-event").click
 			$this = $(this);
 			$this.popover('toggle');
+			$(".delete-event").click(function() {
+				$this.popover('dispose');
+				$('#cal').fullCalendar('removeEvents', event._id);
+			});
 		}
 	})
+
+
 
 	//The left div height subtracted by the upper header
 	//31 comes from the 30 cells + 1 for column headers
@@ -282,23 +304,25 @@ $(document).ready(function() {
 
 		  // Ignore if course is "TBA"
 		  if(timeString.indexOf('TBA') != -1) {
-			alert('Course is TBA');
-			return;
+				alert('Course is TBA');
+				return;
 		  }
 
 		  var courseCode = $(this).find('td').eq(LISTING_CODE_INDEX).text();
 
 		  // Ignore if course already added
 		  if(isCourseAdded(courseCode)) {
-			alert('You have already added that course!');
-			return;
+				alert('You have already added that course!');
+				return;
 		  }
-
-		  var courseName = $.trim( $(this).prevAll().find('.CourseTitle:last').html().split('<font')[0].replace(/&nbsp;/g, '').replace(/&amp;/g, '&') )
+			console.log($(this));
+			var courseName = $.trim( $(this).prevAll().find('.CourseTitle:last').html().split('<font')[0].replace(/&nbsp;/g, '').replace(/&amp;/g, '&') )
+			var fullCourseName = $(this).prevAll().find('.CourseTitle:last').find('b').html();
+			var classType = $(this).find('td').eq(LISTING_TYPE_INDEX).html();
+			var instructor = $(this).find('td').eq(LISTING_INSTRUCTOR_INDEX).html();
 		  var courseTimes = new CourseTimeStringParser(timeString)
 		  var roomString = $(this).find('td').eq(LISTING_ROOM_INDEX).html();
 		  var rooms = parseRoomString(roomString);
-
 		  // Iterate through course times (a course may have different meeting times)
 		  for(var i in courseTimes) {
 				var parsed = courseTimes[i];
@@ -315,11 +339,13 @@ $(document).ready(function() {
 					groupId: courseCode,
 					start: parsed.beginHour + ':' + parsed.beginMin,
 					end: parsed.endHour + ':' + parsed.endMin,
-					title: courseName,
+					title: classType + ' ' + courseName,
 					dow: parsed.days,
 					color: colorPair.color,
 					daysOfTheWeek: parsed.days,
-					location: room
+					location: room,
+					fullName: fullCourseName,
+					instructor: instructor
 				})
 		  }
 		});
@@ -338,6 +364,9 @@ $(document).ready(function() {
 					start: calRawData[i].start.format('HH:mm'),
 					end: calRawData[i].end.format('HH:mm'),
 					color: calRawData[i].color,
+					location: calRawData[i].location,
+					fullName: calRawData[i].fullName,
+					instructor: calRawData[i].instructor,
 					dow: calRawData[i].daysOfTheWeek
 				}
 				calCleanData.push(calEventData)
