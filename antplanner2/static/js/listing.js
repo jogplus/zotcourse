@@ -18,6 +18,10 @@ $(document).ready(function() {
                     continue;
                 }
 
+                if (instructorName == '') {
+                    continue;
+                }
+
                 // Build the link to RateMyProfessors
                 var instructorLastName = instructorName.split(',')[0];
                 if (instructorLastName.indexOf('-') !== -1) {

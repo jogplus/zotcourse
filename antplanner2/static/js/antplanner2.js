@@ -186,6 +186,39 @@ function isCourseAdded(courseCode, callback) {
 	return isAdded;
 }
 
+function getInstructorArray(html) {
+	var rawInstructorArray = html.split('<br>');
+	var cleanInstructorArray = [];
+	for (var i=0; i<rawInstructorArray.length; i++) {
+		if (rawInstructorArray[i] === '')
+			continue;
+		else if (rawInstructorArray[i] === 'STAFF')
+			cleanInstructorArray.push('STAFF');
+		else 
+			cleanInstructorArray.push($(rawInstructorArray[i]).html());
+	}
+	return cleanInstructorArray;
+}
+
+function createInstructorLinks(instructorNames) {
+	var instructorLinks = [];
+	for (i = 0; i < instructorNames.length; i++) {
+		var instructorName = instructorNames[i].trim();
+		if (instructorName == 'STAFF') {
+			instructorLinks.push('STAFF');
+			continue;
+		}
+		// Build the link to RateMyProfessors
+		var instructorLastName = instructorName.split(',')[0];
+		if (instructorLastName.indexOf('-') !== -1) {
+				instructorLastName = instructorName.split('-')[0]
+		}
+		var link = "https://www.ratemyprofessors.com/search.jsp?queryoption=HEADER&queryBy=teacherName&schoolName=University+of+California+Irvine&schoolID=1074&query="+instructorLastName;
+		instructorLinks.push('<a class="instructor-link" href="'+link+'" target="_blank">'+instructorName+'</a>');
+	}
+	return instructorLinks.join('<br>');
+}
+
 $(document).ready(function() {
 	//Workaround to implementing a resizable iframe
 	//Wraps a div around the iframe and then removes it once it is done moving. 
@@ -226,6 +259,7 @@ $(document).ready(function() {
 		themeSystem: 'bootstrap4',
 		defaultView: 'agendaWeek',
 		allDaySlot: false,
+		slotEventOverlap: false,
 		minTime: '07:00:00',
 		maxTime: '22:00:00',
 		columnHeaderFormat: 'ddd',
@@ -248,7 +282,7 @@ $(document).ready(function() {
 									</tr>\
 									<tr>\
 										<td>Instructor</td>\
-										<td align="right">'+((event.instructor) ? event.instructor : '')+'</td>\
+										<td align="right">'+((event.instructor) ? createInstructorLinks(event.instructor) : '')+'</td>\
 									</tr>\
 									<tr>\
 										<td>Final</td>\
@@ -261,10 +295,9 @@ $(document).ready(function() {
 									</table>\
 									<input type="button" class="delete-event" value="Delete">',
 				trigger:'focus',
-				placement:'auto',
-				container:'body'
+				placement:'right',
+				container:'body',
 			})
-
 		},
 		eventClick: function(event, jsEvent, view) {
 			// Necessary to keep the $(this) of eventClick in $(".delete-event").click
@@ -321,7 +354,7 @@ $(document).ready(function() {
 			var courseName = $.trim( $(this).prevAll().find('.CourseTitle').last().html().split('<font')[0].replace(/&nbsp;/g, '').replace(/&amp;/g, '&') )
 			var fullCourseName = $(this).prevAll().find('.CourseTitle').last().find('b').html();
 			var classType = $(this).find('td').eq(LISTING_TYPE_INDEX).html();
-			var instructor = $(this).find('td').eq(LISTING_INSTRUCTOR_INDEX).html();
+			var instructor = getInstructorArray($(this).find('td').eq(LISTING_INSTRUCTOR_INDEX).html());
 		  var courseTimes = new CourseTimeStringParser(timeString)
 			var roomString = $(this).find('td').eq(LISTING_ROOM_INDEX).html();
 			var final = $(this).find('td').eq(LISTING_FINAL_INDEX).html();
