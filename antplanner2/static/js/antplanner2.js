@@ -175,15 +175,12 @@ function groupColorize() {
 }
 
 function isCourseAdded(courseCode, callback) {
-	var isAdded = false;
-	$('.wc-cal-event').each(function(index, el) {
-		var c = $(el).data().calEvent;
-		if(c.groupId == courseCode) {
-			isAdded = true;
-			return false; //break out of loop
-		}
-	});
-	return isAdded;
+	var calEvents  = $('#cal').fullCalendar('clientEvents');
+	for (var i in calEvents){
+		if (calEvents[i].groupId === courseCode)
+			return true;
+	}
+	return false;
 }
 
 function getInstructorArray(html) {
@@ -265,6 +262,8 @@ $(document).ready(function() {
 		columnHeaderFormat: 'ddd',
 		height: $('#left').outerHeight() - $('#upper').outerHeight(),
 		eventRender: function(event, element, view) {
+			var colorpickerId = S4();
+			console.log(event);
 			$('.popover').each(function () {
 				$(this).popover('hide');
 			});
@@ -290,14 +289,51 @@ $(document).ready(function() {
 									</tr>\
 									<tr>\
 										<td>Color</td>\
-										<td align="right">'+((event.color) ? event.color : '')+'</td>\
+										<td align="right"><input id="colorpicker-'+colorpickerId+'" type="text"/></td>\
 									</tr>\
 									</table>\
-									<input type="button" class="delete-event" value="Delete">',
+									<input type="button" class="delete-event" value="Delete"/>',
 				trigger:'focus',
 				placement:'right',
 				container:'body',
-			})
+			});
+			element.on('inserted.bs.popover', function() {
+				$('#colorpicker-'+colorpickerId).spectrum({
+					color: event.color,
+					showPaletteOnly: true,
+					togglePaletteOnly: true,
+					togglePaletteMoreText: 'more',
+					togglePaletteLessText: 'less',
+					hideAfterPaletteSelect: true,
+					preferredFormat: "hex",
+					showInput: true,
+					palette: [["#C4A883", "#A7A77D", "#85AAA5", "#94A2BE", "#8997A5",
+											"#A992A9", "#A88383", "#E6804D", "#F2A640", "#E0C240",
+											"#BFBF4D", "#8CBF40", "#4CB052", "#65AD89", "#59BFB3",
+											"#668CD9", "#668CB3", "#8C66D9", "#B373B3", "#E67399",
+											"#D96666"]],
+					change: function(color) {
+						$('#cal').fullCalendar('removeEvents', event._id);
+						$('#cal').fullCalendar('renderEvent', {
+							id:	event.id,
+							groupId: event.groupId,
+							start: event.start.format('HH:mm'),
+							end: event.end.format('HH:mm'),
+							title: event.title,
+							dow: event.daysOfTheWeek,
+							color: color.toHexString(),
+							daysOfTheWeek: event.daysOfTheWeek,
+							location: event.location,
+							fullName: event.fullName,
+							instructor: event.instructor,
+							final: event.final
+						});
+					}
+				});
+			});
+			element.on('hide.bs.popover', function() {
+				$('#colorpicker-'+colorpickerId).spectrum('destroy');
+			});
 		},
 		eventClick: function(event, jsEvent, view) {
 			// Necessary to keep the $(this) of eventClick in $(".delete-event").click
@@ -309,8 +345,6 @@ $(document).ready(function() {
 			});
 		}
 	})
-
-
 
 	//The left div height subtracted by the upper header
 	//31 comes from the 30 cells + 1 for column headers
@@ -394,6 +428,7 @@ $(document).ready(function() {
 		var usedGroupIds = []
 		for (var i in calRawData){
 			if (!(usedGroupIds.indexOf(calRawData[i].groupId) >= 0)) {
+				console.log(calRawData[i].color);
 				var calEventData = {
 					id: calRawData[i].id,
 					groupId: calRawData[i].groupId,
@@ -406,6 +441,7 @@ $(document).ready(function() {
 					instructor: calRawData[i].instructor,
 					final: calRawData[i].final,
 					dow: calRawData[i].daysOfTheWeek,
+					daysOfTheWeek: calRawData[i].daysOfTheWeek
 				}
 				calCleanData.push(calEventData)
 				usedGroupIds.push(calRawData[i].groupId)
