@@ -166,11 +166,11 @@ function colorEvent(el, colorPair) {
 function groupColorize() {
 	var tracking = {};
 	$('.wc-cal-event').each(function(index, el) {
-	  var c = $(el).data().calEvent;
-	  if( !(c.groupId in tracking) ) {
-	    tracking[c.groupId] = getRandomColorPair();
-	  } 
-	  colorEvent(this, tracking[c.groupId])
+		var c = $(el).data().calEvent;
+		if( !(c.groupId in tracking) ) {
+			tracking[c.groupId] = getRandomColorPair();
+		} 
+	  	colorEvent(this, tracking[c.groupId])
 	});
 }
 
@@ -219,6 +219,7 @@ function createInstructorLinks(instructorNames) {
 $(document).ready(function() {
 	//Workaround to implementing a resizable iframe
 	//Wraps a div around the iframe and then removes it once it is done moving. 
+	console.log($('#upper').outerHeight())
 	$( "#left" ).resizable({
 		start: function(){
 			$("#right").each(function (index, element) {
@@ -232,9 +233,24 @@ $(document).ready(function() {
 		},
 		maxWidth:$(document).width()-30,
 		minWidth:30,
-		height: $(document).height(),
+		maxHeight: $('body').height() - $('#upper').outerHeight(),
 		handles: "e"
 	});
+
+	$('#print-btn').click(function(){
+		$('#cal').css('width', '100%');
+		$('#soc').show();
+		$('.ui-resizable-e').show();
+		$('#resize-btn').removeClass('active');
+		$('.fc-time-grid .fc-slats td').css({
+			'height': 45,
+		})
+		$('#cal').fullCalendar('option', 'height', $('#left').outerHeight() - $('#upper').outerHeight());
+		window.print();
+		$('.fc-time-grid .fc-slats td').css({
+			'height': ($('#left').outerHeight() - $('#upper').outerHeight()) / 31,
+		})
+	})
 
 	//Whenever the left panel changes sizes, resizes the right panel.
 	//Also accounts for when the user zooms in/out
@@ -292,7 +308,7 @@ $(document).ready(function() {
 										<td align="right"><input id="colorpicker-'+colorpickerId+'" type="text"/></td>\
 									</tr>\
 									</table>\
-									<input type="button" class="delete-event" value="Delete"/>',
+									<button class="btn btn-sm btn-outline-primary delete-event"><i class="fas fa-trash-alt"></i></button>',
 				trigger:'focus',
 				placement:'right',
 				container:'body',

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <head>
   <title>Zotcourse</title>
-  <link rel="stylesheet" href="{{url_for('static', filename="css/fullcalendar.css")}}">
+  <link rel="stylesheet" href="{{url_for('static', filename="css/fullcalendar.min.css")}}">
   <link rel="stylesheet" href="{{url_for('static', filename="css/spectrum.css")}}">
   <link rel="stylesheet" href="{{url_for('static', filename="css/reset.css")}}">
   <link rel="stylesheet" href="{{url_for('static', filename="css/main.css")}}">
@@ -14,25 +14,41 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
   <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
-  <script src="{{url_for('static', filename="js/fullcalendar.js")}}"></script>
+  <script src="{{url_for('static', filename="js/fullcalendar.min.js")}}"></script>
   <script src="{{url_for('static', filename="js/spectrum.js")}}"></script>
   <script src="{{url_for('static', filename="js/antplanner2.js")}}"></script>
 </head>
 <body>
-  <div id="left">
-    <div id="upper">
-      <div id="main-nav">
-          <h5><a target="_blank" href="https://github.com/jogplus/zotcourse">Zotcourse</a> - a slightly better copy of Antplanner</h5>
-      </div>
-      <div id="cal-ctrl">
-        <button type="button" class="btn btn-sm" onclick="javascript:print()">Print</button>
-        <button type="button" id="save-btn" class="btn btn-sm">Save</button>
-        <button type="button" id="load-btn" class="btn btn-sm">Load</button>
-        <button type="button" id="load-ap-btn" class="btn btn-sm">Load AP</button>
-        <button type="button" id="clear-cal-btn" class="btn btn-sm">Clear</button>
-        <button type="button" id="resize-btn" class="btn btn-sm">Size</button>
-      </div>
+  <div id="upper">
+    <div id="main-nav">
+        <h5><a target="_blank" href="https://github.com/jogplus/zotcourse">Zotcourse</a> - a slightly better copy of Antplanner</h5>
     </div>
+    <div id="cal-ctrl">
+      <div class="space1">&nbsp;</div>
+      <button type="button" id="whatsnew" class="btn btn-sm btn-outline-primary">
+        <i class="fas fa-bell"></i>
+        </button>
+      <button type="button" id="print-btn" class="btn btn-sm btn-outline-primary" >
+        Print  <i class="fas fa-print"></i>
+      </button>
+      <button type="button" id="save-btn" class="btn btn-sm btn-outline-primary">
+        Save  <i class="fas fa-save"></i>
+      </button>
+      <button type="button" id="load-btn" class="btn btn-sm btn-outline-primary">
+        Load  <i class="fas fa-download"></i>
+      </button>
+      <button type="button" id="load-ap-btn" class="btn btn-sm btn-outline-primary">
+        Import  <i class="fas fa-truck-moving"></i>
+      </button>
+      <button type="button" id="clear-cal-btn" class="btn btn-sm btn-outline-primary">
+        Clear  <i class="fas fa-ban"></i>
+      </button>
+      <button type="button" id="resize-btn" class="btn btn-sm btn-outline-primary">
+        Size  <i class="fas fa-expand"></i>
+      </button>
+    </div>
+  </div>
+  <div id="left">
     <div id="cal"></div>
   </div>
   <div id="right">

@@ -4,9 +4,12 @@ body {
 	font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
 	margin: 0;
 	color: #333;
+	padding: 0;
+	overflow:hidden;
 }
+
 a {
-	color: #aaa;
+	color: #007bff;
 }
 
 #left {
@@ -38,7 +41,8 @@ a {
 }
 
 #upper #cal-ctrl {
-	float: right;
+	float: left;
+	width: 30em;
 }
 
 #main-nav h1 {
@@ -104,17 +108,42 @@ a {
 	#left {
 		width: 100%;
 	}
-	#upper, #soc {
+	#upper, #soc, #right {
 		display: none;
 	}
 
-	.wc-scrollable-grid {
-		height: 1200px !important;
+	.fc-scroller,
+	.fc-day-grid-container,
+	.fc-time-grid-container {
+	overflow: visible !important;
+	height: auto !important; }
+
+	.fc-row {
+		border: 0 !important;
+		margin: 0 !important; }
+
+	.ui-resizable-e {
+		width: 0px !important;
 	}
 
-	.wc-cal-event {
-		font-size: 10px !important;
-		border: 1px solid black;
+	.fc-title{
+		font-size: 1.6em;
+	}
+
+	.fc-time > span {
+		font-size: 1.5em;
+	}
+
+	.fc-time-grid-event, .fc-v-event .fc-event, .fc-start, .fc-end {
+		-webkit-print-color-adjust: exact;
+	}
+
+	td .fc-axis > span {
+		font-size: 1em;
+	}
+
+	.table-bordered td, .table-bordered th {
+		border: 1px solid #000000 !important;
 	}
 }
 
@@ -129,6 +158,13 @@ a {
   background-color:inherit !important;
 }
 
+.space1
+{
+	display: inline-block;
+	width: 1%;
+}
+
 /* .popover {
 	min-width: 15em !important;
 } */
+

@@ -47,7 +47,6 @@ def get_backup_from_antplanner(username):
             end = datetime.strptime(clean_data[event_num]['end'], '%Y-%m-%dT%H:%M:%S.%fZ') - sevenHourDiff
             clean_data[event_num]['start'] = start.strftime('%H:%M')
             clean_data[event_num]['end'] = end.strftime('%H:%M')
-            #clean_data[event_num]['title'] = clean_data[event_num]['title'].split(' at ')[0].replace('&amp;', '&')
             added_groupIds.append(clean_data[event_num]['groupId'])
             super_clean.append(clean_data[event_num])
     clean['data'] = super_clean

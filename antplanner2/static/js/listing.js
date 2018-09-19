@@ -1,5 +1,12 @@
 $(document).ready(function() {
     $("tr").each(function() {
+        // To delete the useless 'textbooks' column and title
+        $("th:eq(13)", this).remove();
+        $("td:eq(13)", this).remove();
+        // After textbooks column is deleted, deletes the 'web' column and title
+        $("th:eq(13)", this).remove();
+        $("td:eq(13)", this).remove();
+
         // The 4th child is typically the instructor column
         var element = $("td:eq(4)", this);
         var elementText = element.text();
