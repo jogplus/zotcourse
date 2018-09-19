@@ -216,6 +216,84 @@ function createInstructorLinks(instructorNames) {
 	return instructorLinks.join('<br>');
 }
 
+function saveSchedule(username) {
+	var calRawData  = $('#cal').fullCalendar('clientEvents');
+	var calCleanData = []
+	var usedGroupIds = []
+	for (var i in calRawData){
+		if (!(usedGroupIds.indexOf(calRawData[i].groupId) >= 0)) {
+			console.log(calRawData[i].color);
+			var calEventData = {
+				id: calRawData[i].id,
+				groupId: calRawData[i].groupId,
+				title: calRawData[i].title,
+				start: calRawData[i].start.format('HH:mm'),
+				end: calRawData[i].end.format('HH:mm'),
+				color: calRawData[i].color,
+				location: calRawData[i].location,
+				fullName: calRawData[i].fullName,
+				instructor: calRawData[i].instructor,
+				final: calRawData[i].final,
+				dow: calRawData[i].daysOfTheWeek,
+				daysOfTheWeek: calRawData[i].daysOfTheWeek
+			}
+			calCleanData.push(calEventData)
+			usedGroupIds.push(calRawData[i].groupId)
+		}
+	}
+
+	// Validation
+	if(username == null) {
+			return;
+	}
+
+	if(username.length < 5) {
+			alert('Username must be at least 5 characters.')
+			return;
+		}
+		
+	// Save to server
+	$.ajax({
+			url: "/schedules/add",
+			type: 'POST',
+			data: {
+				username: username,
+				data: JSON.stringify(calCleanData)
+			},
+			success: function(data) {
+				if(data.success) {
+					alert('Schedule successfully saved!');
+					localStorage.username = username;
+				}
+				else {
+					alert('Problem saving schedule');
+				}
+			}
+	});
+}
+
+function loadSchedule(username) {
+	if(username == '') {
+			return;
+	}
+
+	$.ajax({
+			url: '/schedule/load',
+			data: { username: username },
+			success: function(data) {
+				console.log(data)
+				if(data.success) {
+					$('#cal').fullCalendar('removeEvents');
+					$('#cal').fullCalendar('renderEvents', JSON.parse(data.data));
+					alert('Schedule successfully loaded!');
+				}
+				else {
+					alert('Problem loading schedule');
+				}
+			}
+	});
+}
+
 $(document).ready(function() {
 	//Workaround to implementing a resizable iframe
 	//Wraps a div around the iframe and then removes it once it is done moving. 
@@ -237,7 +315,107 @@ $(document).ready(function() {
 		handles: "e"
 	});
 
-	$('#print-btn').click(function(){
+	$('#whatsnew').popover({
+		html: true,
+		title: "What's New! 🎉",
+		content:'<ul style="list-style-type:disc; margin-left:15px">\
+					<li>Resizable panels</li>\
+					<li>Click on a calendar event for more class info</li>\
+					<li>Change calendar event colors</li>\
+					<li>RateMyProfessor links in Websoc and calendar event</li>\
+					<li>Import schedule from Antplanner</li>\
+				</ul>',
+		placement: 'bottom',
+		container: 'body',
+		boundary: 'window',
+		trigger: 'trigger',
+	});
+
+	$('#whatsnew').on('hide.bs.popover', function () {
+		$(this).removeClass('btn-focus');
+	})
+
+	$('#whatsnew').click(function() {
+		if ($(this).hasClass('btn-focus')) {
+			$('#whatsnew').blur();
+			$(this).removeClass('btn-focus');
+		}
+		else {
+			$(this).addClass('btn-focus');
+		}
+	});
+
+	$('#save-btn').popover({
+		html: true,
+		title: "Save Schedule",
+		content:'<div class="input-group input-group-sm mb-3">\
+					<input id="save-input" value="'+(localStorage.username ? localStorage.username : '')+'" type="text" class="form-control save-input" placeholder="ex. Student Id" aria-label="Schedule\'s save name" aria-describedby="basic-addon2">\
+					<div class="input-group-append">\
+						<button id="save-button" class="btn btn-outline-primary" type="button">Submit</button>\
+					</div>\
+				</div>',
+		placement: 'bottom',
+		container: 'body',
+		boundary: 'window',
+	});
+
+	$('#save-btn').on('shown.bs.popover', function () {
+		$('#save-input').focus();
+		$("#save-input").keypress(function(e){
+			if (!e) 
+				e = window.event;
+			var keyCode = e.keyCode || e.which;
+			if (keyCode == '13'){
+				saveSchedule($('#save-input').val());
+				$('#save-btn').popover('hide');
+			}
+		});
+		$('#save-button').click(function() {
+			saveSchedule($('#save-input').val());
+			$('#save-btn').popover('hide');
+		});
+	});
+
+	$('#load-btn').popover({
+		html: true,
+		title: "Load Schedule",
+		content:'<div class="input-group input-group-sm mb-3">\
+					<input id="load-input" value="'+(localStorage.username ? localStorage.username : '')+'" type="text" class="form-control" placeholder="ex. Student Id" aria-label="Schedule\'s load name" aria-describedby="basic-addon2">\
+					<div class="input-group-append">\
+						<button id="load-button" class="btn btn-outline-primary" type="button">Submit</button>\
+					</div>\
+				</div>',
+		placement: 'bottom',
+		container: 'body',
+		boundary: 'window',
+	});
+
+	$('#load-btn').on('shown.bs.popover', function () {
+		$('#load-input').focus();
+		$("#load-input").keypress(function(e){
+			if (!e) 
+				e = window.event;
+			var keyCode = e.keyCode || e.which;
+			if (keyCode == '13'){
+				loadSchedule($('#load-input').val());
+				$('#load-btn').popover('hide');
+			}
+		});
+		$('#load-button').click(function() {
+			loadSchedule($('#load-input').val());
+			$('#load-btn').popover('hide');
+		});
+	});
+
+	$('#left').click(function() {
+		$('#whatsnew').blur();
+	});
+
+	$('#print-btn').click(function() {
+		var tempRightSize = $("#right").outerWidth();
+		var tempLeftSize = $("#left").outerWidth();
+		$("#right").outerWidth('0%');
+		$("#left").outerWidth('100%');
 		$('#cal').css('width', '100%');
 		$('#soc').show();
 		$('.ui-resizable-e').show();
@@ -247,6 +425,8 @@ $(document).ready(function() {
 		})
 		$('#cal').fullCalendar('option', 'height', $('#left').outerHeight() - $('#upper').outerHeight());
 		window.print();
+		$("#right").outerWidth(tempRightSize);
+		$("#left").outerWidth(tempLeftSize);
 		$('.fc-time-grid .fc-slats td').css({
 			'height': ($('#left').outerHeight() - $('#upper').outerHeight()) / 31,
 		})
@@ -436,89 +616,6 @@ $(document).ready(function() {
 				})
 		  }
 		});
-	});
-
-	$('#save-btn').on('click', function() {
-		var calRawData  = $('#cal').fullCalendar('clientEvents');
-		var calCleanData = []
-		var usedGroupIds = []
-		for (var i in calRawData){
-			if (!(usedGroupIds.indexOf(calRawData[i].groupId) >= 0)) {
-				console.log(calRawData[i].color);
-				var calEventData = {
-					id: calRawData[i].id,
-					groupId: calRawData[i].groupId,
-					title: calRawData[i].title,
-					start: calRawData[i].start.format('HH:mm'),
-					end: calRawData[i].end.format('HH:mm'),
-					color: calRawData[i].color,
-					location: calRawData[i].location,
-					fullName: calRawData[i].fullName,
-					instructor: calRawData[i].instructor,
-					final: calRawData[i].final,
-					dow: calRawData[i].daysOfTheWeek,
-					daysOfTheWeek: calRawData[i].daysOfTheWeek
-				}
-				calCleanData.push(calEventData)
-				usedGroupIds.push(calRawData[i].groupId)
-			}
-		}
-	  var defaultName = localStorage.username ? localStorage.username : '';
-	  var username = prompt('Please enter a unique username (e.g. Student ID): ', defaultName);
-
-	  // Validation
-	  if(username == null) {
-			return;
-	  }
-
-	  if(username.length < 5) {
-			alert('Username must be at least 5 characters.')
-			return;
-		}
-		
-	  // Save to server
-	  $.ajax({
-			url: "/schedules/add",
-			type: 'POST',
-			data: {
-				username: username,
-				data: JSON.stringify(calCleanData)
-			},
-			success: function(data) {
-				if(data.success) {
-					alert('Schedule successfully saved!');
-					localStorage.username = username;
-				}
-				else {
-					alert('Problem saving schedule');
-				}
-			}
-	  });
-	});
-
-	$('#load-btn').on('click', function() {
-	  var defaultName = localStorage.username ? localStorage.username : '';
-	  var username = prompt('Please enter your username', defaultName);
-
-	  if(username == '') {
-			return;
-	  }
-
-	  $.ajax({
-			url: '/schedule/load',
-			data: { username: username },
-			success: function(data) {
-				console.log(data)
-				if(data.success) {
-					$('#cal').fullCalendar('removeEvents');
-					$('#cal').fullCalendar('renderEvents', JSON.parse(data.data));
-					alert('Schedule successfully loaded!');
-				}
-				else {
-					alert('Problem loading schedule');
-				}
-			}
-	  });
 	});
 
 	$('#load-ap-btn').on('click', function() {

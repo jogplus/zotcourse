@@ -115,12 +115,14 @@ a {
 	.fc-scroller,
 	.fc-day-grid-container,
 	.fc-time-grid-container {
-	overflow: visible !important;
-	height: auto !important; }
+		overflow: visible !important;
+		height: auto !important; 
+	}
 
 	.fc-row {
 		border: 0 !important;
-		margin: 0 !important; }
+		margin: 0 !important; 
+	}
 
 	.ui-resizable-e {
 		width: 0px !important;
@@ -142,6 +144,7 @@ a {
 		font-size: 1em;
 	}
 
+	/* Currently does not work when printing */
 	.table-bordered td, .table-bordered th {
 		border: 1px solid #000000 !important;
 	}
