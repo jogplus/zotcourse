@@ -47,7 +47,6 @@ def save_schedule():
     username = request.form.get('username')
     data = request.form.get('data')
     try:
-        logging.info(data)
         Schedule(key_name=username, data=data).put()
         return jsonify(success=True)
     except:

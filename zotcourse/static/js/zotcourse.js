@@ -42,7 +42,6 @@ function ParsedCourseTime(timeString) {
 	no +12h                                12
 	
 	Input: "Th &nbsp; 12:30-12:50p "
-
 	*/
 	var MAX_DURATION = 5;
 
@@ -57,26 +56,23 @@ function ParsedCourseTime(timeString) {
 	
 	var endHour = parseInt( endTime.split(':')[0] );
 	var endMin = parseInt( endTime.split(':')[1].replace('p', '') );
-	var isPm = endTime.indexOf('p') != -1;;
+	var isPm = endTime.indexOf('p') != -1;
 
 	var days = []
-	if(timeString.indexOf('M') != -1) {	days.push(MON); } 
-	if(timeString.indexOf('Tu') != -1) { days.push(TUE); } 
-	if(timeString.indexOf('W') != -1) {	days.push(WED); }
-	if(timeString.indexOf('Th') != -1) { days.push(THU); }
-	if(timeString.indexOf('F') != -1) {	days.push(FRI); }
+	if(timeString.indexOf('M') != -1) {	days.push(window.MON); } 
+	if(timeString.indexOf('Tu') != -1) { days.push(window.TUE); } 
+	if(timeString.indexOf('W') != -1) {	days.push(window.WED); }
+	if(timeString.indexOf('Th') != -1) { days.push(window.THU); }
+	if(timeString.indexOf('F') != -1) {	days.push(window.FRI); }
 
 	if(isPm) {
 		var military = endHour == 12 ? 12 : endHour + 12
-
 		if(military - beginHour > MAX_DURATION) {
 			beginHour += 12;
 		} 
-
 		if(endHour != 12) {
 			endHour += 12;
 		}
-
 	}
 
 	return {
@@ -95,14 +91,12 @@ function CourseTimeStringParser(courseString) {
 	"M &nbsp;  6:30- 8:50p<br>Th &nbsp;  9:00-10:50p"
 	MW &nbsp;  6:00- 6:20p 
 	Th &nbsp; 12:30-12:50p 
-
 	*/
 	var courseTimes = []
 	var splitTimes = courseString.split('<br>');
 	for(var i in splitTimes) {
 		courseTimes.push( ParsedCourseTime(splitTimes[i]) )
 	}
-
 	return courseTimes;
 }
 
@@ -144,36 +138,10 @@ function getRandomColorPair() {
 		{color: '#E67399', borderColor: '#DD4477'},
 		{color: '#D96666', borderColor: '#CC3333'}
 	];
-	
 	return palette[Math.floor(Math.random() * palette.length)];
 }
 
-function colorEvent(el, colorPair) {
-	$(el).css({
-		'background-color': colorPair.color,
-		'border': '1px solid ' + colorPair.borderColor
-	});
-
-	$('.wc-time', el).css({
-		'background-color': colorPair.color,
-		'border-left': 'none',
-		'border-right': 'none',
-		'border-top': 'none',
-		'border-bottom': '1px solid ' + colorPair.borderColor
-	});
-}
-function groupColorize() {
-	var tracking = {};
-	$('.wc-cal-event').each(function(index, el) {
-		var c = $(el).data().calEvent;
-		if( !(c.groupId in tracking) ) {
-			tracking[c.groupId] = getRandomColorPair();
-		} 
-	  	colorEvent(this, tracking[c.groupId])
-	});
-}
-
-function isCourseAdded(courseCode, callback) {
+function isCourseAdded(courseCode) {
 	var calEvents  = $('#cal').fullCalendar('clientEvents');
 	for (var i in calEvents){
 		if (calEvents[i].groupId === courseCode)
@@ -182,6 +150,8 @@ function isCourseAdded(courseCode, callback) {
 	return false;
 }
 
+// Parses the Websoc html to create an array of professor names
+// for the createInstructorLinks function
 function getInstructorArray(html) {
 	var rawInstructorArray = html.split('<br>');
 	var cleanInstructorArray = [];
@@ -196,18 +166,21 @@ function getInstructorArray(html) {
 	return cleanInstructorArray;
 }
 
+// Creates an array of html link elements that direct to RateMyProfessor
 function createInstructorLinks(instructorNames) {
 	var instructorLinks = [];
-	for (i = 0; i < instructorNames.length; i++) {
+	for (var i = 0; i < instructorNames.length; i++) {
 		var instructorName = instructorNames[i].trim();
+		// Links are not created for STAFF
 		if (instructorName == 'STAFF') {
 			instructorLinks.push('STAFF');
 			continue;
 		}
-		// Build the link to RateMyProfessors
+		// Splits by ',' to retrieve professor's first name
 		var instructorLastName = instructorName.split(',')[0];
+		// Splits in case professors have a '-' in their name which causes the RateMyProfessor query to fail
 		if (instructorLastName.indexOf('-') !== -1) {
-				instructorLastName = instructorName.split('-')[0]
+			instructorLastName = instructorName.split('-')[0];
 		}
 		var link = "https://www.ratemyprofessors.com/search.jsp?queryoption=HEADER&queryBy=teacherName&schoolName=University+of+California+Irvine&schoolID=1074&query="+instructorLastName;
 		instructorLinks.push('<a class="instructor-link" href="'+link+'" target="_blank">'+instructorName+'</a>');
@@ -216,12 +189,14 @@ function createInstructorLinks(instructorNames) {
 }
 
 function saveSchedule(username) {
+	// Retrieves all events currently in the calendar
 	var calRawData  = $('#cal').fullCalendar('clientEvents');
 	var calCleanData = []
 	var usedGroupIds = []
 	for (var i in calRawData){
+		// Removes duplicate events based on groupId (which is the course code)
+		// Duplicates are caused by a class occuring on multiple days
 		if (!(usedGroupIds.indexOf(calRawData[i].groupId) >= 0)) {
-			console.log(calRawData[i].color);
 			var calEventData = {
 				id: calRawData[i].id,
 				groupId: calRawData[i].groupId,
@@ -240,17 +215,14 @@ function saveSchedule(username) {
 			usedGroupIds.push(calRawData[i].groupId)
 		}
 	}
-
 	// Validation
-	if(username == null) {
-	return;
-	}
-
-	if(username.length < 5) {
-		toastr.warning('Must be at least 5 characters.', 'Schedule Name Too Short');
+	if (username == null) {
 		return;
 	}
-		
+	if (username.length < 5) {
+		toastr.warning('Must be at least 5 characters.', 'Schedule Name Too Short');
+		return;
+	}	
 	// Save to server
 	$.ajax({
 		url: "/schedules/add",
@@ -260,7 +232,7 @@ function saveSchedule(username) {
 			data: JSON.stringify(calCleanData)
 		},
 		success: function(data) {
-			if(data.success) {
+			if (data.success) {
 				toastr.success(username, 'Schedule Saved!');
 				localStorage.username = username;
 				$('#scheduleNameForPrint').html('Zotcourse schedule name: '+username);
@@ -273,14 +245,13 @@ function saveSchedule(username) {
 }
 
 function loadSchedule(username) {
-	if(username == '') {
+	if (username == '') {
 		return;
 	}
 	$.ajax({
 		url: '/schedule/load',
 		data: { username: username },
 		success: function(data) {
-			console.log(data)
 			if(data.success) {
 				$('#cal').fullCalendar('removeEvents');
 				$('#cal').fullCalendar('renderEvents', JSON.parse(data.data));
@@ -295,16 +266,14 @@ function loadSchedule(username) {
 }
 
 function loadAPSchedule(username) {
-	if(username == '') {
+	if (username == '') {
 		return;
 	}
-
 	$.ajax({
 		url: '/schedule/loadap',
 		data: { username: username },
 		success: function(data) {
-			console.log(data)
-			if(data.success) {
+			if (data.success) {
 				$('#cal').fullCalendar('removeEvents');
 				for (var i=0; i< data.data.length; i++) {
 					data.data[i]['color'] = getRandomColorPair().color;
@@ -324,9 +293,10 @@ function loadAPSchedule(username) {
 	});
 }
 
+// JQuery listeners
 $(document).ready(function() {
-	//Workaround to implementing a resizable iframe
-	//Wraps a div around the iframe and then removes it once it is done moving. 
+	// Workaround to implementing a resizable iframe
+	// Wraps a div around the iframe and then removes it once it is done moving. 
 	$( "#left" ).resizable({
 		start: function(){
 			$("#right").each(function (index, element) {
@@ -344,6 +314,11 @@ $(document).ready(function() {
 		handles: "e"
 	});
 
+	// Required to dismiss '#whatsnew' popover when clicking on calendar
+	$('#left').click(function() {
+		$('#whatsnew').blur();
+	});
+
 	$('#whatsnew').popover({
 		html: true,
 		title: "What's New! 🎉",
@@ -351,6 +326,7 @@ $(document).ready(function() {
 				<li>Click on a calendar event for more course info</li>\
 				<li>Change course event color</li>\
 				<li>RateMyProfessor links in calendar event and Websoc results</li>\
+				<li>Course event title shows if it is Lec, Dis, Lab, etc.</li>\
 				<li>Import schedule from Antplanner</li> \
 				<li>Calendar adjusts to screen size</li>\
 				<li>Resizable panes</li>\
@@ -362,10 +338,12 @@ $(document).ready(function() {
 		trigger: 'trigger',
 	});
 
+	// Removes btn-focus class manually in case of a window resize or course addition
 	$('#whatsnew').on('hide.bs.popover', function () {
 		$(this).removeClass('btn-focus');
 	})
 
+	// Required to close the popover when the button is pressed again
 	$('#whatsnew').click(function() {
 		if ($(this).hasClass('btn-focus')) {
 			$('#whatsnew').blur();
@@ -390,11 +368,13 @@ $(document).ready(function() {
 		boundary: 'window',
 	});
 
+	// Triggers before popover has been shown and hides the other toolbar popovers
 	$('#save-btn').on('show.bs.popover', function () {
 		$('#load-ap-btn').popover('hide');
 		$('#load-btn').popover('hide');
 	});
 
+	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
 	$('#save-btn').on('shown.bs.popover', function () {
 		$('#save-input').focus();
 		$("#save-input").keypress(function(e){
@@ -426,11 +406,13 @@ $(document).ready(function() {
 		boundary: 'window',
 	});
 
+	// Triggers before popover has been shown and hides the other toolbar popovers
 	$('#load-btn').on('show.bs.popover', function () {
 		$('#load-ap-btn').popover('hide');
 		$('#save-btn').popover('hide');
 	});
 
+	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
 	$('#load-btn').on('shown.bs.popover', function () {
 		$('#load-input').focus();
 		$("#load-input").keypress(function(e){
@@ -448,35 +430,6 @@ $(document).ready(function() {
 		});
 	});
 
-	$('#left').click(function() {
-		$('#whatsnew').blur();
-	});
-
-	$('#print-btn').click(function() {
-		var tempRightSize = $("#right").outerWidth();
-		var tempLeftSize = $("#left").outerWidth();
-		$("#right").outerWidth('0%');
-		// Not 100% or else it will not fit on letter paper
-		$("#left").outerWidth('99.5%');
-		$('#cal').css('width', '100%');
-		$('th, td, tr').css('border', '2px solid #bfbfbf');
-		$('.fc-minor').css('border-top', '3px dotted #bfbfbf')
-		$('#soc').show();
-		$('.ui-resizable-e').show();
-		$('#resize-btn').removeClass('active');
-		$('.fc-time-grid .fc-slats td').css({
-			'height': 46,
-		})
-		$('#cal').fullCalendar('option', 'height', $('#left').outerHeight() - $('#upper').outerHeight());
-		window.print();
-		$("#right").outerWidth(tempRightSize);
-		$("#left").outerWidth(tempLeftSize);
-		$('th, td, tr').css('border', '');
-		$('.fc-time-grid .fc-slats td').css({
-			'height': ($('#left').outerHeight() - $('#upper').outerHeight()) / 31,
-		})
-	});
-
 	$('#load-ap-btn').popover({
 		html: true,
 		title: "Import from Antplanner",
@@ -492,11 +445,13 @@ $(document).ready(function() {
 		boundary: 'window',
 	});
 
+	// Triggers before popover has been shown and hides the other toolbar popovers
 	$('#load-ap-btn').on('show.bs.popover', function () {
 		$('#load-btn').popover('hide');
 		$('#save-btn').popover('hide');
 	});
 
+	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
 	$('#load-ap-btn').on('shown.bs.popover', function () {
 		$('#load-ap-input').focus();
 		$("#load-ap-input").keypress(function(e){
@@ -514,15 +469,49 @@ $(document).ready(function() {
 		});
 	});
 
-	//Whenever the left panel changes sizes, resizes the right panel.
-	//Also accounts for when the user zooms in/out
+	// Temporarily changes size of calendar for printing.
+	// This must be done with JS instead of just styling because
+	// fullCalendar must rescale all of the events for the bigger event sizes
+	$('#print-btn').click(function() {
+		var tempRightSize = $("#right").outerWidth();
+		var tempLeftSize = $("#left").outerWidth();
+		$("#right").outerWidth('0%');
+		// Not 100% or else it will not fit on letter paper
+		$("#left").outerWidth('99.5%');
+		$('#cal').css('width', '100%');
+		$('th, td, tr').css('border', '2px solid #bfbfbf');
+		$('.fc-minor').css('border-top', '3px dotted #bfbfbf')
+		$('#soc').show();
+		$('.ui-resizable-e').show();
+		$('#resize-btn').removeClass('active');
+		// Sets the rows to have a larger height for printing
+		$('.fc-time-grid .fc-slats td').css('height', '46');
+		// This triggers fullCalendar to rescale
+		$('#cal').fullCalendar('option', 'height', $('#left').outerHeight() - $('#upper').outerHeight());
+
+		window.print();
+		// Resets page back to original size
+		$("#right").outerWidth(tempRightSize);
+		$("#left").outerWidth(tempLeftSize);
+		$('th, td, tr').css('border', '');
+		$('.fc-time-grid .fc-slats td').css({
+			'height': ($('#left').outerHeight() - $('#upper').outerHeight()) / 31,
+		});
+	});
+
+	// Whenever the left panel changes sizes, resizes the right panel.
+	// Also accounts for when the user zooms in/out
 	$(window).resize(function() {
-		//Subtracts 5 from total right width to account for when scroll bar is present
+		// Subtracts 5 from total right width to account for when scroll bar is present
 		$("#right").outerWidth($(document).width() - $("#left").outerWidth()-5);
+		// Resizes the rows to fit on the screen
+		// 31 comes from the 30 table cells + 1 for table column headers
 		$('.fc-time-grid .fc-slats td').css({
 			'height': ($('body').outerHeight() - $('#upper').outerHeight()) / 31,
-		})
+		});
+		// Triggers fullCalendar to rescale
 		$('#cal').fullCalendar('option', 'height', $('#left').outerHeight());
+		// Hides all open popovers to prevent them from drifting while resize is occuring
 		$('.popover').each(function () {
 			$(this).popover('hide');
 		});
@@ -539,8 +528,10 @@ $(document).ready(function() {
 		maxTime: '22:00:00',
 		columnHeaderFormat: 'ddd',
 		height: $('#left').outerHeight(),
-		eventRender: function(event, element, view) {
+		eventRender: function(event, element) {
 			var colorpickerId = S4();
+			// Hides all open popovers when adding a new event since it was causing
+			// currently opened popovers to freeze.
 			$('.popover').each(function () {
 				$(this).popover('hide');
 			});
@@ -590,6 +581,7 @@ $(document).ready(function() {
 											"#668CD9", "#668CB3", "#8C66D9", "#B373B3", "#E67399",
 											"#D96666"]],
 					change: function(color) {
+						// Must remove and rerender the event manually since updateEvent is not working
 						$('#cal').fullCalendar('removeEvents', event._id);
 						$('#cal').fullCalendar('renderEvent', {
 							id:	event.id,
@@ -608,45 +600,46 @@ $(document).ready(function() {
 					}
 				});
 			});
+			// Must manually destroy colorpicker or else it never gets deleted
 			element.on('hide.bs.popover', function() {
 				$('#colorpicker-'+colorpickerId).spectrum('destroy');
 			});
 		},
-		eventClick: function(event, jsEvent, view) {
+		eventClick: function(event) {
 			// Necessary to keep the $(this) of eventClick in $(".delete-event").click
-			$this = $(this);
+			var $this = $(this);
 			$this.popover('toggle');
 			$(".delete-event").click(function() {
 				$this.popover('dispose');
 				$('#cal').fullCalendar('removeEvents', event._id);
 			});
 		}
-	})
+	});
 
-	//The left div height divided by the number of calendar rows
-	//31 comes from the 30 table cells + 1 for table column headers
+	// The left div height divided by the number of calendar rows
+	// 31 comes from the 30 table cells + 1 for table column headers
 	$('.fc-time-grid .fc-slats td').css({
 		'height': ($('#left').outerHeight()) / 31,
 	})
 
+	// Causes fullCalendar to resize after row height was adjusted.
 	$(window).trigger('resize');
 
 	$('#soc').bind('load', function(){
-	  var $listingContext = $('.course-list', $('#soc').contents());
-	  var $courseRow = $("tr[valign*='top']:not([bgcolor='#fff0ff'])", $listingContext);
+		var $listingContext = $('.course-list', $('#soc').contents());
+		var $courseRow = $("tr[valign*='top']:not([bgcolor='#fff0ff'])", $listingContext);
 
-		// FIXME: hover() deprecated
 		$courseRow.hover(
-		  function() {
-			$(this).css({'color': '#ff0000', 'cursor': 'pointer'});
-		  },
-		  function() {
-			$(this).css({'color': '#000000', 'cursor': 'default'});
-		  }
+			function() {
+				$(this).css({'color': '#ff0000', 'cursor': 'pointer'});
+			},
+			function() {
+				$(this).css({'color': '#000000', 'cursor': 'default'});
+			}
 		);
 
 		$courseRow.on('click', function() {
-			var timeString = $(this).find('td').eq(LISTING_TIME_INDEX).html();
+			var timeString = $(this).find('td').eq(window.LISTING_TIME_INDEX).html();
 
 			// Ignore if course is "TBA"
 			if(timeString.indexOf('TBA') != -1) {
@@ -654,7 +647,7 @@ $(document).ready(function() {
 				return;
 			}
 
-			var courseCode = $(this).find('td').eq(LISTING_CODE_INDEX).text();
+			var courseCode = $(this).find('td').eq(window.LISTING_CODE_INDEX).text();
 
 			// Ignore if course already added
 			if(isCourseAdded(courseCode)) {
@@ -662,23 +655,22 @@ $(document).ready(function() {
 				return;
 			}
 
+			// Parses Websoc result to find course elements in the row
 			var courseName = $.trim( $(this).prevAll().find('.CourseTitle').last().html().split('<font')[0].replace(/&nbsp;/g, '').replace(/&amp;/g, '&') )
 			var fullCourseName = $(this).prevAll().find('.CourseTitle').last().find('b').html();
-			var classType = $(this).find('td').eq(LISTING_TYPE_INDEX).html();
-			var instructor = getInstructorArray($(this).find('td').eq(LISTING_INSTRUCTOR_INDEX).html());
+			var classType = $(this).find('td').eq(window.LISTING_TYPE_INDEX).html();
+			var instructor = getInstructorArray($(this).find('td').eq(window.LISTING_INSTRUCTOR_INDEX).html());
 			var courseTimes = new CourseTimeStringParser(timeString)
-			var roomString = $(this).find('td').eq(LISTING_ROOM_INDEX).html();
-			var final = $(this).find('td').eq(LISTING_FINAL_INDEX).html();
+			var roomString = $(this).find('td').eq(window.LISTING_ROOM_INDEX).html();
+			var final = $(this).find('td').eq(window.LISTING_FINAL_INDEX).html();
 			var rooms = parseRoomString(roomString);
+
 			// Iterate through course times (a course may have different meeting times)
 			for(var i in courseTimes) {
 				var parsed = courseTimes[i];
-
+				var room = "TBA";
 				if (i in rooms && rooms[i].length > 0) {
-					var room = rooms[i];
-				} else {
-					// Is there a possibility that there is only one room listed for all times (in the case of multiple times)?
-					var room = "TBA";
+					room = rooms[i];
 				}
 				var colorPair = getRandomColorPair();
 				$('#cal').fullCalendar("renderEvent",{
@@ -694,13 +686,13 @@ $(document).ready(function() {
 					fullName: fullCourseName,
 					instructor: instructor,
 					final: final
-				})
-		  	}
+				});
+			}
 		});
 	});
 
 	$('#clear-cal-btn').on('click', function() {
-	  $('#cal').fullCalendar('removeEvents');
+		$('#cal').fullCalendar('removeEvents');
 	});
 
 	$('#resize-btn').click(function() {
@@ -720,5 +712,4 @@ $(document).ready(function() {
 			$('#cal').animate({width: $(document).width()});
 		}
 	});
-
 });
