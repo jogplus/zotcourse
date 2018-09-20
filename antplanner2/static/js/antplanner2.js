@@ -121,32 +121,31 @@ function parseRoomString(roomString) {
 }
 
 function getRandomColorPair() {
-		var palette = [
-			{color: '#C4A883', borderColor: '#B08B59'},
-			{color: '#A7A77D', borderColor: '#898951'},
-			{color: '#85AAA5', borderColor: '#5C8D87'},
-			{color: '#94A2BE', borderColor: '#5C8D87'},
-			{color: '#8997A5', borderColor: '#627487'},
-			{color: '#A992A9', borderColor: '#8C6D8C'},
-			{color: '#A88383', borderColor: '#A87070'},
-			{color: '#E6804D', borderColor: '#DD5511'},
-			{color: '#F2A640', borderColor: '#EE8800'},
-			{color: '#E0C240', borderColor: '#D6AE00'},
-			{color: '#BFBF4D', borderColor: '#AAAA11'},
-			{color: '#8CBF40', borderColor: '#66AA00'},
-			{color: '#4CB052', borderColor: '#109618'},
-			{color: '#65AD89', borderColor: '#329262'},
-			{color: '#59BFB3', borderColor: '#22AA99'},
-			{color: '#668CD9', borderColor: '#3366CC'},
-			{color: '#668CB3', borderColor: '#336699'},
-			{color: '#8C66D9', borderColor: '#6633CC'},
-			{color: '#B373B3', borderColor: '#994499'},
-			{color: '#E67399', borderColor: '#DD4477'},
-			{color: '#D96666', borderColor: '#CC3333'}
-		];
-		
-		return palette[Math.floor(Math.random() * palette.length)];
-
+	var palette = [
+		{color: '#C4A883', borderColor: '#B08B59'},
+		{color: '#A7A77D', borderColor: '#898951'},
+		{color: '#85AAA5', borderColor: '#5C8D87'},
+		{color: '#94A2BE', borderColor: '#5C8D87'},
+		{color: '#8997A5', borderColor: '#627487'},
+		{color: '#A992A9', borderColor: '#8C6D8C'},
+		{color: '#A88383', borderColor: '#A87070'},
+		{color: '#E6804D', borderColor: '#DD5511'},
+		{color: '#F2A640', borderColor: '#EE8800'},
+		{color: '#E0C240', borderColor: '#D6AE00'},
+		{color: '#BFBF4D', borderColor: '#AAAA11'},
+		{color: '#8CBF40', borderColor: '#66AA00'},
+		{color: '#4CB052', borderColor: '#109618'},
+		{color: '#65AD89', borderColor: '#329262'},
+		{color: '#59BFB3', borderColor: '#22AA99'},
+		{color: '#668CD9', borderColor: '#3366CC'},
+		{color: '#668CB3', borderColor: '#336699'},
+		{color: '#8C66D9', borderColor: '#6633CC'},
+		{color: '#B373B3', borderColor: '#994499'},
+		{color: '#E67399', borderColor: '#DD4477'},
+		{color: '#D96666', borderColor: '#CC3333'}
+	];
+	
+	return palette[Math.floor(Math.random() * palette.length)];
 }
 
 function colorEvent(el, colorPair) {
@@ -244,60 +243,90 @@ function saveSchedule(username) {
 
 	// Validation
 	if(username == null) {
-			return;
+	return;
 	}
 
 	if(username.length < 5) {
-			alert('Username must be at least 5 characters.')
-			return;
-		}
+		toastr.warning('Must be at least 5 characters.', 'Schedule Name Too Short');
+		return;
+	}
 		
 	// Save to server
 	$.ajax({
-			url: "/schedules/add",
-			type: 'POST',
-			data: {
-				username: username,
-				data: JSON.stringify(calCleanData)
-			},
-			success: function(data) {
-				if(data.success) {
-					alert('Schedule successfully saved!');
-					localStorage.username = username;
-				}
-				else {
-					alert('Problem saving schedule');
-				}
+		url: "/schedules/add",
+		type: 'POST',
+		data: {
+			username: username,
+			data: JSON.stringify(calCleanData)
+		},
+		success: function(data) {
+			if(data.success) {
+				toastr.success(username, 'Schedule Saved!');
+				localStorage.username = username;
+				$('#scheduleNameForPrint').html('Zotcourse schedule name: '+username);
 			}
+			else {
+				toastr.error(username, 'Schedule Not Saved');
+			}
+		}
 	});
 }
 
 function loadSchedule(username) {
 	if(username == '') {
-			return;
+		return;
+	}
+	$.ajax({
+		url: '/schedule/load',
+		data: { username: username },
+		success: function(data) {
+			console.log(data)
+			if(data.success) {
+				$('#cal').fullCalendar('removeEvents');
+				$('#cal').fullCalendar('renderEvents', JSON.parse(data.data));
+				$('#scheduleNameForPrint').html('Zotcourse schedule name: '+username);
+				toastr.success(username, 'Schedule Loaded!');
+			}
+			else {
+				toastr.error(username, 'Schedule Not Found');
+			}
+		}
+	});
+}
+
+function loadAPSchedule(username) {
+	if(username == '') {
+		return;
 	}
 
 	$.ajax({
-			url: '/schedule/load',
-			data: { username: username },
-			success: function(data) {
-				console.log(data)
-				if(data.success) {
-					$('#cal').fullCalendar('removeEvents');
-					$('#cal').fullCalendar('renderEvents', JSON.parse(data.data));
-					alert('Schedule successfully loaded!');
+		url: '/schedule/loadap',
+		data: { username: username },
+		success: function(data) {
+			console.log(data)
+			if(data.success) {
+				$('#cal').fullCalendar('removeEvents');
+				for (var i=0; i< data.data.length; i++) {
+					data.data[i]['color'] = getRandomColorPair().color;
+					var courseCodeSplit = data.data[i]['title'].split('<br>')[0];
+					var locationSplit = courseCodeSplit.split(' at ');
+					data.data[i]['location'] = locationSplit[1];
+					data.data[i]['title'] = locationSplit[0].replace('&amp;', '&');
 				}
-				else {
-					alert('Problem loading schedule');
-				}
+				$('#cal').fullCalendar('renderEvents',data.data);
+				$('#scheduleNameForPrint').html(username);
+				toastr.success(username, 'Schedule Loaded!');
 			}
+			else {
+				toastr.error(username, 'Schedule Not Found');
+			}
+		}
 	});
 }
 
 $(document).ready(function() {
 	//Workaround to implementing a resizable iframe
 	//Wraps a div around the iframe and then removes it once it is done moving. 
-	console.log($('#upper').outerHeight())
 	$( "#left" ).resizable({
 		start: function(){
 			$("#right").each(function (index, element) {
@@ -320,7 +349,7 @@ $(document).ready(function() {
 		title: "What's New! 🎉",
 		content:'<ul style="list-style-type:disc; margin-left:15px">\
 					<li>Resizable panels</li>\
-					<li>Click on a calendar event for more class info</li>\
+					<li>Click on a calendar event for more course info</li>\
 					<li>Change calendar event colors</li>\
 					<li>RateMyProfessor links in Websoc and calendar event</li>\
 					<li>Import schedule from Antplanner</li>\
@@ -359,6 +388,11 @@ $(document).ready(function() {
 		boundary: 'window',
 	});
 
+	$('#save-btn').on('show.bs.popover', function () {
+		$('#load-ap-btn').popover('hide');
+		$('#load-btn').popover('hide');
+	});
+
 	$('#save-btn').on('shown.bs.popover', function () {
 		$('#save-input').focus();
 		$("#save-input").keypress(function(e){
@@ -390,6 +424,11 @@ $(document).ready(function() {
 		boundary: 'window',
 	});
 
+	$('#load-btn').on('show.bs.popover', function () {
+		$('#load-ap-btn').popover('hide');
+		$('#save-btn').popover('hide');
+	});
+
 	$('#load-btn').on('shown.bs.popover', function () {
 		$('#load-input').focus();
 		$("#load-input").keypress(function(e){
@@ -415,32 +454,73 @@ $(document).ready(function() {
 		var tempRightSize = $("#right").outerWidth();
 		var tempLeftSize = $("#left").outerWidth();
 		$("#right").outerWidth('0%');
-		$("#left").outerWidth('100%');
+		// Not 100% or else it will not fit on letter paper
+		$("#left").outerWidth('99.5%');
 		$('#cal').css('width', '100%');
+		$('th, td, tr').css('border', '2px solid #bfbfbf');
+		$('.fc-minor').css('border-top', '3px dotted #bfbfbf')
 		$('#soc').show();
 		$('.ui-resizable-e').show();
 		$('#resize-btn').removeClass('active');
 		$('.fc-time-grid .fc-slats td').css({
-			'height': 45,
+			'height': 46,
 		})
 		$('#cal').fullCalendar('option', 'height', $('#left').outerHeight() - $('#upper').outerHeight());
 		window.print();
 		$("#right").outerWidth(tempRightSize);
 		$("#left").outerWidth(tempLeftSize);
+		$('th, td, tr').css('border', '');
 		$('.fc-time-grid .fc-slats td').css({
 			'height': ($('#left').outerHeight() - $('#upper').outerHeight()) / 31,
 		})
-	})
+	});
+
+	$('#load-ap-btn').popover({
+		html: true,
+		title: "Import from Antplanner",
+		content:'<div class="input-group input-group-sm mb-3">\
+					<div style="padding-bottom: 8px">Note: Not all course info will be available in event popup.</div>\
+					<input id="load-ap-input" type="text" class="form-control" placeholder="ex. Student Id" aria-label="Schedule\'s AP load name" aria-describedby="basic-addon2">\
+					<div class="input-group-append">\
+						<button id="load-ap-button" class="btn btn-outline-primary" type="button">Submit</button>\
+					</div>\
+				</div>',
+		placement: 'bottom',
+		container: 'body',
+		boundary: 'window',
+	});
+
+	$('#load-ap-btn').on('show.bs.popover', function () {
+		$('#load-btn').popover('hide');
+		$('#save-btn').popover('hide');
+	});
+
+	$('#load-ap-btn').on('shown.bs.popover', function () {
+		$('#load-ap-input').focus();
+		$("#load-ap-input").keypress(function(e){
+			if (!e) 
+				e = window.event;
+			var keyCode = e.keyCode || e.which;
+			if (keyCode == '13'){
+				loadAPSchedule($('#load-ap-input').val());
+				$('#load-ap-btn').popover('hide');
+			}
+		});
+		$('#load-button').click(function() {
+			loadAPSchedule($('#load-ap-input').val());
+			$('#load-ap-btn').popover('hide');
+		});
+	});
 
 	//Whenever the left panel changes sizes, resizes the right panel.
 	//Also accounts for when the user zooms in/out
-	//Subtracts 20 from total right width to account for when scroll bar is present
 	$(window).resize(function() {
-		$("#right").outerWidth($(document).width() - $("#left").outerWidth()-20);
+		//Subtracts 5 from total right width to account for when scroll bar is present
+		$("#right").outerWidth($(document).width() - $("#left").outerWidth()-5);
 		$('.fc-time-grid .fc-slats td').css({
-			'height': ($('#left').outerHeight() - $('#upper').outerHeight()) / 31,
+			'height': ($('body').outerHeight() - $('#upper').outerHeight()) / 31,
 		})
-		$('#cal').fullCalendar('option', 'height', $('#left').outerHeight() - $('#upper').outerHeight());
+		$('#cal').fullCalendar('option', 'height', $('#left').outerHeight());
 		$('.popover').each(function () {
 			$(this).popover('hide');
 		});
@@ -456,10 +536,9 @@ $(document).ready(function() {
 		minTime: '07:00:00',
 		maxTime: '22:00:00',
 		columnHeaderFormat: 'ddd',
-		height: $('#left').outerHeight() - $('#upper').outerHeight(),
+		height: $('#left').outerHeight(),
 		eventRender: function(event, element, view) {
 			var colorpickerId = S4();
-			console.log(event);
 			$('.popover').each(function () {
 				$(this).popover('hide');
 			});
@@ -481,7 +560,7 @@ $(document).ready(function() {
 									</tr>\
 									<tr>\
 										<td>Final</td>\
-										<td align="right">'+((event.final) ? event.final : '')+'</td>\
+										<td align="right">'+ ((event.final !== '&nbsp;' ) ? ((event.final) ? event.final : '') : 'See Lecture')+'</td>\
 									</tr>\
 									<tr>\
 										<td>Color</td>\
@@ -542,13 +621,13 @@ $(document).ready(function() {
 		}
 	})
 
-	//The left div height subtracted by the upper header
-	//31 comes from the 30 cells + 1 for column headers
+	//The left div height divided by the number of calendar rows
+	//31 comes from the 30 table cells + 1 for table column headers
 	$('.fc-time-grid .fc-slats td').css({
-		'height': ($('#left').outerHeight() - $('#upper').outerHeight()) / 31,
+		'height': ($('#left').outerHeight()) / 31,
 	})
 
-	// $('#cal').weekCalendar('gotoWeek', new Date(APP_YEAR, APP_MONTH, APP_DAY));
+	$(window).trigger('resize');
 
 	$('#soc').bind('load', function(){
 	  var $listingContext = $('.course-list', $('#soc').contents());
@@ -565,32 +644,32 @@ $(document).ready(function() {
 		);
 
 		$courseRow.on('click', function() {
-		  var timeString = $(this).find('td').eq(LISTING_TIME_INDEX).html();
+			var timeString = $(this).find('td').eq(LISTING_TIME_INDEX).html();
 
-		  // Ignore if course is "TBA"
-		  if(timeString.indexOf('TBA') != -1) {
-				alert('Course is TBA');
+			// Ignore if course is "TBA"
+			if(timeString.indexOf('TBA') != -1) {
+				toastr.warning('Course is TBA');
 				return;
-		  }
+			}
 
-		  var courseCode = $(this).find('td').eq(LISTING_CODE_INDEX).text();
+			var courseCode = $(this).find('td').eq(LISTING_CODE_INDEX).text();
 
-		  // Ignore if course already added
-		  if(isCourseAdded(courseCode)) {
-				alert('You have already added that course!');
+			// Ignore if course already added
+			if(isCourseAdded(courseCode)) {
+				toastr.warning('Course Already Added');
 				return;
-		  }
-			console.log($(this));
+			}
+
 			var courseName = $.trim( $(this).prevAll().find('.CourseTitle').last().html().split('<font')[0].replace(/&nbsp;/g, '').replace(/&amp;/g, '&') )
 			var fullCourseName = $(this).prevAll().find('.CourseTitle').last().find('b').html();
 			var classType = $(this).find('td').eq(LISTING_TYPE_INDEX).html();
 			var instructor = getInstructorArray($(this).find('td').eq(LISTING_INSTRUCTOR_INDEX).html());
-		  var courseTimes = new CourseTimeStringParser(timeString)
+			var courseTimes = new CourseTimeStringParser(timeString)
 			var roomString = $(this).find('td').eq(LISTING_ROOM_INDEX).html();
 			var final = $(this).find('td').eq(LISTING_FINAL_INDEX).html();
-		  var rooms = parseRoomString(roomString);
-		  // Iterate through course times (a course may have different meeting times)
-		  for(var i in courseTimes) {
+			var rooms = parseRoomString(roomString);
+			// Iterate through course times (a course may have different meeting times)
+			for(var i in courseTimes) {
 				var parsed = courseTimes[i];
 
 				if (i in rooms && rooms[i].length > 0) {
@@ -614,40 +693,8 @@ $(document).ready(function() {
 					instructor: instructor,
 					final: final
 				})
-		  }
+		  	}
 		});
-	});
-
-	$('#load-ap-btn').on('click', function() {
-	  var defaultName = localStorage.username ? localStorage.username : '';
-	  var username = prompt('Please enter your Antplanner username', defaultName);
-
-	  if(username == '') {
-			return;
-	  }
-
-	  $.ajax({
-			url: '/schedule/loadap',
-			data: { username: username },
-			success: function(data) {
-				console.log(data)
-				if(data.success) {
-					$('#cal').fullCalendar('removeEvents');
-					for (var i=0; i< data.data.length; i++) {
-						data.data[i]['color'] = getRandomColorPair().color;
-						var courseCodeSplit = data.data[i]['title'].split('<br>')[0];
-						var locationSplit = courseCodeSplit.split(' at ');
-						data.data[i]['location'] = locationSplit[1];
-						data.data[i]['title'] = locationSplit[0].replace('&amp;', '&');
-					}
-					$('#cal').fullCalendar('renderEvents',data.data);
-					alert('Schedule successfully loaded!');
-				}
-				else {
-					alert('Problem loading schedule');
-				}
-			}
-	  });
 	});
 
 	$('#clear-cal-btn').on('click', function() {
@@ -671,6 +718,5 @@ $(document).ready(function() {
 			$('#cal').animate({width: $(document).width()});
 		}
 	});
-	
 
 });

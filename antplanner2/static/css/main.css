@@ -5,7 +5,6 @@ body {
 	margin: 0;
 	color: #333;
 	padding: 0;
-	overflow:hidden;
 }
 
 a {
@@ -15,14 +14,14 @@ a {
 #left {
 	width: 50%;
 	float: left;
-	height: 100%;
+	height: calc(100% - 42px);
 }
 
 #right {
 	width: calc(50% - 5px);
-	height: 100%;
+	height: calc(100% - 42px);
 	float: left;
-	overflow: auto;
+	overflow: hidden;
 	-webkit-overflow-scrolling: touch; /* for iOS */
 	margin-left: 5px;
 }
@@ -47,6 +46,10 @@ a {
 
 #main-nav h1 {
 	display: inline;
+}
+
+#scheduleNameForPrint {
+	display : none;
 }
 
 .btn {
@@ -95,19 +98,11 @@ a {
 	position: relative;
 }
 
-/* weekly calendar overrides */
-.wc-header {
-	background: #fff;
-}
-.wc-cal-event {
-	font-size: 10px !important;
-	border: none;
-}
-
 @media print {
 	#left {
 		width: 100%;
 	}
+
 	#upper, #soc, #right {
 		display: none;
 	}
@@ -142,18 +137,31 @@ a {
 
 	td .fc-axis > span {
 		font-size: 1em;
+		position:relative;
+		top:-15px;
 	}
 
-	/* Currently does not work when printing */
-	.table-bordered td, .table-bordered th {
-		border: 1px solid #000000 !important;
+	#scheduleNameForPrint {
+		display : inline-block;
+	}
+
+	#toast-container {
+		display: none;
+	}
+
+	th, td, tr {
+		border: 2px solid  #bfbfbf;
+	}
+
+	.fc-minor {
+		border-top: 3px dotted  #bfbfbf !important;
 	}
 }
 
 .ui-resizable-e {
 	width: 7px;
-	background-color: #286090;
-	cursor: ew-resize;
+	background-color: #007bff;
+	cursor: ew-resize !important;
 }
 
 .fc-today
@@ -167,7 +175,7 @@ a {
 	width: 1%;
 }
 
-/* .popover {
-	min-width: 15em !important;
-} */
+.popover {
+	min-width: 20em !important;
+}
 

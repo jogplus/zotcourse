@@ -34,6 +34,8 @@ def get_listing(form_data):
 def get_backup_from_antplanner(username):
     raw = urlfetch.fetch("https://antplanner.appspot.com/schedule/load?username="+username).content
     clean = json.loads(raw)
+    if(clean['success'] == False):
+        return clean
     clean_data = json.loads(clean['data'])
     super_clean = []
     added_groupIds = []
