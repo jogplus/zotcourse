@@ -26,6 +26,7 @@ a {
 	float: left;
 	overflow: hidden;
 	-webkit-overflow-scrolling: touch; /* for iOS */
+	overflow-y: scroll;
 	margin-left: 5px;
 }
 
