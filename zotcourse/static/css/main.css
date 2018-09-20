@@ -67,6 +67,10 @@ a {
 	display : none;
 }
 
+#name {
+	font-size: .7em;
+}
+
 .btn {
 	border: 1px solid transparent;
 	color: #333;

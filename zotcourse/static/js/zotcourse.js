@@ -469,6 +469,19 @@ $(document).ready(function() {
 		});
 	});
 
+	// Used to close popovers when clicking outside of popover or button
+	// Does not work when clicking in iframe
+	$('body').on('click', function (e) {
+		if (($(e.target).parents('.fc-event-container').length === 0) && 
+		$(e.target).parents('.popover').length === 0 &&
+		$(e.target).parents('.btn').length === 0 &&
+		!($(e.target).hasClass('btn'))) { 
+			$('.popover').each(function () {
+				$(this).popover('hide');
+			});
+		}
+	});
+
 	// Temporarily changes size of calendar for printing.
 	// This must be done with JS instead of just styling because
 	// fullCalendar must rescale all of the events for the bigger event sizes
