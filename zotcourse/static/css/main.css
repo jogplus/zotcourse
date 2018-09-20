@@ -1,4 +1,7 @@
-html { height: 100%; }
+html { 
+	height: 100%; 
+}
+
 body {
 	height: 100%;
 	font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
@@ -24,6 +27,17 @@ a {
 	overflow: hidden;
 	-webkit-overflow-scrolling: touch; /* for iOS */
 	margin-left: 5px;
+}
+
+#cal {
+	position: relative;
+}
+
+#soc {
+	height: 100%;
+	width: 100%;
+	float: left;
+	position: relative;
 }
 
 #upper {
@@ -85,17 +99,6 @@ a {
 .btn-primary:hover {
   background-color: #286090;
   border-color: #204d74;
-}
-
-#cal {
-	position: relative;
-}
-
-#soc {
-	height: 100%;
-	width: 100%;
-	float: left;
-	position: relative;
 }
 
 @media print {

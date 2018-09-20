@@ -1,1 +1,1 @@
-from antplanner2 import app
+from zotcourse import app

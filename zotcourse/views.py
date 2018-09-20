@@ -1,4 +1,4 @@
-from antplanner2 import app, websoc
+from zotcourse import app, websoc
 from flask import render_template, request, jsonify
 from google.appengine.api import memcache
 from google.appengine.ext import db

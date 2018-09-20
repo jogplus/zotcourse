@@ -1,6 +1,6 @@
 import unittest
 from google.appengine.ext import testbed
-from antplanner2 import websoc
+from zotcourse import websoc
 
 
 class WebSoc_Test(unittest.TestCase):

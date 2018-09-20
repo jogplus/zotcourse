@@ -348,11 +348,13 @@ $(document).ready(function() {
 		html: true,
 		title: "What's New! 🎉",
 		content:'<ul style="list-style-type:disc; margin-left:15px">\
-					<li>Resizable panels</li>\
-					<li>Click on a calendar event for more course info</li>\
-					<li>Change calendar event colors</li>\
-					<li>RateMyProfessor links in Websoc and calendar event</li>\
-					<li>Import schedule from Antplanner</li>\
+				<li>Click on a calendar event for more course info</li>\
+				<li>Change course event color</li>\
+				<li>RateMyProfessor links in calendar event and Websoc results</li>\
+				<li>Import schedule from Antplanner</li> \
+				<li>Calendar adjusts to screen size</li>\
+				<li>Resizable panes</li>\
+				<li>Better print formatting. (Calendar fits entirely on one page!)</li>\
 				</ul>',
 		placement: 'bottom',
 		container: 'body',
