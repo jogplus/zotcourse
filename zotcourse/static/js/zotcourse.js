@@ -515,8 +515,8 @@ $(document).ready(function() {
 	// Whenever the left panel changes sizes, resizes the right panel.
 	// Also accounts for when the user zooms in/out
 	$(window).resize(function() {
-		// Subtracts 5 from total right width to account for when scroll bar is present
-		$("#right").outerWidth($(document).width() - $("#left").outerWidth()-5);
+		// Subtracts 20 from total right width to account for when scroll bar is present
+		$("#right").outerWidth($(document).width() - $("#left").outerWidth() - 20);
 		// Resizes the rows to fit on the screen
 		// 31 comes from the 30 table cells + 1 for table column headers
 		$('.fc-time-grid .fc-slats td').css({
