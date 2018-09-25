@@ -31,7 +31,8 @@ def get_listing(form_data):
         return unicode(BeautifulSoup(html).encode(formatter='html'))
 
 def get_backup_from_antplanner(username):
-    raw = urlfetch.fetch("https://antplanner.appspot.com/schedule/load?username="+username).content
+    encoded = urllib.quote(username)
+    raw = urlfetch.fetch("https://antplanner.appspot.com/schedule/load?username="+encoded).content
     clean = json.loads(raw)
     # Stop parsing of schedule name not found
     if (clean['success'] == False):
