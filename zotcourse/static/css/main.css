@@ -26,6 +26,7 @@ a {
 	float: left;
 	overflow: hidden;
 	margin-left: 5px;
+	-webkit-overflow-scrolling: touch;
 }
 
 #cal {
@@ -36,8 +37,7 @@ a {
 	height: 100%;
 	width: 100%;
 	-webkit-overflow-scrolling: touch; /* for iOS */
-	overflow-y: scroll;
-	overflow-x: scroll;
+	overflow: scroll;
 	float: left;
 	position: relative;
 }
