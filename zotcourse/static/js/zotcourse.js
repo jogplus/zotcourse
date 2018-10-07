@@ -298,9 +298,14 @@ $(document).ready(function() {
 	// Workaround to implementing a resizable iframe
 	// Wraps a div around the iframe and then removes it once it is done moving. 
 	window.Split(['#left', '#right'], {
-		sizes: [49.85, 49.85],
+		sizes: [50, 50],
 		gutterSize: 10,
-		minSize: 250,
+		minSize: 20,
+		elementStyle: function(dim, size, gutterSize){
+			return {
+				'width': 'calc(' + size + '% - ' + gutterSize*2 + 'px)',
+			};
+		},
 	})
 
 	// Required to dismiss '#whatsnew' popover when clicking on calendar

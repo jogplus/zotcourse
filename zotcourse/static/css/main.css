@@ -21,7 +21,7 @@ a {
 }
 
 #right {
-	width: calc(50% - 20px);
+	width: 50%;
 	height: calc(100% - 42px);
 	float: left;
 	overflow: hidden;
