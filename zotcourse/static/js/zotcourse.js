@@ -297,22 +297,11 @@ function loadAPSchedule(username) {
 $(document).ready(function() {
 	// Workaround to implementing a resizable iframe
 	// Wraps a div around the iframe and then removes it once it is done moving. 
-	$( "#left" ).resizable({
-		start: function(){
-			$("#right").each(function (index, element) {
-				var d = $('<div class="iframeCover" style="zindex:99;position:absolute;width:100%;top:0px;left:0px;height:' +
-					$(element).height() + 'px"></div>');
-				$(element).append(d);
-			});
-		},
-		stop: function () {
-			$('.iframeCover').remove();
-		},
-		maxWidth:$(document).width()-30,
-		minWidth:30,
-		maxHeight: $('body').height() - $('#upper').outerHeight(),
-		handles: "e"
-	});
+	window.Split(['#left', '#right'], {
+		sizes: [49.85, 49.85],
+		gutterSize: 10,
+		minSize: 250,
+	})
 
 	// Required to dismiss '#whatsnew' popover when clicking on calendar
 	$('#left').click(function() {
@@ -486,26 +475,28 @@ $(document).ready(function() {
 	// This must be done with JS instead of just styling because
 	// fullCalendar must rescale all of the events for the bigger event sizes
 	$('#print-btn').click(function() {
-		var tempRightSize = $("#right").outerWidth();
 		var tempLeftSize = $("#left").outerWidth();
-		$("#right").outerWidth('0%');
+		$("#right").hide();
 		// Not 100% or else it will not fit on letter paper
 		$("#left").outerWidth('99.5%');
 		$('#cal').css('width', '100%');
 		$('th, td, tr').css('border', '2px solid #bfbfbf');
 		$('.fc-minor').css('border-top', '3px dotted #bfbfbf')
 		$('#soc').show();
-		$('.ui-resizable-e').show();
 		$('#resize-btn').removeClass('active');
 		// Sets the rows to have a larger height for printing
 		$('.fc-time-grid .fc-slats td').css('height', '46');
 		// This triggers fullCalendar to rescale
 		$('#cal').fullCalendar('option', 'height', $('#left').outerHeight() - $('#upper').outerHeight());
+		$('.popover').each(function () {
+			$(this).popover('hide');
+		});
 
 		window.print();
 		// Resets page back to original size
-		$("#right").outerWidth(tempRightSize);
-		$("#left").outerWidth(tempLeftSize);
+		$("#right").show();
+		$('.gutter').show();
+		$("#left").outerWidth(tempLeftSize-20);
 		$('th, td, tr').css('border', '');
 		$('.fc-time-grid .fc-slats td').css({
 			'height': ($('#left').outerHeight() - $('#upper').outerHeight()) / 31,
@@ -515,8 +506,7 @@ $(document).ready(function() {
 	// Whenever the left panel changes sizes, resizes the right panel.
 	// Also accounts for when the user zooms in/out
 	$(window).resize(function() {
-		// Subtracts 20 from total right width to account for when scroll bar is present
-		$("#right").outerWidth($(document).width() - $("#left").outerWidth() - 20);
+		$('.gutter').height($('#left').height()+'px');
 		// Resizes the rows to fit on the screen
 		// 31 comes from the 30 table cells + 1 for table column headers
 		$('.fc-time-grid .fc-slats td').css({
@@ -717,13 +707,13 @@ $(document).ready(function() {
 		if ($(this).hasClass('active')) {
 			$('#cal').animate({width: '100%'});
 			$('#soc').show();
-			$('.ui-resizable-e').show();
+			$('.gutter').show();
 			$(this).removeClass('active');
 		}
 		else {
 			$(this).addClass('active');
 			$('#soc').hide();
-			$('.ui-resizable-e').hide();
+			$('.gutter').hide();
 			$('#cal').animate({width: $(document).width()});
 		}
 	});

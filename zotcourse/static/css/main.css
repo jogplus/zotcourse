@@ -128,7 +128,7 @@ a {
 		margin: 0 !important; 
 	}
 
-	.ui-resizable-e {
+	.gutter {
 		width: 0px !important;
 	}
 
@@ -186,5 +186,17 @@ a {
 
 .popover {
 	min-width: 20em !important;
+}
+
+.gutter {
+	background-color: #007bff;
+}
+
+.gutter.gutter-horizontal {
+    cursor: ew-resize;
+}
+
+.split, .gutter.gutter-horizontal {
+    float: left;
 }
 
