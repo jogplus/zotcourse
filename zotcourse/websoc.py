@@ -43,16 +43,20 @@ def get_backup_from_antplanner(username):
     for event_num in range(len(clean_data)):
         if clean_data[event_num]['groupId'] not in added_groupIds:
             # Creates a list of unique Days of the Week a class meets
-            clean_data[event_num]['dow'] = [datetime.strptime(course['start'], '%Y-%m-%dT%H:%M:%S.%fZ').weekday()+1 \
+            sevenHourDiff = timedelta(seconds=25200)
+            clean_data[event_num]['dow'] = [(datetime.strptime(course['start'], '%Y-%m-%dT%H:%M:%S.%fZ') - sevenHourDiff).weekday()+1 \
                                             for course in clean_data if course['groupId'] == clean_data[event_num]['groupId']]
             clean_data[event_num]['daysOfTheWeek'] = clean_data[event_num]['dow']
 
             # Converts UTC time to PDT
-            sevenHourDiff = timedelta(seconds=25200)
             start = datetime.strptime(clean_data[event_num]['start'], '%Y-%m-%dT%H:%M:%S.%fZ') - sevenHourDiff
             end = datetime.strptime(clean_data[event_num]['end'], '%Y-%m-%dT%H:%M:%S.%fZ') - sevenHourDiff
             clean_data[event_num]['start'] = start.strftime('%H:%M')
             clean_data[event_num]['end'] = end.strftime('%H:%M')
+
+            # Note that information is not available due to import
+            clean_data[event_num]['instructor'] = ['N/A (due to import)']
+            clean_data[event_num]['final'] = 'N/A (due to import)'
 
             # Adds groupId (Course code) to list to prevent it from being readded
             added_groupIds.append(clean_data[event_num]['groupId'])

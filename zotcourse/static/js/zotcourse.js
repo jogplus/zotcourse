@@ -172,8 +172,8 @@ function createInstructorLinks(instructorNames) {
 	for (var i = 0; i < instructorNames.length; i++) {
 		var instructorName = instructorNames[i].trim();
 		// Links are not created for STAFF
-		if (instructorName == 'STAFF') {
-			instructorLinks.push('STAFF');
+		if (instructorName == 'STAFF' || instructorName == 'N/A (due to import)') {
+			instructorLinks.push(instructorName);
 			continue;
 		}
 		// Splits by ',' to retrieve professor's first name
@@ -557,11 +557,11 @@ $(document).ready(function() {
 									</tr>\
 									<tr>\
 										<td>Instructor</td>\
-										<td align="right">'+((event.instructor) ? createInstructorLinks(event.instructor) : '')+'</td>\
+										<td align="right">'+((event.instructor) ? createInstructorLinks(event.instructor) : 'N/A')+'</td>\
 									</tr>\
 									<tr>\
 										<td>Final</td>\
-										<td align="right">'+ ((event.final !== '&nbsp;' ) ? ((event.final) ? event.final : '') : 'See Lecture')+'</td>\
+										<td align="right">'+ ((event.final !== '&nbsp;' ) ? ((event.final) ? event.final : 'N/A') : 'See Lecture')+'</td>\
 									</tr>\
 									<tr>\
 										<td>Color</td>\
