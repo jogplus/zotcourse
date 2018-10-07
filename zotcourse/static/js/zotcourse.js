@@ -594,9 +594,11 @@ $(document).ready(function() {
 											"#668CD9", "#668CB3", "#8C66D9", "#B373B3", "#E67399",
 											"#D96666"]],
 					change: function(color) {
+						$('#colorpicker-'+colorpickerId).spectrum('destroy');
 						// Must remove and rerender the event manually since updateEvent is not working
 						$('#cal').fullCalendar('removeEvents', event._id);
 						$('#cal').fullCalendar('renderEvent', {
+							_id: event._id,
 							id:	event.id,
 							groupId: event.groupId,
 							start: event.start.format('HH:mm'),
