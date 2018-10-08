@@ -295,8 +295,7 @@ function loadAPSchedule(username) {
 
 // JQuery listeners
 $(document).ready(function() {
-	// Workaround to implementing a resizable iframe
-	// Wraps a div around the iframe and then removes it once it is done moving. 
+	// Creates a resizable panels using Split.Js
 	window.Split(['#left', '#right'], {
 		sizes: [50, 50],
 		gutterSize: 10,
@@ -489,6 +488,8 @@ $(document).ready(function() {
 		$('.fc-minor').css('border-top', '3px dotted #bfbfbf')
 		$('#soc').show();
 		$('#resize-btn').removeClass('active');
+		// Sets the name of the schedule as the header for the page
+		document.title = ($('#scheduleNameForPrint').html() ? $('#scheduleNameForPrint').html() : 'Zotcourse - Schedule Planner for UCI' );
 		// Sets the rows to have a larger height for printing
 		$('.fc-time-grid .fc-slats td').css('height', '46');
 		// This triggers fullCalendar to rescale
@@ -506,11 +507,13 @@ $(document).ready(function() {
 		$('.fc-time-grid .fc-slats td').css({
 			'height': ($('#left').outerHeight() - $('#upper').outerHeight()) / 31,
 		});
+		document.title = 'Zotcourse - Schedule Planner for UCI';
 	});
 
 	// Whenever the left panel changes sizes, resizes the right panel.
 	// Also accounts for when the user zooms in/out
 	$(window).resize(function() {
+		// Resizes the gutter bar to match the height of the left panel
 		$('.gutter').height($('#left').height()+'px');
 		// Resizes the rows to fit on the screen
 		// 31 comes from the 30 table cells + 1 for table column headers

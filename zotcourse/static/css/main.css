@@ -150,10 +150,6 @@ a {
 		top:-15px;
 	}
 
-	#scheduleNameForPrint {
-		display : inline-block;
-	}
-
 	#toast-container {
 		display: none;
 	}
@@ -165,12 +161,6 @@ a {
 	.fc-minor {
 		border-top: 3px dotted  #bfbfbf !important;
 	}
-}
-
-.ui-resizable-e {
-	width: 7px;
-	background-color: #007bff;
-	cursor: ew-resize !important;
 }
 
 .fc-today
