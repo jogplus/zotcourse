@@ -7,6 +7,8 @@ This was forked from [Antplanner2](https://github.com/gumho/antplanner2) by Ryan
 Unfortunetly it seems that Antplanner2 is no longer being maintained so I have decided to maintain it here.
 Please feel free to make a PR and contribute!
 
+![Zotcourse Screenshot](https://i.imgur.com/JNpvHQX.jpg)
+
 ## Benefits over Antplanner
 
 <ul>
