@@ -306,6 +306,7 @@ $(document).ready(function() {
 				'width': 'calc(' + size + '% - ' + gutterSize*2 + 'px)',
 			};
 		},
+		// Workaround for when iframe can't scroll after dragging on Safari
 		onDragEnd: function() {
 			$('iframe').css('display', 'none').height();
 			$('iframe').css('display', 'block');
@@ -374,10 +375,15 @@ $(document).ready(function() {
 
 	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
 	$('#save-btn').on('shown.bs.popover', function () {
-		if( !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) ) {
-			$('#save-input').focus();
+		// Workaround for popover disappearing on mobile devices
+		if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+			var defaultName = localStorage.username ? localStorage.username : '';
+			var username = prompt('Please enter your username', defaultName);
+			saveSchedule(username);
+			$('#save-btn').popover('hide');
 		}
 		$('#save-input').val(localStorage.username);
+		$('#save-input').focus();
 		$("#save-input").keypress(function(e){
 			if (!e) 
 				e = window.event;
@@ -415,10 +421,15 @@ $(document).ready(function() {
 
 	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
 	$('#load-btn').on('shown.bs.popover', function () {
-		if( !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) ) {
-			$('#load-input').focus();
+		// Workaround for popover disappearing on mobile devices
+		if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+			var defaultName = localStorage.username ? localStorage.username : '';
+			var username = prompt('Please enter your username', defaultName);
+			loadSchedule(username);
+			$('#load-btn').popover('hide');
 		}
 		$('#load-input').val(localStorage.username);
+		$('#load-input').focus();
 		$("#load-input").keypress(function(e){
 			if (!e) 
 				e = window.event;
@@ -457,9 +468,14 @@ $(document).ready(function() {
 
 	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
 	$('#load-ap-btn').on('shown.bs.popover', function () {
-		if( !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) ) {
-			$('#load-ap-input').focus();
+		// Workaround for popover disappearing on mobile devices
+		if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+			var defaultName = localStorage.username ? localStorage.username : '';
+			var username = prompt('Please enter your Antplanner username', defaultName);
+			loadAPSchedule(username);
+			$('#load-ap-btn').popover('hide');
 		}
+		$('#load-ap-input').focus();
 		$("#load-ap-input").keypress(function(e){
 			if (!e) 
 				e = window.event;
