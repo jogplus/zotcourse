@@ -257,6 +257,7 @@ function loadSchedule(username) {
 				$('#cal').fullCalendar('renderEvents', JSON.parse(data.data));
 				$('#scheduleNameForPrint').html('Zotcourse schedule name: '+username);
 				toastr.success(username, 'Schedule Loaded!');
+				localStorage.username = username;
 			}
 			else {
 				toastr.error(username, 'Schedule Not Found');
@@ -373,7 +374,10 @@ $(document).ready(function() {
 
 	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
 	$('#save-btn').on('shown.bs.popover', function () {
-		$('#save-input').focus();
+		if( !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) ) {
+			$('#save-input').focus();
+		}
+		$('#save-input').val(localStorage.username);
 		$("#save-input").keypress(function(e){
 			if (!e) 
 				e = window.event;
@@ -411,7 +415,10 @@ $(document).ready(function() {
 
 	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
 	$('#load-btn').on('shown.bs.popover', function () {
-		$('#load-input').focus();
+		if( !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) ) {
+			$('#load-input').focus();
+		}
+		$('#load-input').val(localStorage.username);
 		$("#load-input").keypress(function(e){
 			if (!e) 
 				e = window.event;
@@ -450,7 +457,9 @@ $(document).ready(function() {
 
 	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
 	$('#load-ap-btn').on('shown.bs.popover', function () {
-		$('#load-ap-input').focus();
+		if( !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) ) {
+			$('#load-ap-input').focus();
+		}
 		$("#load-ap-input").keypress(function(e){
 			if (!e) 
 				e = window.event;
