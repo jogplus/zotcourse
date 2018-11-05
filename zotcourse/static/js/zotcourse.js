@@ -485,7 +485,7 @@ $(document).ready(function() {
 				$('#load-ap-btn').popover('hide');
 			}
 		});
-		$('#load-button').click(function() {
+		$('#load-ap-button').click(function() {
 			loadAPSchedule($('#load-ap-input').val());
 			$('#load-ap-btn').popover('hide');
 		});

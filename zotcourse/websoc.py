@@ -33,7 +33,11 @@ def get_listing(form_data):
 def get_backup_from_antplanner(username):
     encoded = urllib.quote(username)
     raw = urlfetch.fetch("https://antplanner.appspot.com/schedule/load?username="+encoded).content
-    clean = json.loads(raw)
+    # Catch for when Antplanner returns 500
+    try:
+        clean = json.loads(raw)
+    except ValueError:
+        return {'success':False}
     # Stop parsing of schedule name not found
     if (clean['success'] == False):
         return clean
