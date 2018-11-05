@@ -305,6 +305,10 @@ $(document).ready(function() {
 				'width': 'calc(' + size + '% - ' + gutterSize*2 + 'px)',
 			};
 		},
+		onDragEnd: function() {
+			$('iframe').css('display', 'none').height();
+			$('iframe').css('display', 'block');
+		}
 	})
 
 	// Required to dismiss '#whatsnew' popover when clicking on calendar
