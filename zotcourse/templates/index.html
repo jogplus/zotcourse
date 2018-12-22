@@ -32,12 +32,16 @@
   <div id="upper">
     <div id="main-nav">
         <h5><a target="_blank" href="https://github.com/jogplus/zotcourse">Zotcourse</a> - Schedule Planner for UCI</h5>
+        <a id="name">by Tristan Jogminas</a>
     </div>
     <div id="cal-ctrl">
       <div class="space1">&nbsp;</div>
       <a href="#" id="whatsnew" class="btn btn-sm btn-outline-primary">
         <i class="fas fa-info-circle"></i>
       </a>
+      <button type="button" id="finals-btn" class="btn btn-sm btn-outline-primary">
+        Finals  <i class="fas fa-book"></i>
+      </button>
       <button type="button" id="print-btn" class="btn btn-sm btn-outline-primary" >
         Print  <i class="fas fa-print"></i>
       </button>
@@ -57,10 +61,10 @@
         Size  <i class="fas fa-expand"></i>
       </button>
     </div>
-    <a id="name">by Tristan Jogminas</a>
   </div>
   <div id="left">
     <div id="cal"></div>
+    <div id="finals"></div>
   </div>
   <div id="right">
     <iframe src="{{url_for('websoc_search_form')}}" id="soc" frameborder="0"></iframe>

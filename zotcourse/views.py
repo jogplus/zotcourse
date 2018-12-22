@@ -22,6 +22,7 @@ def index():
 
 @app.route('/websoc/search', methods=['GET'])
 def websoc_search_form():
+    form_info = websoc.get_form_info()
     form_html = memcache.get('search')
     if not form_html:
         form_html = websoc.get_search()

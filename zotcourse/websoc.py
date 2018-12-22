@@ -15,6 +15,31 @@ def get_search():
         action='https://www.reg.uci.edu/perl/WebSoc/').renderContents()
     return unicode(inner, errors='ignore')
 
+def get_form_info():
+    form_info = dict()
+    html = urlfetch.fetch("http://websoc.reg.uci.edu").content
+    inner = BeautifulSoup(html, 'lxml').find(
+        'select', {"name":"YearTerm"}).find_all('option')
+    default_year = inner[0].get_text()
+    form_info['default_year'] = default_year
+    
+    for i in range(len(inner)):
+        inner[i].name = 'li'
+        inner[i]['class'] = 'drop-down__item'
+        del inner[i]['style']
+        inner[i] = str(inner[i])
+    form_info['term'] = "".join(inner)
+
+    inner2 = BeautifulSoup(html, 'lxml').find(
+        'select', {"name":"Dept"}).find_all('option')
+    for i in range(len(inner2)):
+        inner2[i].name = 'li'
+        inner2[i]['class'] = 'drop-down__item'
+        del inner2[i]['style']
+        inner2[i] = str(inner2[i])
+    form_info['department'] = "".join(inner2)
+
+    return form_info
 
 def get_listing(form_data):
     encoded = urllib.urlencode(form_data)

@@ -9,8 +9,9 @@
 </head>
 <body>
   <header>
-    <button type="button" class="btn" onclick="javascript: history.go(-1)">Back to search</button>
+    <button type="button" class="btn btn-sm btn-primary" onclick="javascript: history.go(-1)" style="position: fixed;">Back to search</button>
   </header>
+  <div class="space2"></div>
   {{listing | safe}}
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
   <script src="{{url_for('static', filename="js/listing.js")}}"></script>

@@ -84,6 +84,51 @@ function ParsedCourseTime(timeString) {
 	}
 }
 
+function FinalParsedCourseTime(timeString) {
+	var MAX_DURATION = 5;
+	var daySplit = timeString.split(',');
+	var timeSplit = daySplit[2].split('-');
+
+	var date = $.trim( daySplit[1] );
+	var beginTime = $.trim( timeSplit[0] ); // ex. "6:00"
+	var endTime   = $.trim( timeSplit[1] ); // "6:50p"
+
+	var beginHour = parseInt( beginTime.split(':')[0] );
+	var beginMin  = parseInt( beginTime.split(':')[1] );
+	
+	var endHour = parseInt( endTime.split(':')[0] );
+	var endMin = parseInt( endTime.split(':')[1].replace('pm', '') );
+	var isPm = endTime.indexOf('pm') != -1;
+
+	var day = -1;
+	if(timeString.indexOf('Sun') != -1) {	day = 0; } 
+	if(timeString.indexOf('Mon') != -1) {	day = 1; } 
+	if(timeString.indexOf('Tue') != -1) { day = 2; } 
+	if(timeString.indexOf('Wed') != -1) {	day = 3; }
+	if(timeString.indexOf('Thu') != -1) { day = 4; }
+	if(timeString.indexOf('Fri') != -1) {	day = 5; }
+	if(timeString.indexOf('Sat') != -1) {	day = 6; } 
+
+	if(isPm) {
+		var military = endHour == 12 ? 12 : endHour + 12
+		if(military - beginHour > MAX_DURATION) {
+			beginHour += 12;
+		} 
+		if(endHour != 12) {
+			endHour += 12;
+		}
+	}
+
+	return {
+		'beginHour': beginHour,
+		'beginMin': beginMin,
+		'endHour': endHour,
+		'endMin': endMin,
+		'day': day,
+		'date': date
+	}
+}
+
 function CourseTimeStringParser(courseString) {
 	/* 
 	Accepts:
@@ -254,10 +299,29 @@ function loadSchedule(username) {
 		success: function(data) {
 			if(data.success) {
 				$('#cal').fullCalendar('removeEvents');
+				$('#finals').fullCalendar('removeEvents');
 				$('#cal').fullCalendar('renderEvents', JSON.parse(data.data));
+				// var finalData = JSON.parse(data.data);
+				// for (var i = 0; i < finalData.length; i++) {
+				// 	if (data.data.final != '&nbsp;') {
+				// 		var finalParsed = FinalParsedCourseTime(finalData[i].final);
+				// 		finalData[i].title = finalData[i].title.split(/\s(.+)/)[1]
+				// 		finalData[i].date = finalParsed.date;
+				// 		finalData[i].start = finalParsed.beginHour + ':' + finalParsed.beginMin;
+				// 		finalData[i].end = finalParsed.endHour + ':' + finalParsed.endMin;
+				// 		finalData[i].dow = [finalParsed.day];
+				// 	}
+				// }
+				// $('#finals').fullCalendar('renderEvents', finalData);
 				$('#scheduleNameForPrint').html('Zotcourse schedule name: '+username);
 				toastr.success(username, 'Schedule Loaded!');
 				localStorage.username = username;
+				if ($('#finals-btn').hasClass('active')) {
+					$('#finals').hide();
+					$('#cal').show();
+					$('#finals-btn').removeClass('active');
+					$('#cal').fullCalendar( 'rerenderEvents' );
+				}
 			}
 			else {
 				toastr.error(username, 'Schedule Not Found');
@@ -286,6 +350,12 @@ function loadAPSchedule(username) {
 				$('#cal').fullCalendar('renderEvents',data.data);
 				$('#scheduleNameForPrint').html(username);
 				toastr.success(username, 'Schedule Loaded!');
+				if ($('#finals-btn').hasClass('active')) {
+					$('#finals').hide();
+					$('#cal').show();
+					$('#finals-btn').removeClass('active');
+					$('#cal').fullCalendar( 'rerenderEvents' );
+				}
 			}
 			else {
 				toastr.error(username, 'Schedule Not Found');
@@ -311,11 +381,29 @@ $(document).ready(function() {
 			$('iframe').css('display', 'none').height();
 			$('iframe').css('display', 'block');
 		}
-	})
+	});
+	$('.gutter').append('<i class="fas fa-ellipsis-v"></i>')
 
-	// Required to dismiss '#whatsnew' popover when clicking on calendar
-	$('#left').click(function() {
-		$('#whatsnew').blur();
+	//#region Button Creation
+	
+	// Triggers before popover has been shown and hides the other toolbar popovers
+	$('.btn').on('show.bs.popover', function () {
+		$('.popover').each(function () {
+			$(this).popover('hide');
+		});
+	});
+
+	// Used to close popovers when clicking outside of popover or button
+	// Does not work when clicking in iframe
+	$('body').on('click', function (e) {
+		if (($(e.target).parents('.fc-event-container').length === 0) && 
+		$(e.target).parents('.popover').length === 0 &&
+		$(e.target).parents('.btn').length === 0 &&
+		!($(e.target).hasClass('btn'))) { 
+			$('.popover').each(function () {
+				$(this).popover('hide');
+			});
+		}
 	});
 
 	$('#whatsnew').popover({
@@ -334,23 +422,6 @@ $(document).ready(function() {
 		placement: 'bottom',
 		container: 'body',
 		boundary: 'window',
-		trigger: 'trigger',
-	});
-
-	// Removes btn-focus class manually in case of a window resize or course addition
-	$('#whatsnew').on('hide.bs.popover', function () {
-		$(this).removeClass('btn-focus');
-	})
-
-	// Required to close the popover when the button is pressed again
-	$('#whatsnew').click(function() {
-		if ($(this).hasClass('btn-focus')) {
-			$('#whatsnew').blur();
-			$(this).removeClass('btn-focus');
-		}
-		else {
-			$(this).addClass('btn-focus');
-		}
 	});
 
 	$('#save-btn').popover({
@@ -365,12 +436,6 @@ $(document).ready(function() {
 		placement: 'bottom',
 		container: 'body',
 		boundary: 'window',
-	});
-
-	// Triggers before popover has been shown and hides the other toolbar popovers
-	$('#save-btn').on('show.bs.popover', function () {
-		$('#load-ap-btn').popover('hide');
-		$('#load-btn').popover('hide');
 	});
 
 	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
@@ -411,12 +476,6 @@ $(document).ready(function() {
 		placement: 'bottom',
 		container: 'body',
 		boundary: 'window',
-	});
-
-	// Triggers before popover has been shown and hides the other toolbar popovers
-	$('#load-btn').on('show.bs.popover', function () {
-		$('#load-ap-btn').popover('hide');
-		$('#save-btn').popover('hide');
 	});
 
 	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
@@ -460,12 +519,6 @@ $(document).ready(function() {
 		boundary: 'window',
 	});
 
-	// Triggers before popover has been shown and hides the other toolbar popovers
-	$('#load-ap-btn').on('show.bs.popover', function () {
-		$('#load-btn').popover('hide');
-		$('#save-btn').popover('hide');
-	});
-
 	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
 	$('#load-ap-btn').on('shown.bs.popover', function () {
 		// Workaround for popover disappearing on mobile devices
@@ -489,19 +542,6 @@ $(document).ready(function() {
 			loadAPSchedule($('#load-ap-input').val());
 			$('#load-ap-btn').popover('hide');
 		});
-	});
-
-	// Used to close popovers when clicking outside of popover or button
-	// Does not work when clicking in iframe
-	$('body').on('click', function (e) {
-		if (($(e.target).parents('.fc-event-container').length === 0) && 
-		$(e.target).parents('.popover').length === 0 &&
-		$(e.target).parents('.btn').length === 0 &&
-		!($(e.target).hasClass('btn'))) { 
-			$('.popover').each(function () {
-				$(this).popover('hide');
-			});
-		}
 	});
 
 	// Temporarily changes size of calendar for printing.
@@ -539,6 +579,83 @@ $(document).ready(function() {
 		document.title = 'Zotcourse - Schedule Planner for UCI';
 	});
 
+	$('#clear-cal-btn').on('click', function() {
+		$('.popover').each(function () {
+			$(this).popover('hide');
+		});
+		$('#cal').fullCalendar('removeEvents');
+		$('#finals').fullCalendar('removeEvents');
+		if ($('#finals-btn').hasClass('active')) {
+			$('#finals').hide();
+			$('#cal').show();
+			$('#finals-btn').removeClass('active');
+			$('#cal').fullCalendar( 'rerenderEvents' );
+		}
+	});
+
+	$('#resize-btn').click(function() {
+		$('.popover').each(function () {
+			$(this).popover('hide');
+		});
+		if ($(this).hasClass('active')) {
+			$('#cal').animate({width: '100%'});
+			$('#soc').show();
+			$('.gutter').show();
+			$(this).removeClass('active');
+		}
+		else {
+			$(this).addClass('active');
+			$('#soc').hide();
+			$('.gutter').hide();
+			$('#cal').animate({width: $(document).width()});
+		}
+	});
+
+	$('#finals-btn').click(function() {
+		$('.popover').each(function () {
+			$(this).popover('hide');
+		});
+		if ($(this).hasClass('active')) {
+			$('#finals').hide();
+			$('#cal').show();
+			$(this).removeClass('active');
+			$('#cal').fullCalendar( 'rerenderEvents' );
+		}
+		else {
+			$('#finals').show();
+			$('#cal').hide();
+			$(this).addClass('active');
+			$('#finals').fullCalendar('removeEvents');
+			var calRawData  = $('#cal').fullCalendar('clientEvents');
+			var usedGroupIds = []
+			for (var i in calRawData) {
+				// Checks to make sure that finals attribute is not empty, TBA, or from import
+				if ($.trim(calRawData[i].final.replace(/&nbsp;/g, '')) != '' &&
+					$.trim(calRawData[i].final.replace(/&nbsp;/g, '')) != 'TBA' &&
+					$.trim(calRawData[i].final.replace(/&nbsp;/g, '')) != 'N/A (due to import)' &&
+					!(usedGroupIds.indexOf(calRawData[i].groupId) >= 0)) {
+					var finalParsed = FinalParsedCourseTime(calRawData[i].final);
+					$('#finals').fullCalendar("renderEvent",{
+						id:	calRawData[i].id,
+						groupId: calRawData[i].groupId,
+						start: finalParsed.beginHour + ':' + finalParsed.beginMin,
+						end: finalParsed.endHour + ':' + finalParsed.endMin,
+						title: calRawData[i].title.split(/\s(.+)/)[1],
+						dow: [finalParsed.day],
+						color: calRawData[i].color,
+						fullName: calRawData[i].fullName,
+						instructor: calRawData[i].instructor,
+						date: finalParsed.date
+					});
+					usedGroupIds.push(calRawData[i].groupId);
+				}
+			}
+			$('#finals').fullCalendar('rerenderEvents');
+		}
+		$(window).trigger('resize');
+	});
+	//#endregion
+
 	// Whenever the left panel changes sizes, resizes the right panel.
 	// Also accounts for when the user zooms in/out
 	$(window).resize(function() {
@@ -551,12 +668,14 @@ $(document).ready(function() {
 		});
 		// Triggers fullCalendar to rescale
 		$('#cal').fullCalendar('option', 'height', $('#left').outerHeight());
+		$('#finals').fullCalendar('option', 'height', $('#left').outerHeight());
 		// Hides all open popovers to prevent them from drifting while resize is occuring
 		$('.popover').each(function () {
 			$(this).popover('hide');
 		});
 	});
 
+	//#region Calendar Creation
 	$('#cal').fullCalendar({
 		weekends: false,
 		header: false,
@@ -646,6 +765,12 @@ $(document).ready(function() {
 			element.on('hide.bs.popover', function() {
 				$('#colorpicker-'+colorpickerId).spectrum('destroy');
 			});
+			// Only allows for one popover to be open at a time
+			element.on('show.bs.popover', function() {
+				$('.popover').each(function () {
+					$(this).popover('hide');
+				});
+			});
 		},
 		eventClick: function(event) {
 			// Necessary to keep the $(this) of eventClick in $(".delete-event").click
@@ -657,6 +782,59 @@ $(document).ready(function() {
 			});
 		}
 	});
+	$('#finals').fullCalendar({
+		header: false,
+		firstDay: 6,
+		themeSystem: 'bootstrap4',
+		defaultView: 'agendaWeek',
+		allDaySlot: false,
+		slotEventOverlap: false,
+		minTime: '07:00:00',
+		maxTime: '22:00:00',
+		columnHeaderFormat: 'ddd',
+		height: $('#left').outerHeight(),
+		eventRender: function(event, element) {
+			// Hides all open popovers when adding a new event since it was causing
+			// currently opened popovers to freeze.
+			$('.popover').each(function () {
+				$(this).popover('hide');
+			});
+			element.popover({
+				html:true,
+				title: (event.fullName) ? event.fullName : '',
+				content:'<table style="width:100%">\
+									<tr>\
+										<td>Code</td>\
+										<td align="right">'+event.groupId+'</td>\
+									</tr>\
+									<tr>\
+										<td>Date</td>\
+										<td align="right">'+event.date+'</td>\
+									</tr>\
+									<tr>\
+										<td>Instructor</td>\
+										<td align="right">'+((event.instructor) ? createInstructorLinks(event.instructor) : 'N/A')+'</td>\
+									</tr>\
+									</table>',
+				trigger:'focus',
+				placement:'right',
+				container:'body',
+			});
+
+			// Only allows for one popover to be open at a time
+			element.on('show.bs.popover', function() {
+				$('.popover').each(function () {
+					$(this).popover('hide');
+				});
+			});
+		},
+		eventClick: function() {
+			// Necessary to keep the $(this) of eventClick in $(".delete-event").click
+			var $this = $(this);
+			$this.popover('toggle');
+		}
+	});
+	//#endregion
 
 	// The left div height divided by the number of calendar rows
 	// 31 comes from the 30 table cells + 1 for table column headers
@@ -702,7 +880,7 @@ $(document).ready(function() {
 			var fullCourseName = $(this).prevAll().find('.CourseTitle').last().find('b').html();
 			var classType = $(this).find('td').eq(window.LISTING_TYPE_INDEX).html();
 			var instructor = getInstructorArray($(this).find('td').eq(window.LISTING_INSTRUCTOR_INDEX).html());
-			var courseTimes = new CourseTimeStringParser(timeString)
+			var courseTimes = CourseTimeStringParser(timeString)
 			var roomString = $(this).find('td').eq(window.LISTING_ROOM_INDEX).html();
 			var final = $(this).find('td').eq(window.LISTING_FINAL_INDEX).html();
 			var rooms = parseRoomString(roomString);
@@ -730,28 +908,13 @@ $(document).ready(function() {
 					final: final
 				});
 			}
-		});
-	});
 
-	$('#clear-cal-btn').on('click', function() {
-		$('#cal').fullCalendar('removeEvents');
-	});
-
-	$('#resize-btn').click(function() {
-		$('.popover').each(function () {
-			$(this).popover('hide');
+			if ($('#finals-btn').hasClass('active')) {
+				$('#finals').hide();
+				$('#cal').show();
+				$('#finals-btn').removeClass('active');
+				$('#cal').fullCalendar( 'rerenderEvents' );
+			}
 		});
-		if ($(this).hasClass('active')) {
-			$('#cal').animate({width: '100%'});
-			$('#soc').show();
-			$('.gutter').show();
-			$(this).removeClass('active');
-		}
-		else {
-			$(this).addClass('active');
-			$('#soc').hide();
-			$('.gutter').hide();
-			$('#cal').animate({width: $(document).width()});
-		}
 	});
 });
