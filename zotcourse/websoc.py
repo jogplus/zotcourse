@@ -18,27 +18,25 @@ def get_search():
 def get_form_info():
     form_info = dict()
     html = urlfetch.fetch("http://websoc.reg.uci.edu").content
-
+    # Parses for term info
     term = BeautifulSoup(html, 'lxml').find(
         'select', {"name":"YearTerm"}).find_all('option')
+    form_info['default_term'] = term[0]['value']
     form_info['term'] = [str(line).replace("\xc2\xa0", "") for line in term]
-
+    # Parses for GE info
     general_ed = BeautifulSoup(html, 'lxml').find(
         'select', {"name":"Breadth"}).find_all('option')
     form_info['general_ed'] = [str(line).replace("\xc2\xa0", "") for line in general_ed]
-
+    # Parses for department info
     dept = BeautifulSoup(html, 'lxml').find(
         'select', {"name":"Dept"}).find_all('option')
     form_info['department'] = [str(line).replace("\xc2\xa0", "") for line in dept]
-
     return form_info
 
 def get_listing(form_data):
-    encoded = urllib.urlencode(form_data)
     html = urlfetch.fetch(
-        "https://www.reg.uci.edu/perl/WebSoc/",
-        payload=encoded,
-        method=urlfetch.POST,
+        "https://www.reg.uci.edu/perl/WebSoc?"+form_data,
+        method=urlfetch.GET,
         headers={'Content-Type': 'application/x-www-form-urlencoded'}).content
     listing = BeautifulSoup(html, 'lxml').find('div', 'course-list')
     if listing:

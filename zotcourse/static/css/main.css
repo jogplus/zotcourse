@@ -204,6 +204,10 @@ a {
 	.fc-minor {
 		border-top: 3px dotted  #bfbfbf !important;
 	}
+
+	.fas {
+		display: none;
+	}
 }
 
 .fc-today
@@ -254,4 +258,9 @@ a {
 
 .search-top {
 	min-width: 120px; 
+}
+
+.btn-link:disabled, .btn-link.disabled {
+	color: #333 !important;
+	opacity: 1 !important;
 }

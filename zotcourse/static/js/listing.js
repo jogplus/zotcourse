@@ -3,13 +3,14 @@ $(document).ready(function() {
         $('.course-list').text('No courses matched your search criteria for this term.');
     }
     $("a").each(function() {
-        // Considered have the "same as class" link open within the iframe
-        // Issue is that the endpoint is POST and not GET
-        // if ($(this).attr("href").indexOf("reg.uci.edu") !== 1) {
-        //     var query = $(this).attr("href").split("?")[1];
-        //     $(this).attr("href", "/websoc/search?" + query);
-        // }
-        $(this).attr("target", "_blank");
+        // "same as class" link open within the iframe
+        if ($(this).attr("href").indexOf("reg.uci.edu") !== -1) {
+            var query = $(this).attr("href").split("?")[1];
+            $(this).attr("href", "/websoc/listing?" + query);
+        }
+        else {
+            $(this).attr("target", "_blank");
+        }
     });
     $("tr").each(function() {
         // To delete the useless 'textbooks' column and title

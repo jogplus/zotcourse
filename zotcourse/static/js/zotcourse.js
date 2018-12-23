@@ -12,6 +12,7 @@ window.FRI = 5;
 
 window.LISTING_CODE_INDEX = 0;
 window.LISTING_TYPE_INDEX = 1;
+window.LISTING_UNITS_INDEX = 3;
 window.LISTING_INSTRUCTOR_INDEX = 4;
 window.LISTING_TIME_INDEX = 5;
 window.LISTING_ROOM_INDEX = 6;
@@ -254,7 +255,8 @@ function saveSchedule(username) {
 				instructor: calRawData[i].instructor,
 				final: calRawData[i].final,
 				dow: calRawData[i].daysOfTheWeek,
-				daysOfTheWeek: calRawData[i].daysOfTheWeek
+				daysOfTheWeek: calRawData[i].daysOfTheWeek,
+				units: calRawData[i].units
 			}
 			calCleanData.push(calEventData)
 			usedGroupIds.push(calRawData[i].groupId)
@@ -301,18 +303,14 @@ function loadSchedule(username) {
 				$('#cal').fullCalendar('removeEvents');
 				$('#finals').fullCalendar('removeEvents');
 				$('#cal').fullCalendar('renderEvents', JSON.parse(data.data));
-				// var finalData = JSON.parse(data.data);
-				// for (var i = 0; i < finalData.length; i++) {
-				// 	if (data.data.final != '&nbsp;') {
-				// 		var finalParsed = FinalParsedCourseTime(finalData[i].final);
-				// 		finalData[i].title = finalData[i].title.split(/\s(.+)/)[1]
-				// 		finalData[i].date = finalParsed.date;
-				// 		finalData[i].start = finalParsed.beginHour + ':' + finalParsed.beginMin;
-				// 		finalData[i].end = finalParsed.endHour + ':' + finalParsed.endMin;
-				// 		finalData[i].dow = [finalParsed.day];
-				// 	}
-				// }
-				// $('#finals').fullCalendar('renderEvents', finalData);
+				var unitData = JSON.parse(data.data);
+				var unitCounter = 0;
+				for (var i = 0; i < unitData.length; i++) {
+					if (unitData[i].units) {
+						unitCounter += parseInt(unitData[i].units);
+					}
+				}
+				$('#unitCounter').text(unitCounter);
 				$('#scheduleNameForPrint').html('Zotcourse schedule name: '+username);
 				toastr.success(username, 'Schedule Loaded!');
 				localStorage.username = username;
@@ -356,6 +354,7 @@ function loadAPSchedule(username) {
 					$('#finals-btn').removeClass('active');
 					$('#cal').fullCalendar( 'rerenderEvents' );
 				}
+				$('#unitCounter').text(0);
 			}
 			else {
 				toastr.error(username, 'Schedule Not Found');
@@ -382,10 +381,9 @@ $(document).ready(function() {
 			$('iframe').css('display', 'block');
 		}
 	});
-	$('.gutter').append('<i class="fas fa-ellipsis-v"></i>')
+	$('.gutter').append('<i class="fas fa-ellipsis-v"></i>');
 
 	//#region Button Creation
-	
 	// Triggers before popover has been shown and hides the other toolbar popovers
 	$('.btn').on('show.bs.popover', function () {
 		$('.popover').each(function () {
@@ -591,6 +589,7 @@ $(document).ready(function() {
 			$('#finals-btn').removeClass('active');
 			$('#cal').fullCalendar( 'rerenderEvents' );
 		}
+		$('#unitCounter').text(0);
 	});
 
 	$('#resize-btn').click(function() {
@@ -653,6 +652,27 @@ $(document).ready(function() {
 			$('#finals').fullCalendar('rerenderEvents');
 		}
 		$(window).trigger('resize');
+	});
+
+	$('#list-btn').click(function() {
+		$('.popover').each(function () {
+			$(this).popover('hide');
+		});
+		var courseCodes = '';
+		var calRawData  = $('#cal').fullCalendar('clientEvents');
+		for (var i in calRawData) {
+			courseCodes += calRawData[i].groupId + ','
+		}
+		if (courseCodes == '') {
+			toastr.warning('Must have at least 1 course added.', 'Cannot List Courses');
+		}
+		else {
+			console.log($('#list-btn').attr('data-term'))
+			document.getElementById('soc').src = '/websoc/listing?YearTerm='+$('#list-btn').attr('data-term')+'&\
+			Breadth=ANY&Dept=&CourseCodes='+courseCodes+'&CourseNum=&Division=ANY&\
+			InstrName=&CourseTitle=&ClassType=ALL&Units=&Days=&StartTime=&EndTime=&\
+			FullCourses=ANY&ShowComments=on&ShowFinals=on';
+		}
 	});
 	//#endregion
 
@@ -779,6 +799,7 @@ $(document).ready(function() {
 			$(".delete-event").click(function() {
 				$this.popover('dispose');
 				$('#cal').fullCalendar('removeEvents', event._id);
+				$('#unitCounter').text(parseInt($('#unitCounter').text())-parseInt(event.units));
 			});
 		}
 	});
@@ -884,6 +905,8 @@ $(document).ready(function() {
 			var roomString = $(this).find('td').eq(window.LISTING_ROOM_INDEX).html();
 			var final = $(this).find('td').eq(window.LISTING_FINAL_INDEX).html();
 			var rooms = parseRoomString(roomString);
+			var units = $(this).find('td').eq(window.LISTING_UNITS_INDEX).html();
+			$('#unitCounter').text(parseInt($('#unitCounter').text())+parseInt(units));
 
 			// Iterate through course times (a course may have different meeting times)
 			for(var i in courseTimes) {
@@ -905,7 +928,8 @@ $(document).ready(function() {
 					location: room,
 					fullName: fullCourseName,
 					instructor: instructor,
-					final: final
+					final: final,
+					units: units
 				});
 			}
 

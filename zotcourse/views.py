@@ -14,7 +14,13 @@ use_memcache = env['USE_MEMCACHE'].lower() == 'true'
 def index():
     index_html = memcache.get('index')
     if not index_html:
-        index_html = render_template('index.html')
+        form_info = memcache.get('search')
+        if form_info:
+            form_info = eval(form_info)
+        if not form_info:
+            form_info = websoc.get_form_info()
+            memcache.add('search', str(form_info), 60 * 60 * 24)
+        index_html = render_template('index.html', term=form_info['default_term'])
         memcache.add('index', index_html, 60 * 60 * 24)
     return index_html
 
@@ -30,12 +36,12 @@ def websoc_search_form():
     return render_template('websoc/search.html', term=form_info['term'], general_ed=form_info['general_ed'], department=form_info['department'])
 
 
-@app.route('/websoc/search', methods=['POST'])
+@app.route('/websoc/listing', methods=['GET'])
 def websoc_search():
-    key = str(request.form)
+    key = str(request.query_string)
     listing_html = memcache.get(key)
     if not listing_html:
-        listing_html = websoc.get_listing(request.form)
+        listing_html = websoc.get_listing(request.query_string)
         if use_memcache:
             memcache.add(key, listing_html, 60 * 60 * 24)
     return render_template('websoc/listing.html', listing=listing_html)

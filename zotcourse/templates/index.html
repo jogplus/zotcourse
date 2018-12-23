@@ -42,6 +42,9 @@
       <button type="button" id="finals-btn" class="btn btn-sm btn-outline-primary">
         Finals  <i class="fas fa-book"></i>
       </button>
+      <button type="button" id="list-btn" class="btn btn-sm btn-outline-primary" data-term="{{term | safe}}">
+        List  <i class="fas fa-list"></i>
+      </button>
       <button type="button" id="print-btn" class="btn btn-sm btn-outline-primary" >
         Print  <i class="fas fa-print"></i>
       </button>
@@ -59,6 +62,9 @@
       </button>
       <button type="button" id="resize-btn" class="btn btn-sm btn-outline-primary">
         Size  <i class="fas fa-expand"></i>
+      </button>
+      <button type="button" class="btn btn-sm btn-link" disabled>
+        Enrolled Units:  <b id="unitCounter">0</b>
       </button>
     </div>
   </div>
