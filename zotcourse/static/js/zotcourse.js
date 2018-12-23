@@ -806,7 +806,9 @@ $(document).ready(function() {
 			$(".delete-event").click(function() {
 				$this.popover('dispose');
 				$('#cal').fullCalendar('removeEvents', event._id);
-				$('#unitCounter').text(parseInt($('#unitCounter').text())-parseInt(event.units));
+				if (event.units && parseInt($('#unitCounter').text()) > 0) {
+					$('#unitCounter').text(parseInt($('#unitCounter').text())-parseInt(event.units));
+				}
 			});
 		}
 	});
