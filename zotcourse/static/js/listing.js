@@ -8,6 +8,7 @@ $(document).ready(function() {
             var query = $(this).attr("href").split("?")[1];
             $(this).attr("href", "/websoc/listing?" + query);
         }
+        // all other links open in a new tab
         else {
             $(this).attr("target", "_blank");
         }

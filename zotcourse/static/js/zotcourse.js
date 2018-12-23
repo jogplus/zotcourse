@@ -314,12 +314,7 @@ function loadSchedule(username) {
 				$('#scheduleNameForPrint').html('Zotcourse schedule name: '+username);
 				toastr.success(username, 'Schedule Loaded!');
 				localStorage.username = username;
-				if ($('#finals-btn').hasClass('active')) {
-					$('#finals').hide();
-					$('#cal').show();
-					$('#finals-btn').removeClass('active');
-					$('#cal').fullCalendar( 'rerenderEvents' );
-				}
+				switchToMainCalendar();
 			}
 			else {
 				toastr.error(username, 'Schedule Not Found');
@@ -348,12 +343,7 @@ function loadAPSchedule(username) {
 				$('#cal').fullCalendar('renderEvents',data.data);
 				$('#scheduleNameForPrint').html(username);
 				toastr.success(username, 'Schedule Loaded!');
-				if ($('#finals-btn').hasClass('active')) {
-					$('#finals').hide();
-					$('#cal').show();
-					$('#finals-btn').removeClass('active');
-					$('#cal').fullCalendar( 'rerenderEvents' );
-				}
+				switchToMainCalendar();
 				$('#unitCounter').text(0);
 			}
 			else {
@@ -361,6 +351,15 @@ function loadAPSchedule(username) {
 			}
 		}
 	});
+}
+
+function switchToMainCalendar() {
+	if ($('#finals-btn').hasClass('active')) {
+		$('#finals').hide();
+		$('#cal').show();
+		$('#finals-btn').removeClass('active');
+		$('#cal').fullCalendar( 'rerenderEvents' );
+	}
 }
 
 // JQuery listeners
@@ -381,6 +380,7 @@ $(document).ready(function() {
 			$('iframe').css('display', 'block');
 		}
 	});
+	// Adds the ellipsis icon within the gutter
 	$('.gutter').append('<i class="fas fa-ellipsis-v"></i>');
 
 	//#region Button Creation
@@ -411,11 +411,12 @@ $(document).ready(function() {
 				<li>Click on a calendar event for more course info</li>\
 				<li>Change course event color</li>\
 				<li>RateMyProfessor links in calendar event and Websoc results</li>\
-				<li>Course event title shows if it is Lec, Dis, Lab, etc.</li>\
+				<li>View your finals\' schedule</li>\
+				<li>View all your courses\' info using the List button</li>\
+				<li>Enrolled unit counter (for new schedules)</li>\
 				<li>Import schedule from Antplanner</li> \
 				<li>Calendar adjusts to screen size</li>\
 				<li>Resizable panes</li>\
-				<li>Better print formatting. (Calendar fits entirely on one page!)</li>\
 				</ul>',
 		placement: 'bottom',
 		container: 'body',
@@ -546,35 +547,40 @@ $(document).ready(function() {
 	// This must be done with JS instead of just styling because
 	// fullCalendar must rescale all of the events for the bigger event sizes
 	$('#print-btn').click(function() {
-		var tempLeftSize = $("#left").outerWidth();
-		$("#right").hide();
-		// Not 100% or else it will not fit on letter paper
-		$("#left").outerWidth('99.5%');
-		$('#cal').css('width', '100%');
-		$('th, td, tr').css('border', '2px solid #bfbfbf');
-		$('.fc-minor').css('border-top', '3px dotted #bfbfbf')
-		$('#soc').show();
-		$('#resize-btn').removeClass('active');
-		// Sets the name of the schedule as the header for the page
-		document.title = ($('#scheduleNameForPrint').html() ? $('#scheduleNameForPrint').html() : 'Zotcourse - Schedule Planner for UCI' );
-		// Sets the rows to have a larger height for printing
-		$('.fc-time-grid .fc-slats td').css('height', '46');
-		// This triggers fullCalendar to rescale
-		$('#cal').fullCalendar('option', 'height', $('#left').outerHeight() - $('#upper').outerHeight());
-		$('.popover').each(function () {
-			$(this).popover('hide');
-		});
+		if (navigator.userAgent.indexOf("Chrome") != -1) {
+			var tempLeftSize = $("#left").outerWidth();
+			$("#right").hide();
+			// Not 100% or else it will not fit on letter paper
+			$("#left").outerWidth('99.5%');
+			$('#cal').css('width', '100%');
+			$('th, td, tr').css('border', '2px solid #bfbfbf');
+			$('.fc-minor').css('border-top', '3px dotted #bfbfbf')
+			$('#soc').show();
+			$('#resize-btn').removeClass('active');
+			// Sets the name of the schedule as the header for the page
+			document.title = ($('#scheduleNameForPrint').html() ? $('#scheduleNameForPrint').html() : 'Zotcourse - Schedule Planner for UCI' );
+			// Sets the rows to have a larger height for printing
+			$('.fc-time-grid .fc-slats td').css('height', '46');
+			// This triggers fullCalendar to rescale
+			$('#cal').fullCalendar('option', 'height', $('#left').outerHeight() - $('#upper').outerHeight());
+			$('.popover').each(function () {
+				$(this).popover('hide');
+			});
 
-		window.print();
-		// Resets page back to original size
-		$("#right").show();
-		$('.gutter').show();
-		$("#left").outerWidth(tempLeftSize-20);
-		$('th, td, tr').css('border', '');
-		$('.fc-time-grid .fc-slats td').css({
-			'height': ($('#left').outerHeight() - $('#upper').outerHeight()) / 31,
-		});
-		document.title = 'Zotcourse - Schedule Planner for UCI';
+			window.print();
+			// Resets page back to original size
+			$("#right").show();
+			$('.gutter').show();
+			$("#left").outerWidth(tempLeftSize-20);
+			$('th, td, tr').css('border', '');
+			$('.fc-time-grid .fc-slats td').css({
+				'height': ($('#left').outerHeight() - $('#upper').outerHeight()) / 31,
+			});
+			document.title = 'Zotcourse - Schedule Planner for UCI';
+		}
+		else {
+			toastr.error('Printing is currently only supported in Chrome', 'Unsupported Browser');
+		}
 	});
 
 	$('#clear-cal-btn').on('click', function() {
@@ -583,12 +589,7 @@ $(document).ready(function() {
 		});
 		$('#cal').fullCalendar('removeEvents');
 		$('#finals').fullCalendar('removeEvents');
-		if ($('#finals-btn').hasClass('active')) {
-			$('#finals').hide();
-			$('#cal').show();
-			$('#finals-btn').removeClass('active');
-			$('#cal').fullCalendar( 'rerenderEvents' );
-		}
+		switchToMainCalendar();
 		$('#unitCounter').text(0);
 	});
 
@@ -667,7 +668,7 @@ $(document).ready(function() {
 			toastr.warning('Must have at least 1 course added.', 'Cannot List Courses');
 		}
 		else {
-			console.log($('#list-btn').attr('data-term'))
+			// 'data-term' attribute is rendered from index template and defaults to latest term
 			document.getElementById('soc').src = '/websoc/listing?YearTerm='+$('#list-btn').attr('data-term')+'&\
 			Breadth=ANY&Dept=&CourseCodes='+courseCodes+'&CourseNum=&Division=ANY&\
 			InstrName=&CourseTitle=&ClassType=ALL&Units=&Days=&StartTime=&EndTime=&\
@@ -933,12 +934,7 @@ $(document).ready(function() {
 				});
 			}
 
-			if ($('#finals-btn').hasClass('active')) {
-				$('#finals').hide();
-				$('#cal').show();
-				$('#finals-btn').removeClass('active');
-				$('#cal').fullCalendar( 'rerenderEvents' );
-			}
+			switchToMainCalendar();
 		});
 	});
 });
