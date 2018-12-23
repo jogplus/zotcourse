@@ -21,7 +21,7 @@ def get_form_info():
 
     term = BeautifulSoup(html, 'lxml').find(
         'select', {"name":"YearTerm"}).find_all('option')
-    form_info['term'] = term
+    form_info['term'] = [str(line).replace("\xc2\xa0", "") for line in term]
 
     general_ed = BeautifulSoup(html, 'lxml').find(
         'select', {"name":"Breadth"}).find_all('option')
@@ -29,7 +29,7 @@ def get_form_info():
 
     dept = BeautifulSoup(html, 'lxml').find(
         'select', {"name":"Dept"}).find_all('option')
-    form_info['department'] = dept
+    form_info['department'] = [str(line).replace("\xc2\xa0", "") for line in dept]
 
     return form_info
 
