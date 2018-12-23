@@ -21,15 +21,10 @@ Please feel free to make a PR and contribute!
 <li>Cleaner field inputs when saving/loading schedule.</li>
 <li>Toastr notifications after saving/loading schedule.</li>
 <li>Better print formatting. (Calendar fits entirely on one page!)</li>
-</ul>
-
-## Todo
-
-<ul>
-<li>Export to iCal file.</li>
-<li>Multiple schedules assigned to one name.</li>
-<li>Refresh course event on load and include updated information like class availability.</li>
-<li>Mobile support.</li>
+<li>View your finals' schedule</li>
+<li>View all your courses' info using the List button</li>
+<li>Enrolled unit counter</li>
+<li>Complete redesign of search</li>
 </ul>
 
 ## How to run locally for testing
