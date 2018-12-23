@@ -548,6 +548,7 @@ $(document).ready(function() {
 	// fullCalendar must rescale all of the events for the bigger event sizes
 	$('#print-btn').click(function() {
 		if (navigator.userAgent.indexOf("Chrome") != -1) {
+			switchToMainCalendar();
 			var tempLeftSize = $("#left").outerWidth();
 			$("#right").hide();
 			// Not 100% or else it will not fit on letter paper
@@ -721,22 +722,27 @@ $(document).ready(function() {
 				content:'<table style="width:100%">\
 									<tr>\
 										<td>Code</td>\
+										<td></td>\
 										<td align="right">'+event.groupId+'</td>\
 									</tr>\
 									<tr>\
 										<td>Location</td>\
+										<td></td>\
 										<td align="right">'+((event.location) ? event.location : '')+'</td>\
 									</tr>\
 									<tr>\
 										<td>Instructor</td>\
+										<td>&nbsp;&nbsp;</td>\
 										<td align="right">'+((event.instructor) ? createInstructorLinks(event.instructor) : 'N/A')+'</td>\
 									</tr>\
 									<tr>\
 										<td>Final</td>\
+										<td></td>\
 										<td align="right">'+ ((event.final !== '&nbsp;' ) ? ((event.final) ? event.final : 'N/A') : 'See Lecture')+'</td>\
 									</tr>\
 									<tr>\
 										<td>Color</td>\
+										<td></td>\
 										<td align="right"><input id="colorpicker-'+colorpickerId+'" type="text"/></td>\
 									</tr>\
 									</table>\
@@ -827,14 +833,17 @@ $(document).ready(function() {
 				content:'<table style="width:100%">\
 									<tr>\
 										<td>Code</td>\
+										<td></td>\
 										<td align="right">'+event.groupId+'</td>\
 									</tr>\
 									<tr>\
 										<td>Date</td>\
+										<td></td>\
 										<td align="right">'+event.date+'</td>\
 									</tr>\
 									<tr>\
 										<td>Instructor</td>\
+										<td>&nbsp;&nbsp;</td>\
 										<td align="right">'+((event.instructor) ? createInstructorLinks(event.instructor) : 'N/A')+'</td>\
 									</tr>\
 									</table>',
