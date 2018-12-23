@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <title>Zotcourse - Search</title>
-  <link rel="stylesheet" href="{{url_for('static', filename="css/reset.css")}}">
+  <!-- <link rel="stylesheet" href="{{url_for('static', filename="css/reset.css")}}"> -->
   <link rel="stylesheet" href="{{url_for('static', filename="css/main.css")}}">
-  <link rel="stylesheet" href="{{url_for('static', filename="css/search.css")}}">
+  <!-- <link rel="stylesheet" href="{{url_for('static', filename="css/search.css")}}"> -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 </head>
-<body>
+<body style="padding: 20px">
   <!-- <form action="{{url_for('websoc_search_form')}}" method="post">
     <div>
       
@@ -17,53 +17,162 @@
     <button type="submit" class="btn btn-sm btn-primary search-btn">Submit Search</button>
     <a href="/websoc/search" class="link">reset</a>
   </form> -->
-  <h5 class="display-5">Schedule of Classes</h1>
-  <form>
+  <h5 class="display-5" style="padding-bottom: 10px">Schedule of Classes</h1>
+  <form action="{{url_for('websoc_search_form')}}" method="post">
     <div class="input-group mb-3">
       <div class="input-group-prepend">
         <label class="input-group-text" for="inputGroupSelect01">Term</label>
       </div>
-      <select class="custom-select" id="inputGroupSelect01">
-        <option selected>Choose...</option>
-        <option value="1">One</option>
-        <option value="2">Two</option>
-        <option value="3">Three</option>
+      <select name="YearTerm" class="custom-select" id="inputGroupSelect01">
+        {{term | safe}}
       </select>
     </div>
     <div class="input-group mb-3">
       <div class="input-group-prepend">
         <label class="input-group-text" for="inputGroupSelect01">General Ed</label>
       </div>
-      <select class="custom-select" id="inputGroupSelect01">
-        <option selected>Choose...</option>
-        <option value="1">One</option>
-        <option value="2">Two</option>
-        <option value="3">Three</option>
+      <select name="Breadth" class="custom-select" id="inputGroupSelect01">
+        {{general_ed | safe}}
       </select>
     </div>
     <div class="input-group mb-3">
       <div class="input-group-prepend">
         <label class="input-group-text" for="inputGroupSelect01">Department</label>
       </div>
-      <select class="custom-select" id="inputGroupSelect01">
-        <option selected>Choose...</option>
-        <option value="1">One</option>
-        <option value="2">Two</option>
-        <option value="3">Three</option>
+      <select name="Dept" class="custom-select" id="inputGroupSelect01">
+        {{department | safe}}
       </select>
     </div>
     <div class="input-group mb-3">
       <div class="input-group-prepend">
         <label class="input-group-text" for="inputGroupSelect01">Course Code</label>
       </div>
-      <input type="number" class="form-control" placeholder="14200, 29000-29100">
+      <input name="CourseCodes" type="number" class="form-control">
+    </div>
+    <div id="moreOptions" style="display: none;">
+      <hr/>
+      <div class="form-row">
+        <div class="col">
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <label class="input-group-text" for="inputGroupSelect01">Course Number</label>
+            </div>
+            <input name="CourseNum" type="number" class="form-control">
+          </div>
+        </div>
+        <div class="col">
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <label class="input-group-text" for="inputGroupSelect01">Course Level</label>
+            </div>
+            <select name="Division" class="custom-select" id="inputGroupSelect01">
+              <option value="ANY" selected="selected">Any course division</option>
+              <option value="0xx">Lower Division only</option>
+              <option value="1xx">Upper Division only</option>
+              <option value="2xx">Graduate/Professional only</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="col">
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <label class="input-group-text" for="inputGroupSelect01">Instructor</label>
+            </div>
+            <input name="InstrName" class="form-control">
+          </div>
+        </div>
+        <div class="col">
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <label class="input-group-text" for="inputGroupSelect01">Title Contains</label>
+            </div>
+            <input name="CourseTitle" class="form-control">
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="col">
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <label class="input-group-text" for="inputGroupSelect01">Days</label>
+            </div>
+            <input name="Days" class="form-control" placeholder="MWF, TuTh, W">
+          </div>
+        </div>
+        <div class="col">
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <label class="input-group-text" for="inputGroupSelect01">Starts After</label>
+            </div>
+            <select name="StartTime" class="custom-select" id="inputGroupSelect01">
+              <option selected="selected" value="">&nbsp;</option>
+              <option>7:00am</option>
+              <option>8:00am</option>
+              <option>9:00am</option>
+              <option>10:00am</option>
+              <option>11:00am</option>
+              <option>12:00pm</option>
+              <option>1:00pm</option>
+              <option>2:00pm</option>
+              <option>3:00pm</option>
+              <option>4:00pm</option>
+              <option>5:00pm</option>
+              <option>6:00pm</option>
+              <option>7:00pm</option>
+              <option>8:00pm</option>
+              <option>9:00pm</option>
+            </select>
+          </div>
+        </div>
+        <div class="col">
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <label class="input-group-text" for="inputGroupSelect01">Ends After</label>
+            </div>
+            <select name="EndTime" class="custom-select" id="inputGroupSelect01">
+              <option selected="selected" value="">&nbsp;</option>
+              <option>7:00am</option>
+              <option>8:00am</option>
+              <option>9:00am</option>
+              <option>10:00am</option>
+              <option>11:00am</option>
+              <option>12:00pm</option>
+              <option>1:00pm</option>
+              <option>2:00pm</option>
+              <option>3:00pm</option>
+              <option>4:00pm</option>
+              <option>5:00pm</option>
+              <option>6:00pm</option>
+              <option>7:00pm</option>
+              <option>8:00pm</option>
+              <option>9:00pm</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="input-group mb-3">
+        <div class="input-group-prepend">
+          <label class="input-group-text" for="inputGroupSelect01">Courses Full Option</label>
+        </div>
+        <select name="FullCourses" class="custom-select" id="inputGroupSelect01">
+          <option value="ANY" selected="selected">&nbsp;</option>
+          <option value="SkipFullWaitlist">Include full courses if space on waitlist</option>
+          <option value="SkipFull">Skip courses that are full</option>
+          <option value="FullOnly">Show only full or waitlisted courses</option>
+          <option value="OverEnrolled">Show only courses that are over-enrolled</option>
+        </select>
+      </div>
     </div>
     <div class="input-group mb-3">
         <button type="submit" class="btn btn-primary">Submit Search</button>
         <button type="reset" class="btn btn-link btn-sm" value="Reset">Reset</button>
-        <button class="btn btn-link btn-sm" style="margin-left: auto;">More Search Options</button>
-        <!-- <a href="#" class="col-sm-3 col-form-label" style="float: right;">More search options.</a> -->
+        <button type="button" id="moreOptionsButton" onclick="toggleOptions()" class="btn btn-link btn-sm" style="margin-left: auto;">Show More Options...</button>
     </div>
+    <input type="checkbox" name="ShowComments" checked="checked" style="display: none">
+    <input type="checkbox" name="ShowFinals" checked="checked" style="display: none">
+    <input id="moreOptionsClosed" type="checkbox" checked="checked" style="display: none">
     <!-- <div class="form-group row">
       <label for="inputTerm" class="col-sm-2 col-form-label">Term:</label>
       <div class="col-sm-10">
@@ -74,8 +183,8 @@
           <option value="3">Three</option>
         </select>
       </div>
-    </div> -->
-    <!-- <div class="form-group row">
+    </div>
+    <div class="form-group row">
       <label for="inputGeneralEd" class="col-sm-2 col-form-label">General Ed:</label>
       <div class="col-sm-10">
         <select id="inputGeneralEd" class="custom-select">
@@ -85,8 +194,8 @@
           <option value="3">Three</option>
         </select>
       </div>
-    </div> -->
-    <!-- <div class="form-group row">
+    </div>
+    <div class="form-group row">
       <label for="inputDepartment" class="col-sm-2 col-form-label">Department:</label>
       <div class="col-sm-10">
         <select id="inputDepartment" class="custom-select">
@@ -96,17 +205,17 @@
           <option value="3">Three</option>
         </select>
       </div>
-    </div> -->
-    <!-- <div class="form-group row">
+    </div>
+    <div class="form-group row">
       <label for="inputCourseCode" class="col-sm-2 col-form-label">Course Code:</label>
       <div class="col-sm-10">
         <input class="form-control" id="inputCourseCode" placeholder="14200, 29000-29100">
       </div>
-    </div> -->
-    <!-- <div class="input-group mb-3">
+    </div>
+    <div class="input-group mb-3">
       <a href="#" class="col-sm-3 col-form-label">More search options.</a>
-    </div> -->
-    <!-- <div class="form-group row">
+    </div>
+    <div class="form-group row">
       <div class="col-sm-10">
         <button type="submit" class="btn btn-primary">Submit Search</button>
         <button type="reset" class="btn btn-link btn-sm" value="Reset">Reset</button>
@@ -114,4 +223,23 @@
     </div> -->
   </form>
 </body>
+<script>
+  var isClosed = document.getElementById("moreOptionsClosed");
+  if (!isClosed.checked) {
+    toggleOptions();
+  }
+  function toggleOptions() {
+    var div = document.getElementById("moreOptions");
+    var button = document.getElementById("moreOptionsButton");
+    if (div.style.display === "none") {
+      div.style.display = "block";
+      button.innerText = "Show Less Options..."
+      isClosed.checked = false; 
+    } else {
+      div.style.display = "none";
+      button.innerText = "Show More Options..." 
+      isClosed.checked = true; 
+    }
+  }
+</script>
 </html>

@@ -29,7 +29,7 @@ def websoc_search_form():
         if use_memcache:
             memcache.add('search', form_html, 60 * 60 * 24)
 
-    return render_template('websoc/search.html', form_content=form_html)
+    return render_template('websoc/search.html', term=form_info['term'], general_ed=form_info['general_ed'], department=form_info['department'])
 
 
 @app.route('/websoc/search', methods=['POST'])
