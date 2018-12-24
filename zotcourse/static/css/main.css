@@ -69,6 +69,7 @@ a {
 #finals {
 	display: none;
 	position: relative;
+	overflow: hidden;
 }
 
 @media print {

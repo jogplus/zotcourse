@@ -599,6 +599,7 @@ $(document).ready(function() {
 			$(this).popover('hide');
 		});
 		if ($(this).hasClass('active')) {
+			$('#finals').animate({width: '100%'});
 			$('#cal').animate({width: '100%'});
 			$('#soc').show();
 			$('.gutter').show();
@@ -609,6 +610,7 @@ $(document).ready(function() {
 			$('#soc').hide();
 			$('.gutter').hide();
 			$('#cal').animate({width: $(document).width()});
+			$('#finals').animate({width: $(document).width()});
 		}
 	});
 
