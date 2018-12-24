@@ -720,33 +720,33 @@ $(document).ready(function() {
 				html:true,
 				title: (event.fullName) ? event.fullName : '',
 				content:'<table style="width:100%">\
-									<tr>\
-										<td>Code</td>\
-										<td></td>\
-										<td align="right">'+event.groupId+'</td>\
-									</tr>\
-									<tr>\
-										<td>Location</td>\
-										<td></td>\
-										<td align="right">'+((event.location) ? event.location : '')+'</td>\
-									</tr>\
-									<tr>\
-										<td>Instructor</td>\
-										<td>&nbsp;&nbsp;</td>\
-										<td align="right">'+((event.instructor) ? createInstructorLinks(event.instructor) : 'N/A')+'</td>\
-									</tr>\
-									<tr>\
-										<td>Final</td>\
-										<td></td>\
-										<td align="right">'+ ((event.final !== '&nbsp;' ) ? ((event.final) ? event.final : 'N/A') : 'See Lecture')+'</td>\
-									</tr>\
-									<tr>\
-										<td>Color</td>\
-										<td></td>\
-										<td align="right"><input id="colorpicker-'+colorpickerId+'" type="text"/></td>\
-									</tr>\
-									</table>\
-									<button class="btn btn-sm btn-outline-primary delete-event"><i class="fas fa-trash-alt"></i></button>',
+						<tr>\
+							<td>Code</td>\
+							<td></td>\
+							<td align="right">'+event.groupId+'</td>\
+						</tr>\
+						<tr>\
+							<td>Location</td>\
+							<td></td>\
+							<td align="right">'+((event.location) ? event.location : '')+'</td>\
+						</tr>\
+						<tr>\
+							<td>Instructor</td>\
+							<td>&nbsp;&nbsp;</td>\
+							<td align="right">'+((event.instructor) ? createInstructorLinks(event.instructor) : 'N/A')+'</td>\
+						</tr>\
+						<tr>\
+							<td>Final</td>\
+							<td></td>\
+							<td align="right">'+ ((event.final !== '&nbsp;' ) ? ((event.final) ? event.final : 'N/A') : 'See Lecture')+'</td>\
+						</tr>\
+						<tr>\
+							<td>Color</td>\
+							<td></td>\
+							<td align="right"><input id="colorpicker-'+colorpickerId+'" type="text"/></td>\
+						</tr>\
+						</table>\
+						<button class="btn btn-sm btn-outline-primary delete-event"><i class="fas fa-trash-alt"></i></button>',
 				trigger:'focus',
 				placement:'right',
 				container:'body',
@@ -762,10 +762,10 @@ $(document).ready(function() {
 					preferredFormat: "hex",
 					showInput: true,
 					palette: [["#C4A883", "#A7A77D", "#85AAA5", "#94A2BE", "#8997A5",
-											"#A992A9", "#A88383", "#E6804D", "#F2A640", "#E0C240",
-											"#BFBF4D", "#8CBF40", "#4CB052", "#65AD89", "#59BFB3",
-											"#668CD9", "#668CB3", "#8C66D9", "#B373B3", "#E67399",
-											"#D96666"]],
+								"#A992A9", "#A88383", "#E6804D", "#F2A640", "#E0C240",
+								"#BFBF4D", "#8CBF40", "#4CB052", "#65AD89", "#59BFB3",
+								"#668CD9", "#668CB3", "#8C66D9", "#B373B3", "#E67399",
+								"#D96666"]],
 					change: function(color) {
 						$('#colorpicker-'+colorpickerId).spectrum('destroy');
 						// Must remove and rerender the event manually since updateEvent is not working
@@ -833,22 +833,22 @@ $(document).ready(function() {
 				html:true,
 				title: (event.fullName) ? event.fullName : '',
 				content:'<table style="width:100%">\
-									<tr>\
-										<td>Code</td>\
-										<td></td>\
-										<td align="right">'+event.groupId+'</td>\
-									</tr>\
-									<tr>\
-										<td>Date</td>\
-										<td></td>\
-										<td align="right">'+event.date+'</td>\
-									</tr>\
-									<tr>\
-										<td>Instructor</td>\
-										<td>&nbsp;&nbsp;</td>\
-										<td align="right">'+((event.instructor) ? createInstructorLinks(event.instructor) : 'N/A')+'</td>\
-									</tr>\
-									</table>',
+						<tr>\
+							<td>Code</td>\
+							<td></td>\
+							<td align="right">'+event.groupId+'</td>\
+						</tr>\
+						<tr>\
+							<td>Date</td>\
+							<td></td>\
+							<td align="right">'+event.date+'</td>\
+						</tr>\
+						<tr>\
+							<td>Instructor</td>\
+							<td>&nbsp;&nbsp;</td>\
+							<td align="right">'+((event.instructor) ? createInstructorLinks(event.instructor) : 'N/A')+'</td>\
+						</tr>\
+						</table>',
 				trigger:'focus',
 				placement:'right',
 				container:'body',
