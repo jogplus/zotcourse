@@ -24,22 +24,20 @@ a {
 	width: 50%;
 	height: calc(100% - 42px);
 	float: left;
-	overflow: hidden;
+	overflow: scroll;
 	margin-left: 5px;
 	-webkit-overflow-scrolling: touch;
 }
 
 #cal {
 	position: relative;
+	overflow: hidden;
 }
 
 #soc {
 	height: 100%;
 	width: 100%;
-	-webkit-overflow-scrolling: touch; /* for iOS */
-	overflow: scroll;
-	float: left;
-	position: relative;
+  	display: block;
 }
 
 #upper {
