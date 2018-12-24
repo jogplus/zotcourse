@@ -407,17 +407,17 @@ $(document).ready(function() {
 	$('#whatsnew').popover({
 		html: true,
 		title: "What's New! 🎉",
-		content:'<ul style="list-style-type:disc; margin-left:15px">\
+		content:'<ul style="list-style-type:disc; margin-left:15px; margin-bottom:2px">\
 				<li>Click on a calendar event for more course info</li>\
 				<li>Change course event color</li>\
-				<li>RateMyProfessor links in calendar event and Websoc results</li>\
+				<li>RateMyProfessor links</li>\
 				<li>View your finals\' schedule</li>\
 				<li>View all your courses\' info using the List button</li>\
 				<li>Enrolled unit counter (for new schedules)</li>\
 				<li>Import schedule from Antplanner</li> \
-				<li>Calendar adjusts to screen size</li>\
 				<li>Resizable panes</li>\
-				</ul>',
+				</ul>\
+				<a href="https://goo.gl/forms/YdeevICkr4Ei6HHg1" target="_blank">Bugs or Suggestions?</a>',
 		placement: 'bottom',
 		container: 'body',
 		boundary: 'window',
