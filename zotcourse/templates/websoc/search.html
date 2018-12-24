@@ -33,36 +33,31 @@
         {{department | safe}}
       </select>
     </div>
-    <div class="input-group mb-3">
-      <div class="input-group-prepend">
-        <label class="input-group-text search-top" for="inputGroupSelect01">Course Code</label>
+    <div class="form-row">
+      <div class="col">
+        <div class="input-group mb-3">
+          <div class="input-group-prepend">
+            <label class="input-group-text search-top" for="inputGroupSelect01">Course Code</label>
+          </div>
+          <input name="CourseCodes" type="number" class="form-control" placeholder="ex. 14200, 29000-29100">
+        </div>
       </div>
-      <input name="CourseCodes" type="number" class="form-control">
+      <div class="col">
+        <div class="input-group mb-3">
+          <div class="input-group-prepend">
+            <label class="input-group-text" for="inputGroupSelect01">Course Number</label>
+          </div>
+          <input name="CourseNum" class="form-control" placeholder="ex. H2A, 5, 10-20">
+        </div>
+      </div>
     </div>
     <div id="moreOptions" style="display: none;">
       <hr/>
-      <div class="form-row">
-        <div class="col">
-          <div class="input-group mb-3">
-            <div class="input-group-prepend">
-              <label class="input-group-text" for="inputGroupSelect01">Course Number</label>
-            </div>
-            <input name="CourseNum" type="number" class="form-control">
-          </div>
+      <div class="input-group mb-3">
+        <div class="input-group-prepend">
+          <label class="input-group-text" for="inputGroupSelect01">Title Contains</label>
         </div>
-        <div class="col">
-          <div class="input-group mb-3">
-            <div class="input-group-prepend">
-              <label class="input-group-text" for="inputGroupSelect01">Course Level</label>
-            </div>
-            <select name="Division" class="custom-select" id="inputGroupSelect01">
-              <option value="ANY" selected="selected">Any course division</option>
-              <option value="0xx">Lower Division only</option>
-              <option value="1xx">Upper Division only</option>
-              <option value="2xx">Graduate/Professional only</option>
-            </select>
-          </div>
-        </div>
+        <input name="CourseTitle" class="form-control">
       </div>
       <div class="form-row">
         <div class="col">
@@ -76,9 +71,14 @@
         <div class="col">
           <div class="input-group mb-3">
             <div class="input-group-prepend">
-              <label class="input-group-text" for="inputGroupSelect01">Title Contains</label>
+              <label class="input-group-text" for="inputGroupSelect01">Course Level</label>
             </div>
-            <input name="CourseTitle" class="form-control">
+            <select name="Division" class="custom-select" id="inputGroupSelect01">
+              <option value="ANY" selected="selected">Any course division</option>
+              <option value="0xx">Lower Division only</option>
+              <option value="1xx">Upper Division only</option>
+              <option value="2xx">Graduate/Professional only</option>
+            </select>
           </div>
         </div>
       </div>
@@ -120,7 +120,7 @@
             <div class="input-group-prepend">
               <label class="input-group-text" for="inputGroupSelect01">Days</label>
             </div>
-            <input name="Days" class="form-control" placeholder="MWF, TuTh, W">
+            <input name="Days" class="form-control" placeholder="ex. MWF, TuTh, W">
           </div>
         </div>
         <div class="col">
@@ -151,7 +151,7 @@
         <div class="col">
           <div class="input-group mb-3">
             <div class="input-group-prepend">
-              <label class="input-group-text" for="inputGroupSelect01">Ends After</label>
+              <label class="input-group-text" for="inputGroupSelect01">Ends Before</label>
             </div>
             <select name="EndTime" class="custom-select" id="inputGroupSelect01">
               <option selected="selected" value="">&nbsp;</option>
