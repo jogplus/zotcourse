@@ -24,7 +24,7 @@ a {
 	width: 50%;
 	height: calc(100% - 42px);
 	float: left;
-	overflow: scroll;
+	overflow: auto;
 	margin-left: 5px;
 	-webkit-overflow-scrolling: touch;
 }
