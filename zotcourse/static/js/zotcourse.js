@@ -721,7 +721,7 @@ $(document).ready(function() {
 			element.popover({
 				html:true,
 				title: (event.fullName) ? event.fullName : '',
-				content:'<table style="width:100%">\
+				content:'<table style="width:100%; margin-bottom:3%">\
 						<tr>\
 							<td>Code</td>\
 							<td></td>\
@@ -748,7 +748,7 @@ $(document).ready(function() {
 							<td align="right"><input id="colorpicker-'+colorpickerId+'" type="text"/></td>\
 						</tr>\
 						</table>\
-						<button class="btn btn-sm btn-outline-primary delete-event"><i class="fas fa-trash-alt"></i></button>',
+						<button style="width:100%" class="btn btn-sm btn-outline-primary delete-event">Remove <i class="fas fa-trash-alt"></i></button>',
 				trigger:'focus',
 				placement:'right',
 				container:'body',
@@ -770,6 +770,7 @@ $(document).ready(function() {
 								"#D96666"]],
 					change: function(color) {
 						$('#colorpicker-'+colorpickerId).spectrum('destroy');
+						$('#colorpicker-'+colorpickerId).hide();
 						// Must remove and rerender the event manually since updateEvent is not working
 						$('#cal').fullCalendar('removeEvents', event._id);
 						$('#cal').fullCalendar('renderEvent', {
@@ -790,9 +791,12 @@ $(document).ready(function() {
 					}
 				});
 			});
-			// Must manually destroy colorpicker or else it never gets deleted
+			// Must manually destroy colorpicker or else it never gets deleted.
+			// Also hides the colorpicker input element so it does not appear briefly
+			// after being destroyed.
 			element.on('hide.bs.popover', function() {
 				$('#colorpicker-'+colorpickerId).spectrum('destroy');
+				$('#colorpicker-'+colorpickerId).hide();
 			});
 			// Only allows for one popover to be open at a time
 			element.on('show.bs.popover', function() {
@@ -946,7 +950,6 @@ $(document).ready(function() {
 					units: units
 				});
 			}
-
 			switchToMainCalendar();
 		});
 	});
