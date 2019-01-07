@@ -664,8 +664,12 @@ $(document).ready(function() {
 		});
 		var courseCodes = '';
 		var calRawData  = $('#cal').fullCalendar('clientEvents');
+		var added = [];
 		for (var i in calRawData) {
-			courseCodes += calRawData[i].groupId + ','
+			if (added.indexOf(calRawData[i].groupId) == -1) {
+				courseCodes += calRawData[i].groupId + ',';
+				added.push(calRawData[i].groupId);
+			}
 		}
 		if (courseCodes == '') {
 			toastr.warning('Must have at least 1 course added.', 'Cannot List Courses');
