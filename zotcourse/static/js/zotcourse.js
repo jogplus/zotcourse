@@ -1,5 +1,28 @@
 var today = new Date();
 
+var monthToInt = {
+	'Jan':0,
+	'Feb':1,
+	'Mar':2,
+	'Apr':3,
+	'May':4,
+	'Jun':5,
+	'Jul':6,
+	'Aug':7,
+	'Sep':8,
+	'Oct':9,
+	'Nov':10,
+	'Dec':11,
+}
+
+var weekDayToString = {
+	'1': 'MO',
+	'2': 'TU',
+	'3': 'WE',
+	'4': 'TH',
+	'5': 'FR',
+}
+
 window.APP_YEAR  = today.getFullYear();
 window.APP_MONTH = today.getMonth();
 window.APP_DAY   = today.getDate();
@@ -91,6 +114,8 @@ function FinalParsedCourseTime(timeString) {
 	var timeSplit = daySplit[2].split('-');
 
 	var date = $.trim( daySplit[1] );
+	var month = date.split(' ')[0];
+	var day = parseInt(date.split(' ')[1]);
 	var beginTime = $.trim( timeSplit[0] ); // ex. "6:00"
 	var endTime   = $.trim( timeSplit[1] ); // "6:50p"
 
@@ -101,14 +126,14 @@ function FinalParsedCourseTime(timeString) {
 	var endMin = parseInt( endTime.split(':')[1].replace('pm', '') );
 	var isPm = endTime.indexOf('pm') != -1;
 
-	var day = -1;
-	if(timeString.indexOf('Sun') != -1) {	day = 0; } 
-	if(timeString.indexOf('Mon') != -1) {	day = 1; } 
-	if(timeString.indexOf('Tue') != -1) { day = 2; } 
-	if(timeString.indexOf('Wed') != -1) {	day = 3; }
-	if(timeString.indexOf('Thu') != -1) { day = 4; }
-	if(timeString.indexOf('Fri') != -1) {	day = 5; }
-	if(timeString.indexOf('Sat') != -1) {	day = 6; } 
+	var weekDay = -1;
+	if(timeString.indexOf('Sun') != -1) {	weekDay = 0; } 
+	if(timeString.indexOf('Mon') != -1) {	weekDay = 1; } 
+	if(timeString.indexOf('Tue') != -1) { weekDay = 2; } 
+	if(timeString.indexOf('Wed') != -1) {	weekDay = 3; }
+	if(timeString.indexOf('Thu') != -1) { weekDay = 4; }
+	if(timeString.indexOf('Fri') != -1) {	weekDay = 5; }
+	if(timeString.indexOf('Sat') != -1) {	weekDay = 6; } 
 
 	if(isPm) {
 		var military = endHour == 12 ? 12 : endHour + 12
@@ -125,6 +150,8 @@ function FinalParsedCourseTime(timeString) {
 		'beginMin': beginMin,
 		'endHour': endHour,
 		'endMin': endMin,
+		'weekDay': weekDay,
+		'month': month,
 		'day': day,
 		'date': date
 	}
@@ -360,6 +387,14 @@ function switchToMainCalendar() {
 		$('#finals-btn').removeClass('active');
 		$('#cal').fullCalendar( 'rerenderEvents' );
 	}
+}
+
+function daysOfTheWeekToStr(dow) {
+	var dowStr = [];
+	for (var i in dow) {
+		dowStr.push(weekDayToString[dow[i]]);
+	}
+	return dowStr;
 }
 
 // JQuery listeners
@@ -643,8 +678,9 @@ $(document).ready(function() {
 						groupId: calRawData[i].groupId,
 						start: finalParsed.beginHour + ':' + finalParsed.beginMin,
 						end: finalParsed.endHour + ':' + finalParsed.endMin,
+						// Title is parsed from after the type of class (ie. Lec, Lab, Dis)
 						title: calRawData[i].title.split(/\s(.+)/)[1],
-						dow: [finalParsed.day],
+						dow: [finalParsed.weekDay],
 						color: calRawData[i].color,
 						fullName: calRawData[i].fullName,
 						instructor: calRawData[i].instructor,
@@ -681,6 +717,92 @@ $(document).ready(function() {
 			InstrName=&CourseTitle=&ClassType=ALL&Units=&Days=&StartTime=&EndTime=&\
 			FullCourses=ANY&ShowComments=on&ShowFinals=on';
 		}
+	});
+
+	$('#export-btn').popover({
+		html: true,
+		title: "<b>BETA</b> Export to iCal",
+		content:'<div class="input-group input-group-sm mb-3">\
+					<div style="padding-bottom: 8px">Downloads an .ics file which can import your courses into Google Calender. \
+					<a target="_blank" href="https://support.google.com/calendar/answer/37118#import_to_gcal">Click here to learn how.</a></div>\
+					<div style="margin:auto;"><button id="export-button" class="btn btn-primary" type="button">Download</button></div>\
+				</div>',
+		placement: 'bottom',
+		container: 'body',
+		boundary: 'window',
+	});
+	$('#export-btn').on('shown.bs.popover', function () {
+		$('#export-button').click(function() {
+			$('.popover').each(function () {
+				$(this).popover('hide');
+			});
+			var calRawData  = $('#cal').fullCalendar('clientEvents');
+			// Year is extracted from most recent term in Schedule of Classes search
+			var year = parseInt($('#list-btn').attr('data-term').substring(0,4));
+			var firstMonday;	
+			for (var i in calRawData) {
+				// Prevents courses with no final or imported from Antplanner from being parsed
+				if (calRawData[i].final != '&nbsp;' && calRawData[i].final != 'N/A (due to import)') {
+					// At least one class with a final is necessary since the final is the
+					// only way to determine when the first week of class is
+					var finalParsed = FinalParsedCourseTime(calRawData[i].final);
+					firstMonday = new Date(year, monthToInt[finalParsed.month], finalParsed.day, finalParsed.beginHour);
+					// Gets the Monday AFTER finals week is over
+					firstMonday.setDate(firstMonday.getDate() + (1 + 7 - firstMonday.getDay()) % 7)
+					// Move backwards 10 weeks during quarter + 1 week of finals = 77 days
+					firstMonday.setDate(firstMonday.getDate()-77);
+					break;
+				}
+			}
+			if (firstMonday != null) {
+				var added = [];
+				var cal = ics();
+				for (var i in calRawData) {
+					if (added.indexOf(calRawData[i].groupId) == -1) {
+						var startDate = new Date(firstMonday);
+						var daysOfTheWeek = calRawData[i].daysOfTheWeek.sort();
+						// Add the number of days until first meeting starting from Monday (0)
+						// Only the first meeting of the week is needed since byday handles repeats
+						// daysOfTheWeek - 1 because Monday has an index of 1 instead if 0
+						startDate.setDate(startDate.getDate()+(daysOfTheWeek[0]-1));
+						var endDate = new Date(startDate);
+						startDate.setHours(calRawData[i].start.hours());
+						startDate.setMinutes(calRawData[i].start.minutes());
+						endDate.setHours(calRawData[i].end.hours());
+						endDate.setMinutes(calRawData[i].end.minutes());
+						var rrule = {
+							'freq': 'WEEKLY',
+							// Count is # of weeks in quarter * # of times class occurs in a week
+							'count': 10*calRawData[i].daysOfTheWeek.length,
+							'byday': daysOfTheWeekToStr(daysOfTheWeek)
+						};
+						// Use \\n instead of \n due to ics.js issue #26 
+						cal.addEvent(calRawData[i].title, 
+							'Course Title: '+calRawData[i].fullName+
+							'\\nInstructor: '+calRawData[i].instructor+
+							'\\nCode: '+calRawData[i].groupId+
+							'\\nFinal: '+calRawData[i].final,
+							calRawData[i].location, startDate, endDate, rrule);
+						if (calRawData[i].final != '&nbsp;') {
+							var finalTime = FinalParsedCourseTime(calRawData[i].final);
+							var startTime = new Date(year, monthToInt[finalTime.month], finalTime.day, finalTime.beginHour, finalTime.beginMin);
+							var endTime = new Date(year, monthToInt[finalTime.month], finalTime.day, finalTime.endHour, finalTime.endMin);
+							// Title is parsed from after the type of class (ie. Lec, Lab, Dis)
+							cal.addEvent('Final '+calRawData[i].title.split(/\s(.+)/)[1], 
+								'Course Title: '+calRawData[i].fullName+
+								'\\nInstructor: '+calRawData[i].instructor+
+								'\\nCode: '+calRawData[i].groupId,
+								'Check portal.uci.edu', startTime, endTime);
+						}
+						added.push(calRawData[i].groupId);
+					}
+				}
+				cal.download();
+			}
+			else {
+				toastr.warning('Must have at least 1 course with a final added.', 'Cannot Export Courses');
+			}
+		});
 	});
 	//#endregion
 

@@ -19,6 +19,7 @@
   <script src="{{url_for('static', filename="js/fullcalendar.min.js")}}"></script>
   <script src="{{url_for('static', filename="js/spectrum.js")}}"></script>
   <script src="{{url_for('static', filename="js/toastr.min.js")}}"></script>
+  <script src="{{url_for('static', filename="js/ics.deps.min.js")}}"></script>
   <script src="{{url_for('static', filename="js/zotcourse.js")}}"></script>
   <!-- Global site tag (gtag.js) - Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129912319-1"></script>
@@ -38,9 +39,9 @@
     </div>
     <div id="cal-ctrl">
       <div class="space1">&nbsp;</div>
-      <a href="#" id="whatsnew" class="btn btn-sm btn-outline-primary">
+      <button id="whatsnew" class="btn btn-sm btn-outline-primary">
         <i class="fas fa-info-circle"></i>
-      </a>
+      </button>
       <button type="button" id="finals-btn" class="btn btn-sm btn-outline-primary">
         Finals  <i class="fas fa-book"></i>
       </button>
@@ -58,6 +59,9 @@
       </button>
       <button type="button" id="load-ap-btn" class="btn btn-sm btn-outline-primary">
         Import  <i class="fas fa-truck-moving"></i>
+      </button>
+      <button type="button" id="export-btn" class="btn btn-sm btn-outline-primary">
+        Export  <i class="fas fa-file-export"></i>
       </button>
       <button type="button" id="clear-cal-btn" class="btn btn-sm btn-outline-primary">
         Clear  <i class="fas fa-ban"></i>
