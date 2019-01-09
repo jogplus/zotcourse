@@ -739,13 +739,17 @@ $(document).ready(function() {
 			var calRawData  = $('#cal').fullCalendar('clientEvents');
 			// Year is extracted from most recent term in Schedule of Classes search
 			var year = parseInt($('#list-btn').attr('data-term').substring(0,4));
-			var firstMonday;	
+			var firstMonday;
+			var cleanFinal;	
 			for (var i in calRawData) {
 				// Prevents courses with no final or imported from Antplanner from being parsed
-				if (calRawData[i].final != '&nbsp;' && calRawData[i].final != 'N/A (due to import)') {
+				cleanFinal = calRawData[i].final.replace(/&nbsp;/g, '').trim();
+				if (cleanFinal != '' && 
+					cleanFinal != 'N/A (due to import)' &&
+					cleanFinal != 'TBA') {
 					// At least one class with a final is necessary since the final is the
 					// only way to determine when the first week of class is
-					var finalParsed = FinalParsedCourseTime(calRawData[i].final);
+					var finalParsed = FinalParsedCourseTime(cleanFinal);
 					firstMonday = new Date(year, monthToInt[finalParsed.month], finalParsed.day, finalParsed.beginHour);
 					// Gets the Monday AFTER finals week is over
 					firstMonday.setDate(firstMonday.getDate() + (1 + 7 - firstMonday.getDay()) % 7)
@@ -757,10 +761,11 @@ $(document).ready(function() {
 			if (firstMonday != null) {
 				var added = [];
 				var cal = ics();
-				for (var i in calRawData) {
+				for (i in calRawData) {
 					if (added.indexOf(calRawData[i].groupId) == -1) {
 						var startDate = new Date(firstMonday);
 						var daysOfTheWeek = calRawData[i].daysOfTheWeek.sort();
+						cleanFinal = calRawData[i].final.replace(/&nbsp;/g, '').trim();
 						// Add the number of days until first meeting starting from Monday (0)
 						// Only the first meeting of the week is needed since byday handles repeats
 						// daysOfTheWeek - 1 because Monday has an index of 1 instead if 0
@@ -783,7 +788,9 @@ $(document).ready(function() {
 							'\\nCode: '+calRawData[i].groupId+
 							'\\nFinal: '+calRawData[i].final,
 							calRawData[i].location, startDate, endDate, rrule);
-						if (calRawData[i].final != '&nbsp;') {
+						if (cleanFinal != '' && 
+							cleanFinal != 'N/A (due to import)' &&
+							cleanFinal != 'TBA') {
 							var finalTime = FinalParsedCourseTime(calRawData[i].final);
 							var startTime = new Date(year, monthToInt[finalTime.month], finalTime.day, finalTime.beginHour, finalTime.beginMin);
 							var endTime = new Date(year, monthToInt[finalTime.month], finalTime.day, finalTime.endHour, finalTime.endMin);
