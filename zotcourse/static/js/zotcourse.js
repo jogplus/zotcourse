@@ -723,7 +723,7 @@ $(document).ready(function() {
 		html: true,
 		title: "<b>BETA</b> Export to iCal",
 		content:'<div class="input-group input-group-sm mb-3">\
-					<div style="padding-bottom: 8px">Downloads an .ics file which can import your courses into Google Calender. \
+					<div style="padding-bottom: 8px">Downloads an .ics file which can import your courses into Google Calendar. \
 					<a target="_blank" href="https://support.google.com/calendar/answer/37118#import_to_gcal">Click here to learn how.</a></div>\
 					<div style="margin:auto;"><button id="export-button" class="btn btn-primary" type="button">Download</button></div>\
 				</div>',
