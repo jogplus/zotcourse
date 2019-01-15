@@ -919,7 +919,8 @@ $(document).ready(function() {
 							location: event.location,
 							fullName: event.fullName,
 							instructor: event.instructor,
-							final: event.final
+							final: event.final,
+							units: event.units
 						});
 					}
 				});
