@@ -15,25 +15,25 @@ $(document).ready(function() {
     });
     $("tr").each(function() {
         // To delete the useless 'textbooks' column and title
-        $("th:eq(13)", this).remove();
-        $("td:eq(13)", this).remove();
+        // $("th:eq(13)", this).remove();
+        // $("td:eq(13)", this).remove();
         // After textbooks column is deleted, deletes the 'web' column and title
-        $("th:eq(13)", this).remove();
-        $("td:eq(13)", this).remove();
+        // $("th:eq(13)", this).remove();
+        // $("td:eq(13)", this).remove();
         // Reduces the column width after deleting the two columns
-        if ($("td", this).attr('colspan')) {
-            $("td", this).attr('colspan', 14);
-        }
+        // if ($("td", this).attr('colspan')) {
+        //     $("td", this).attr('colspan', 14);
+        // }
         // Removes the indentions for the "same as class" and "enrollment" info
-        if ($("td:eq(0)", this).html() == "&nbsp;") {
-            $("td:eq(0)", this).remove();
-            if ($("td:eq(0)", this).html() == "&nbsp;") {
-                $("td:eq(0)", this).remove();
-            }
-            if ($("td:eq(2)", this).html() == "&nbsp;" && $(this).attr('bgcolor') == '#fff0ff') {
-                $("td:eq(2)", this).remove();
-            }
-        }
+        // if ($("td:eq(0)", this).html() == "&nbsp;") {
+        //     $("td:eq(0)", this).remove();
+        //     if ($("td:eq(0)", this).html() == "&nbsp;") {
+        //         $("td:eq(0)", this).remove();
+        //     }
+        //     if ($("td:eq(2)", this).html() == "&nbsp;" && $(this).attr('bgcolor') == '#fff0ff') {
+        //         $("td:eq(2)", this).remove();
+        //     }
+        // }
         
         // Used to add registrar restrictions link for each row
         // If only the header needs the link, use th instead of td
