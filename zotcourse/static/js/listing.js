@@ -37,8 +37,8 @@ $(document).ready(function() {
         
         // Used to add registrar restrictions link for each row
         // If only the header needs the link, use th instead of td
-        if ($("td:eq(12)", this).html() != "&nbsp;") {
-            $("td:eq(12)", this).html("<a href='https://www.reg.uci.edu/enrollment/restrict_codes.html' target='_blank'>"+$("td:eq(12)", this).text()+"</a>")
+        if ($("td:eq(13)", this).html() != "&nbsp;") {
+            $("td:eq(13)", this).html("<a href='https://www.reg.uci.edu/enrollment/restrict_codes.html' target='_blank'>"+$("td:eq(13)", this).text()+"</a>")
         }
 
         // The 4th child is typically the instructor column
