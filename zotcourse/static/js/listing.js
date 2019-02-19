@@ -4,7 +4,7 @@ $(document).ready(function() {
     }
     $("a").each(function() {
         // "same as class" link open within the iframe
-        if ($(this).attr("href").indexOf("reg.uci.edu") !== -1) {
+        if ($(this).attr("href").indexOf("reg.uci.edu/perl/") !== -1) {
             var query = $(this).attr("href").split("?")[1];
             $(this).attr("href", "/websoc/listing?" + query);
         }
