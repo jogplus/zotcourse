@@ -52,6 +52,9 @@ def save_schedule():
     username = request.form.get('username')
     data = request.form.get('data')
     try:
+        #Hot fix to prevent XSS vulnerability from fullcalendar event generation
+        #If there is an attribute called "url", it will execute it
+        data = data.decode("utf-8").replace('"url"', '"*"').encode("utf-8")
         Schedule(key_name=username, data=data).put()
         return jsonify(success=True)
     except:
