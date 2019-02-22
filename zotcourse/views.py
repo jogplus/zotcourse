@@ -3,6 +3,7 @@ from flask import render_template, request, jsonify
 from google.appengine.api import memcache
 from google.appengine.ext import db
 import logging
+import ast
 from os import environ as env
 
 LOG = logging.getLogger(__name__)
@@ -49,12 +50,17 @@ def websoc_search():
 
 @app.route('/schedules/add', methods=['POST'])
 def save_schedule():
+    valid_params = ['id', 'groupId', 'title', 'start', 'end', 'color',\
+     'location', 'fullName', 'instructor', 'final', 'dow', 'daysOfTheWeek', 'units' ]
     username = request.form.get('username')
     data = request.form.get('data')
     try:
         #Hot fix to prevent XSS vulnerability from fullcalendar event generation
         #If there is an attribute called "url", it will execute it
-        data = data.decode("utf-8").replace('"url"', '"*"').encode("utf-8")
+        parsed_data = ast.literal_eval(data)
+        for c in parsed_data:
+            if filter(lambda p: p in valid_params, c) != c.keys():
+                raise AttributeError
         Schedule(key_name=username, data=data).put()
         return jsonify(success=True)
     except:

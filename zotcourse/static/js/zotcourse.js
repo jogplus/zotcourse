@@ -168,7 +168,9 @@ function CourseTimeStringParser(courseString) {
 	var courseTimes = []
 	var splitTimes = courseString.split('<br>');
 	for(var i in splitTimes) {
-		courseTimes.push( ParsedCourseTime(splitTimes[i]) )
+		if (splitTimes[i].indexOf('TBA') == -1) {
+			courseTimes.push( ParsedCourseTime(splitTimes[i]) )
+		}
 	}
 	return courseTimes;
 }
@@ -946,7 +948,7 @@ $(document).ready(function() {
 			$(".delete-event").click(function() {
 				$this.popover('dispose');
 				$('#cal').fullCalendar('removeEvents', event._id);
-				if (event.units && parseInt($('#unitCounter').text()) > 0) {
+				if (event.units && parseInt($('#unitCounter').text())-parseInt(event.units) >= 0) {
 					$('#unitCounter').text(parseInt($('#unitCounter').text())-parseInt(event.units));
 				}
 			});
@@ -1035,7 +1037,8 @@ $(document).ready(function() {
 			var timeString = $(this).find('td').eq(window.LISTING_TIME_INDEX).html();
 
 			// Ignore if course is "TBA"
-			if(timeString.indexOf('TBA') != -1) {
+			var courseTimes = CourseTimeStringParser(timeString)
+			if(courseTimes.length == 0) {
 				toastr.warning('Course is TBA');
 				return;
 			}
@@ -1053,7 +1056,6 @@ $(document).ready(function() {
 			var fullCourseName = $(this).prevAll().find('.CourseTitle').last().find('b').html();
 			var classType = $(this).find('td').eq(window.LISTING_TYPE_INDEX).html();
 			var instructor = getInstructorArray($(this).find('td').eq(window.LISTING_INSTRUCTOR_INDEX).html());
-			var courseTimes = CourseTimeStringParser(timeString)
 			var roomString = $(this).find('td').eq(window.LISTING_ROOM_INDEX).html();
 			var final = $(this).find('td').eq(window.LISTING_FINAL_INDEX).html();
 			var rooms = parseRoomString(roomString);
