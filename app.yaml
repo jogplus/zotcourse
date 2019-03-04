@@ -24,4 +24,4 @@ libraries:
   version: latest
 
 env_variables:
-  USE_MEMCACHE: false
+  USE_MEMCACHE: true

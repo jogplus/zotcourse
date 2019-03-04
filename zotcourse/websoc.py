@@ -22,10 +22,10 @@ def get_form_info():
     term = BeautifulSoup(html, 'lxml').find(
         'select', {"name":"YearTerm"}).find_all('option')
     form_info['default_term'] = term[0]['value']
-     # Temporary hotfix to prioritze the newest quarter to be the default
-    term[0]['selected'] = 'selected'
-    if 'selected' in term[1].attrs:
-        del term[1]['selected']
+    # Temporary hotfix to have default_term to be default selected item
+    for t in term:
+        if t.has_attr('selected'):
+            form_info['default_term'] = t['value']
     form_info['term'] = [str(line).replace("\xc2\xa0", "") for line in term]
     # Parses for GE info
     general_ed = BeautifulSoup(html, 'lxml').find(
