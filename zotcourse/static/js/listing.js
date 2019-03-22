@@ -7,6 +7,7 @@ $(document).ready(function() {
         if ($(this).attr("href").indexOf("reg.uci.edu/perl/") !== -1) {
             var query = $(this).attr("href").split("?")[1];
             $(this).attr("href", "/websoc/listing?" + query);
+            $(this).removeAttr("target");
         }
         // all other links open in a new tab
         else {
