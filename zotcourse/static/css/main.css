@@ -98,11 +98,11 @@ a {
 	}
 
 	.fc-title{
-		font-size: 1.6em;
+		font-size: 1.3em !important;
 	}
 
 	.fc-time > span {
-		font-size: 1.5em;
+		font-size: 1.3em !important;
 	}
 
 	.fc-time-grid-event, .fc-v-event .fc-event, .fc-start, .fc-end {
@@ -226,4 +226,14 @@ a {
 .btn-link:disabled, .btn-link.disabled {
 	color: #333 !important;
 	opacity: 1 !important;
+}
+
+.fc-time > span {
+	font-size: 90%;
+}
+
+.fc-title {
+	font-size: 85%;
+	font-weight: bold;
+	text-align: center;
 }

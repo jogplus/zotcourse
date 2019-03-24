@@ -51,7 +51,7 @@ def websoc_search():
 @app.route('/schedules/add', methods=['POST'])
 def save_schedule():
     valid_params = ['id', 'groupId', 'title', 'start', 'end', 'color',\
-     'location', 'fullName', 'instructor', 'final', 'dow', 'daysOfTheWeek', 'units' ]
+     'location', 'fullName', 'instructor', 'final', 'dow', 'daysOfTheWeek', 'units', 'courseTimes' ]
     username = request.form.get('username')
     data = request.form.get('data')
     try:

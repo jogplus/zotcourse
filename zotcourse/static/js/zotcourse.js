@@ -99,11 +99,10 @@ function ParsedCourseTime(timeString) {
 		}
 	}
 
+	// Ensures that minutes is always two digits
 	return {
-		'beginHour': beginHour,
-		'beginMin': beginMin,
-		'endHour': endHour,
-		'endMin': endMin,
+		'start': beginHour + ':' + ("0" + beginMin).slice(-2),
+		'end': endHour + ':' + ("0" + endMin).slice(-2),
 		'days': days
 	}
 }
@@ -157,24 +156,6 @@ function FinalParsedCourseTime(timeString) {
 	}
 }
 
-function CourseTimeStringParser(courseString) {
-	/* 
-	Accepts:
-	
-	"M &nbsp;  6:30- 8:50p<br>Th &nbsp;  9:00-10:50p"
-	MW &nbsp;  6:00- 6:20p 
-	Th &nbsp; 12:30-12:50p 
-	*/
-	var courseTimes = []
-	var splitTimes = courseString.split('<br>');
-	for(var i in splitTimes) {
-		if (splitTimes[i].indexOf('TBA') == -1) {
-			courseTimes.push( ParsedCourseTime(splitTimes[i]) )
-		}
-	}
-	return courseTimes;
-}
-
 function parseRoomString(roomString) {
     // Accepts an html room string (there may or may not be an a tag for any room)
     // Example: <a href="http://www.classrooms.uci.edu/GAC/HH112.html" target="_blank">HH 112</a><br>HH 112
@@ -187,6 +168,31 @@ function parseRoomString(roomString) {
     var info = roomString.match(regex) || [];
 
     return info;
+}
+
+function CourseTimeStringParser(courseString, roomString) {
+	/* 
+	Accepts:
+	
+	"M &nbsp;  6:30- 8:50p<br>Th &nbsp;  9:00-10:50p"
+	MW &nbsp;  6:00- 6:20p 
+	Th &nbsp; 12:30-12:50p 
+	*/
+	var courseTimes = []
+	var splitTimes = courseString.split('<br>');
+	var rooms = parseRoomString(roomString);
+	for(var i in splitTimes) {
+		var room = "TBA";
+		if (i in rooms && rooms[i].length > 0) {
+			room = rooms[i];
+		}
+		if (splitTimes[i].indexOf('TBA') == -1) {
+			var parsedCourse = ParsedCourseTime(splitTimes[i])
+			parsedCourse['room'] = room
+			courseTimes.push(parsedCourse)
+		}
+	}
+	return courseTimes;
 }
 
 function getRandomColorPair() {
@@ -268,6 +274,15 @@ function saveSchedule(username) {
 	var calRawData  = $('#cal').fullCalendar('clientEvents');
 	var calCleanData = []
 	var usedGroupIds = []
+	// Validation
+	if (calRawData.length == 0) {
+		toastr.warning('Must add at least one course.', 'Empty Schedule');
+		return;
+	}
+	if (username == null || username.length < 5) {
+		toastr.warning('Must be at least 5 characters.', 'Schedule Name Too Short');
+		return;
+	}		
 	for (var i in calRawData){
 		// Removes duplicate events based on groupId (which is the course code)
 		// Duplicates are caused by a class occuring on multiple days
@@ -285,20 +300,13 @@ function saveSchedule(username) {
 				final: calRawData[i].final,
 				dow: calRawData[i].daysOfTheWeek,
 				daysOfTheWeek: calRawData[i].daysOfTheWeek,
-				units: calRawData[i].units
+				units: calRawData[i].units,
+				courseTimes: calRawData[i].courseTimes
 			}
 			calCleanData.push(calEventData)
 			usedGroupIds.push(calRawData[i].groupId)
 		}
 	}
-	// Validation
-	if (username == null) {
-		return;
-	}
-	if (username.length < 5) {
-		toastr.warning('Must be at least 5 characters.', 'Schedule Name Too Short');
-		return;
-	}	
 	// Save to server
 	$.ajax({
 		url: "/schedules/add",
@@ -321,7 +329,8 @@ function saveSchedule(username) {
 }
 
 function loadSchedule(username) {
-	if (username == '') {
+	if (username == null || username == '') {
+		toastr.error(username, 'Schedule Not Found');
 		return;
 	}
 	$.ajax({
@@ -329,14 +338,26 @@ function loadSchedule(username) {
 		data: { username: username },
 		success: function(data) {
 			if(data.success) {
+				var scheduleJSON = JSON.parse(data.data)
 				$('#cal').fullCalendar('removeEvents');
 				$('#finals').fullCalendar('removeEvents');
-				$('#cal').fullCalendar('renderEvents', JSON.parse(data.data));
-				var unitData = JSON.parse(data.data);
 				var unitCounter = 0;
-				for (var i = 0; i < unitData.length; i++) {
-					if (unitData[i].units) {
-						unitCounter += parseInt(unitData[i].units);
+				for (var i = 0; i < scheduleJSON.length; i++) {
+					// If a single course has different meeting times (ie. Tu 5:00- 7:50p and Th 5:00- 6:20p)
+					if (scheduleJSON[i].courseTimes) {
+						for (var j = 0; j < scheduleJSON[i].courseTimes.length; j++) {
+							scheduleJSON[i].start = scheduleJSON[i].courseTimes[j].start;
+							scheduleJSON[i].end = scheduleJSON[i].courseTimes[j].end;
+							scheduleJSON[i].dow = scheduleJSON[i].courseTimes[j].days;
+							scheduleJSON[i].location = scheduleJSON[i].courseTimes[j].room;
+							$('#cal').fullCalendar('renderEvent', scheduleJSON[i]);
+						}
+					}
+					else {
+						$('#cal').fullCalendar('renderEvent', scheduleJSON[i]);
+					}
+					if (scheduleJSON[i].units) {
+						unitCounter += parseInt(scheduleJSON[i].units);
 					}
 				}
 				$('#unitCounter').text(unitCounter);
@@ -779,7 +800,7 @@ $(document).ready(function() {
 						endDate.setMinutes(calRawData[i].end.minutes());
 						var rrule = {
 							'freq': 'WEEKLY',
-							// Count is # of weeks in quarter * # of times class occurs in a week
+							// Count is (# of weeks in quarter) * (# of times class occurs in a week)
 							'count': 10*calRawData[i].daysOfTheWeek.length,
 							'byday': daysOfTheWeekToStr(daysOfTheWeek)
 						};
@@ -922,7 +943,8 @@ $(document).ready(function() {
 							fullName: event.fullName,
 							instructor: event.instructor,
 							final: event.final,
-							units: event.units
+							units: event.units,
+							courseTimes: event.courseTimes
 						});
 					}
 				});
@@ -1035,9 +1057,10 @@ $(document).ready(function() {
 
 		$courseRow.on('click', function() {
 			var timeString = $(this).find('td').eq(window.LISTING_TIME_INDEX).html();
+			var roomString = $(this).find('td').eq(window.LISTING_ROOM_INDEX).html();
+			var courseTimes = CourseTimeStringParser(timeString, roomString)
 
 			// Ignore if course is "TBA"
-			var courseTimes = CourseTimeStringParser(timeString)
 			if(courseTimes.length == 0) {
 				toastr.warning('Course is TBA');
 				return;
@@ -1056,34 +1079,30 @@ $(document).ready(function() {
 			var fullCourseName = $(this).prevAll().find('.CourseTitle').last().find('b').html();
 			var classType = $(this).find('td').eq(window.LISTING_TYPE_INDEX).html();
 			var instructor = getInstructorArray($(this).find('td').eq(window.LISTING_INSTRUCTOR_INDEX).html());
-			var roomString = $(this).find('td').eq(window.LISTING_ROOM_INDEX).html();
 			var final = $(this).find('td').eq(window.LISTING_FINAL_INDEX).html();
-			var rooms = parseRoomString(roomString);
 			var units = $(this).find('td').eq(window.LISTING_UNITS_INDEX).html();
+			var colorPair = getRandomColorPair();
 			$('#unitCounter').text(parseInt($('#unitCounter').text())+parseInt(units));
 
 			// Iterate through course times (a course may have different meeting times)
+			var courseID = S4()
 			for(var i in courseTimes) {
 				var parsed = courseTimes[i];
-				var room = "TBA";
-				if (i in rooms && rooms[i].length > 0) {
-					room = rooms[i];
-				}
-				var colorPair = getRandomColorPair();
 				$('#cal').fullCalendar("renderEvent",{
-					id:	S4(),
+					id:	courseID,
 					groupId: courseCode,
-					start: parsed.beginHour + ':' + parsed.beginMin,
-					end: parsed.endHour + ':' + parsed.endMin,
-					title: classType + ' ' + courseName,
+					start: parsed.start,
+					end: parsed.end,
+					title: classType + ' ' + courseName + '\n' + courseCode,
 					dow: parsed.days,
 					color: colorPair.color,
 					daysOfTheWeek: parsed.days,
-					location: room,
+					location: parsed.room,
 					fullName: fullCourseName,
 					instructor: instructor,
 					final: final,
-					units: units
+					units: units,
+					courseTimes: courseTimes
 				});
 			}
 			switchToMainCalendar();
