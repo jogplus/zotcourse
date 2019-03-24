@@ -1,10 +1,14 @@
+# Use of this source code is governed by the MIT license.
+__license__ = "MIT"
+
 from collections import defaultdict
 import itertools
 import sys
 from bs4.element import (
     CharsetMetaAttributeValue,
     ContentMetaAttributeValue,
-    whitespace_re
+    HTMLAwareEntitySubstitution,
+    nonwhitespace_re
     )
 
 __all__ = [
@@ -80,13 +84,16 @@ builder_registry = TreeBuilderRegistry()
 class TreeBuilder(object):
     """Turn a document into a Beautiful Soup object tree."""
 
+    NAME = "[Unknown tree builder]"
+    ALTERNATE_NAMES = []
     features = []
 
     is_xml = False
+    picklable = False
     preserve_whitespace_tags = set()
     empty_element_tags = None # A tag will be considered an empty-element
                               # tag when and only when it has no contents.
-
+    
     # A value for these tag/attribute combinations is a space- or
     # comma-separated list of CDATA, rather than a single CDATA.
     cdata_list_attributes = {}
@@ -95,6 +102,12 @@ class TreeBuilder(object):
     def __init__(self):
         self.soup = None
 
+    def initialize_soup(self, soup):
+        """The BeautifulSoup object has been initialized and is now
+        being associated with the TreeBuilder.
+        """
+        self.soup = soup
+        
     def reset(self):
         pass
 
@@ -118,7 +131,7 @@ class TreeBuilder(object):
         if self.empty_element_tags is None:
             return True
         return tag_name in self.empty_element_tags
-
+        
     def feed(self, markup):
         raise NotImplementedError()
 
@@ -160,7 +173,7 @@ class TreeBuilder(object):
                     # values. Split it into a list.
                     value = attrs[attr]
                     if isinstance(value, basestring):
-                        values = whitespace_re.split(value)
+                        values = nonwhitespace_re.findall(value)
                     else:
                         # html5lib sometimes calls setAttributes twice
                         # for the same tag when rearranging the parse
@@ -224,10 +237,21 @@ class HTMLTreeBuilder(TreeBuilder):
     Such as which tags are empty-element tags.
     """
 
-    preserve_whitespace_tags = set(['pre', 'textarea'])
-    empty_element_tags = set(['br' , 'hr', 'input', 'img', 'meta',
-                              'spacer', 'link', 'frame', 'base'])
+    preserve_whitespace_tags = HTMLAwareEntitySubstitution.preserve_whitespace_tags
+    empty_element_tags = set([
+        # These are from HTML5.
+        'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'keygen', 'link', 'menuitem', 'meta', 'param', 'source', 'track', 'wbr',
+        
+        # These are from earlier versions of HTML and are removed in HTML5.
+        'basefont', 'bgsound', 'command', 'frame', 'image', 'isindex', 'nextid', 'spacer'
+    ])
 
+    # The HTML standard defines these as block-level elements. Beautiful
+    # Soup does not treat these elements differently from other elements,
+    # but it may do so eventually, and this information is available if
+    # you need to use it.
+    block_elements = set(["address", "article", "aside", "blockquote", "canvas", "dd", "div", "dl", "dt", "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header", "hr", "li", "main", "nav", "noscript", "ol", "output", "p", "pre", "section", "table", "tfoot", "ul", "video"])
+    
     # The HTML standard defines these attributes as containing a
     # space-separated list of values, not a single value. That is,
     # class="foo bar" means that the 'class' attribute has two values,

@@ -1093,7 +1093,7 @@ $(document).ready(function() {
 					groupId: courseCode,
 					start: parsed.start,
 					end: parsed.end,
-					title: classType + ' ' + courseName + '\n' + courseCode,
+					title: classType + ' ' + courseName,
 					dow: parsed.days,
 					color: colorPair.color,
 					daysOfTheWeek: parsed.days,

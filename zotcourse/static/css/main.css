@@ -14,6 +14,10 @@ a {
 	color: #007bff;
 }
 
+th {
+	font-weight: normal;
+}
+
 #left {
 	width: 50%;
 	float: left;
@@ -226,14 +230,4 @@ a {
 .btn-link:disabled, .btn-link.disabled {
 	color: #333 !important;
 	opacity: 1 !important;
-}
-
-.fc-time > span {
-	font-size: 90%;
-}
-
-.fc-title {
-	font-size: 85%;
-	font-weight: bold;
-	text-align: center;
 }

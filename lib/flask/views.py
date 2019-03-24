@@ -5,9 +5,10 @@
 
     This module provides class-based views inspired by the ones in Django.
 
-    :copyright: (c) 2011 by Armin Ronacher.
+    :copyright: © 2010 by the Pallets team.
     :license: BSD, see LICENSE for more details.
 """
+
 from .globals import request
 from ._compat import with_metaclass
 
@@ -48,8 +49,11 @@ class View(object):
     generated view function!
     """
 
-    #: A for which methods this pluggable view can handle.
+    #: A list of methods this view can handle.
     methods = None
+
+    #: Setting this disables or force-enables the automatic options handling.
+    provide_automatic_options = None
 
     #: The canonical way to decorate class-based views is to decorate the
     #: return value of as_view().  However since this moves parts of the
@@ -60,7 +64,7 @@ class View(object):
     #: view function is created the result is automatically decorated.
     #:
     #: .. versionadded:: 0.8
-    decorators = []
+    decorators = ()
 
     def dispatch_request(self):
         """Subclasses have to override this method to implement the
@@ -89,7 +93,7 @@ class View(object):
             for decorator in cls.decorators:
                 view = decorator(view)
 
-        # we attach the view class to the view function for two reasons:
+        # We attach the view class to the view function for two reasons:
         # first of all it allows us to easily figure out what class-based
         # view this thing came from, secondly it's also used for instantiating
         # the view class so you can actually replace it with something else
@@ -99,37 +103,39 @@ class View(object):
         view.__doc__ = cls.__doc__
         view.__module__ = cls.__module__
         view.methods = cls.methods
+        view.provide_automatic_options = cls.provide_automatic_options
         return view
 
 
 class MethodViewType(type):
+    """Metaclass for :class:`MethodView` that determines what methods the view
+    defines.
+    """
 
-    def __new__(cls, name, bases, d):
-        rv = type.__new__(cls, name, bases, d)
+    def __init__(cls, name, bases, d):
+        super(MethodViewType, cls).__init__(name, bases, d)
+
         if 'methods' not in d:
-            methods = set(rv.methods or [])
-            for key in d:
-                if key in http_method_funcs:
+            methods = set()
+
+            for key in http_method_funcs:
+                if hasattr(cls, key):
                     methods.add(key.upper())
-            # if we have no method at all in there we don't want to
-            # add a method list.  (This is for instance the case for
-            # the baseclass or another subclass of a base method view
-            # that does not introduce new methods).
+
+            # If we have no method at all in there we don't want to add a
+            # method list. This is for instance the case for the base class
+            # or another subclass of a base method view that does not introduce
+            # new methods.
             if methods:
-                rv.methods = sorted(methods)
-        return rv
+                cls.methods = methods
 
 
 class MethodView(with_metaclass(MethodViewType, View)):
-    """Like a regular class-based view but that dispatches requests to
-    particular methods.  For instance if you implement a method called
-    :meth:`get` it means you will response to ``'GET'`` requests and
-    the :meth:`dispatch_request` implementation will automatically
-    forward your request to that.  Also :attr:`options` is set for you
-    automatically::
+    """A class-based view that dispatches request methods to the corresponding
+    class methods. For example, if you implement a ``get`` method, it will be
+    used to handle ``GET`` requests. ::
 
         class CounterAPI(MethodView):
-
             def get(self):
                 return session.get('counter', 0)
 
@@ -139,11 +145,14 @@ class MethodView(with_metaclass(MethodViewType, View)):
 
         app.add_url_rule('/counter', view_func=CounterAPI.as_view('counter'))
     """
+
     def dispatch_request(self, *args, **kwargs):
         meth = getattr(self, request.method.lower(), None)
-        # if the request method is HEAD and we don't have a handler for it
-        # retry with GET
+
+        # If the request method is HEAD and we don't have a handler for it
+        # retry with GET.
         if meth is None and request.method == 'HEAD':
             meth = getattr(self, 'get', None)
+
         assert meth is not None, 'Unimplemented method %r' % request.method
         return meth(*args, **kwargs)

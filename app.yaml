@@ -3,11 +3,6 @@ api_version: 1
 threadsafe: true
 
 handlers:
-- url: /robots.txt
-  static_files: zotcourse/static/robots.txt
-  upload: zotcourse/static/robots.txt
-  secure: always
-
 - url: /static
   static_dir: zotcourse/static
   secure: always
@@ -21,6 +16,9 @@ libraries:
   version: latest
 
 - name: lxml
+  version: latest
+
+- name: ssl
   version: latest
 
 env_variables:
