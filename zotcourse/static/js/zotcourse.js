@@ -838,7 +838,7 @@ $(document).ready(function() {
 		html: true,
 		title: "Add a Custom Event",
 		content:'<div>\
-					<input id="event-name" type="text" placeholder="Name" class="form-control form-control-lg">\
+					<input id="event-name" type="text" placeholder="Event Name" class="form-control form-control-lg">\
 					<div style="display: flex; justify-content: space-between; width:100%">\
 					<select id="event-start" class="time custom-select">\
 					<option value="07:00">7:00am</option>\
