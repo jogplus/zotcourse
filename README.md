@@ -1,4 +1,4 @@
-# Zotcourse
+# Zotcourse - Schedule Planner for UCI
 
 by Tristan Jogminas
 
@@ -22,6 +22,7 @@ Please feel free to make a PR and contribute!
 <li>Toastr notifications after saving/loading schedule.</li>
 <li>Better print formatting. (Calendar fits entirely on one page!)</li>
 <li>View your finals' schedule</li>
+<li>Create a custom event</li>
 <li>View all your courses' info using the List button</li>
 <li>Enrolled unit counter</li>
 <li>Complete redesign of search</li>
@@ -30,7 +31,7 @@ Please feel free to make a PR and contribute!
 ## How to run locally for testing
 
 1. Create a new Google Cloud Platform project and App Engine application using the GCP Console
-2. Download and install the [Cloud SDK](https://cloud.google.com/appengine/docs/standard/python/download)
+2. Download and install the [Cloud SDK](https://cloud.google.com/appengine/docs/standard/python/download) (Make sure it is added to your PATH)
 3. Run the following command to install the gcloud component that includes the App Engine extension for Python:
     ```
     gcloud components install app-engine-python
@@ -44,7 +45,13 @@ Please feel free to make a PR and contribute!
     ```
     dev_appserver.py app.yaml
     ```
-7. For information on how to setup debugging with Flask in Visual Studio Code, refer to [here](https://code.visualstudio.com/docs/python/tutorial-flask).
+7. If you are using Windows and are having problems starting the server, try replacing `'lxml'` with `'html.parser'` in `zotcourse/websoc.py`
+8. If you are looking to see how this project works, the main files of interest are:
+    ```
+    zotcourse/static/js/zotcourse.js
+    zotcourse/views.py
+    zotcourse/websoc.py
+    ```
 
 ## License
 

@@ -1,27 +1,10 @@
 var today = new Date();
+var monthToInt = {'Jan':0,'Feb':1,'Mar':2,'Apr':3,'May':4,'Jun':5,'Jul':6,'Aug':7,'Sep':8,'Oct':9,'Nov':10,'Dec':11}
+var weekDayToString = {'1': 'MO','2': 'TU','3': 'WE','4': 'TH','5': 'FR'}
 
-var monthToInt = {
-	'Jan':0,
-	'Feb':1,
-	'Mar':2,
-	'Apr':3,
-	'May':4,
-	'Jun':5,
-	'Jul':6,
-	'Aug':7,
-	'Sep':8,
-	'Oct':9,
-	'Nov':10,
-	'Dec':11,
-}
-
-var weekDayToString = {
-	'1': 'MO',
-	'2': 'TU',
-	'3': 'WE',
-	'4': 'TH',
-	'5': 'FR',
-}
+var COURSE_EVENT_TYPE = 0
+var CUSTOM_EVENT_TYPE = 1
+var ANTPLANNER_EVENT_TYPE = 2
 
 window.APP_YEAR  = today.getFullYear();
 window.APP_MONTH = today.getMonth();
@@ -301,7 +284,8 @@ function saveSchedule(username) {
 				dow: calRawData[i].daysOfTheWeek,
 				daysOfTheWeek: calRawData[i].daysOfTheWeek,
 				units: calRawData[i].units,
-				courseTimes: calRawData[i].courseTimes
+				courseTimes: calRawData[i].courseTimes,
+				eventType: calRawData[i].eventType,
 			}
 			calCleanData.push(calEventData)
 			usedGroupIds.push(calRawData[i].groupId)
@@ -388,6 +372,7 @@ function loadAPSchedule(username) {
 					var courseCodeSplit = data.data[i]['title'].split('<br>')[0];
 					var locationSplit = courseCodeSplit.split(' at ');
 					data.data[i]['location'] = locationSplit[1];
+					data.data[i]['eventType'] = ANTPLANNER_EVENT_TYPE;
 					data.data[i]['title'] = locationSplit[0].replace('&amp;', '&');
 				}
 				$('#cal').fullCalendar('renderEvents',data.data);
@@ -465,13 +450,14 @@ $(document).ready(function() {
 	$('#whatsnew').popover({
 		html: true,
 		title: "What's New! 🎉",
-		content:'<ul style="list-style-type:disc; margin-left:15px; margin-bottom:2px">\
+		content:'<ul style="list-style-type:disc;">\
 				<li>Click on a calendar event for more course info</li>\
 				<li>Change course event color</li>\
 				<li>RateMyProfessor links</li>\
 				<li>View your finals\' schedule</li>\
 				<li>View all your courses\' info using the List button</li>\
-				<li>Enrolled unit counter (for new schedules)</li>\
+				<li>Create a custom event</li>\
+				<li>Enrolled unit counter</li>\
 				<li>Import schedule from Antplanner</li> \
 				<li>Resizable panes</li>\
 				</ul>\
@@ -691,7 +677,8 @@ $(document).ready(function() {
 			var usedGroupIds = []
 			for (var i in calRawData) {
 				// Checks to make sure that finals attribute is not empty, TBA, or from import
-				if ($.trim(calRawData[i].final.replace(/&nbsp;/g, '')) != '' &&
+				if (calRawData[i].eventType == COURSE_EVENT_TYPE &&
+					$.trim(calRawData[i].final.replace(/&nbsp;/g, '')) != '' &&
 					$.trim(calRawData[i].final.replace(/&nbsp;/g, '')) != 'TBA' &&
 					$.trim(calRawData[i].final.replace(/&nbsp;/g, '')) != 'N/A (due to import)' &&
 					!(usedGroupIds.indexOf(calRawData[i].groupId) >= 0)) {
@@ -725,7 +712,9 @@ $(document).ready(function() {
 		var calRawData  = $('#cal').fullCalendar('clientEvents');
 		var added = [];
 		for (var i in calRawData) {
-			if (added.indexOf(calRawData[i].groupId) == -1) {
+			// If valid eventType and not already added
+			if ([COURSE_EVENT_TYPE, ANTPLANNER_EVENT_TYPE].includes(calRawData[i].eventType) &&
+			 	added.indexOf(calRawData[i].groupId) == -1) {
 				courseCodes += calRawData[i].groupId + ',';
 				added.push(calRawData[i].groupId);
 			}
@@ -763,19 +752,23 @@ $(document).ready(function() {
 			// Year is extracted from most recent term in Schedule of Classes search
 			var year = parseInt($('#list-btn').attr('data-term').substring(0,4));
 			var firstMonday;
-			var cleanFinal;	
 			for (var i in calRawData) {
 				// Prevents courses with no final or imported from Antplanner from being parsed
-				cleanFinal = calRawData[i].final.replace(/&nbsp;/g, '').trim();
-				if (cleanFinal != '' && 
-					cleanFinal != 'N/A (due to import)' &&
-					cleanFinal != 'TBA') {
+				if (calRawData[i].eventType == COURSE_EVENT_TYPE &&
+					calRawData[i].final.replace(/&nbsp;/g, '').trim() != '' && 
+					calRawData[i].final != 'N/A (due to import)' &&
+					calRawData[i].final != 'TBA') {
 					// At least one class with a final is necessary since the final is the
 					// only way to determine when the first week of class is
-					var finalParsed = FinalParsedCourseTime(cleanFinal);
+					var finalParsed = FinalParsedCourseTime(calRawData[i].final);
 					firstMonday = new Date(year, monthToInt[finalParsed.month], finalParsed.day, finalParsed.beginHour);
 					// Gets the Monday AFTER finals week is over
-					firstMonday.setDate(firstMonday.getDate() + (1 + 7 - firstMonday.getDay()) % 7)
+					// If Sat,Sun,Mon (6,0,1) add 7 to get Monday AFTER finals week
+					var shift = (1 + 7 - firstMonday.getDay()) % 7;
+					if ([6,0,1].includes(firstMonday.getDay())) {
+						shift += 7;
+					}
+					firstMonday.setDate(firstMonday.getDate() + shift)
 					// Move backwards 10 weeks during quarter + 1 week of finals = 77 days
 					firstMonday.setDate(firstMonday.getDate()-77);
 					break;
@@ -788,7 +781,6 @@ $(document).ready(function() {
 					if (added.indexOf(calRawData[i].groupId) == -1) {
 						var startDate = new Date(firstMonday);
 						var daysOfTheWeek = calRawData[i].daysOfTheWeek.sort();
-						cleanFinal = calRawData[i].final.replace(/&nbsp;/g, '').trim();
 						// Add the number of days until first meeting starting from Monday (0)
 						// Only the first meeting of the week is needed since byday handles repeats
 						// daysOfTheWeek - 1 because Monday has an index of 1 instead if 0
@@ -805,15 +797,22 @@ $(document).ready(function() {
 							'byday': daysOfTheWeekToStr(daysOfTheWeek)
 						};
 						// Use \\n instead of \n due to ics.js issue #26 
-						cal.addEvent(calRawData[i].title, 
-							'Course Title: '+calRawData[i].fullName+
-							'\\nInstructor: '+calRawData[i].instructor+
-							'\\nCode: '+calRawData[i].groupId+
-							'\\nFinal: '+calRawData[i].final,
-							calRawData[i].location, startDate, endDate, rrule);
-						if (cleanFinal != '' && 
-							cleanFinal != 'N/A (due to import)' &&
-							cleanFinal != 'TBA') {
+						if (calRawData[i].eventType == CUSTOM_EVENT_TYPE) {
+							// No location or description for custom events
+							cal.addEvent(calRawData[i].title, '', '', startDate, endDate, rrule);
+						}
+						else {
+							cal.addEvent(calRawData[i].title, 
+								'Course Title: '+calRawData[i].fullName+
+								'\\nInstructor: '+calRawData[i].instructor+
+								'\\nCode: '+calRawData[i].groupId+
+								'\\nFinal: '+calRawData[i].final,
+								calRawData[i].location, startDate, endDate, rrule);
+						}
+						if (calRawData[i].eventType == COURSE_EVENT_TYPE &&
+							calRawData[i].final.replace(/&nbsp;/g, '').trim() != '' && 
+							calRawData[i].final != 'N/A (due to import)' &&
+							calRawData[i].final != 'TBA') {
 							var finalTime = FinalParsedCourseTime(calRawData[i].final);
 							var startTime = new Date(year, monthToInt[finalTime.month], finalTime.day, finalTime.beginHour, finalTime.beginMin);
 							var endTime = new Date(year, monthToInt[finalTime.month], finalTime.day, finalTime.endHour, finalTime.endMin);
@@ -831,6 +830,130 @@ $(document).ready(function() {
 			}
 			else {
 				toastr.warning('Must have at least 1 course with a final added.', 'Cannot Export Courses');
+			}
+		});
+	});
+
+	$('#event-btn').popover({
+		html: true,
+		title: "Add a Custom Event",
+		content:'<div>\
+					<input id="event-name" type="text" placeholder="Name" class="form-control form-control-lg">\
+					<div style="display: flex; justify-content: space-between; width:100%">\
+					<select id="event-start" class="time custom-select">\
+					<option value="07:00">7:00am</option>\
+					<option value="07:30">7:30am</option>\
+					<option value="08:00">8:00am</option>\
+					<option value="08:30">8:30am</option>\
+					<option value="09:00">9:00am</option>\
+					<option value="09:30">9:30am</option>\
+					<option value="10:00">10:00am</option>\
+					<option value="10:30">10:30am</option>\
+					<option value="11:00">11:00am</option>\
+					<option value="11:30">11:30am</option>\
+					<option value="12:00" selected>12:00pm</option>\
+					<option value="12:30">12:30pm</option>\
+					<option value="13:00">1:00pm</option>\
+					<option value="13:30">1:30pm</option>\
+					<option value="14:00">2:00pm</option>\
+					<option value="14:30">2:30pm</option>\
+					<option value="15:00">3:00pm</option>\
+					<option value="15:30">3:30pm</option>\
+					<option value="16:00">4:00pm</option>\
+					<option value="16:30">4:30pm</option>\
+					<option value="17:00">5:00pm</option>\
+					<option value="17:30">5:30pm</option>\
+					<option value="18:00">6:00pm</option>\
+					<option value="18:30">6:30pm</option>\
+					<option value="19:00">7:00pm</option>\
+					<option value="19:30">7:30pm</option>\
+					<option value="20:00">8:00pm</option>\
+					<option value="20:30">8:30pm</option>\
+					<option value="21:00">9:00pm</option>\
+					<option value="21:30">9:30pm</option>\
+					</select>\
+					<span style="padding-top: 10px; margin-left:10px; margin-right:10px">to</span>\
+					<select id="event-end" class="time custom-select">\
+					<option value="07:30">7:30am</option>\
+					<option value="08:00">8:00am</option>\
+					<option value="08:30">8:30am</option>\
+					<option value="09:00">9:00am</option>\
+					<option value="09:30">9:30am</option>\
+					<option value="10:00">10:00am</option>\
+					<option value="10:30">10:30am</option>\
+					<option value="11:00">11:00am</option>\
+					<option value="11:30">11:30am</option>\
+					<option value="12:00">12:00pm</option>\
+					<option value="12:30">12:30pm</option>\
+					<option value="13:00" selected>1:00pm</option>\
+					<option value="13:30">1:30pm</option>\
+					<option value="14:00">2:00pm</option>\
+					<option value="14:30">2:30pm</option>\
+					<option value="15:00">3:00pm</option>\
+					<option value="15:30">3:30pm</option>\
+					<option value="16:00">4:00pm</option>\
+					<option value="16:30">4:30pm</option>\
+					<option value="17:00">5:00pm</option>\
+					<option value="17:30">5:30pm</option>\
+					<option value="18:00">6:00pm</option>\
+					<option value="18:30">6:30pm</option>\
+					<option value="19:00">7:00pm</option>\
+					<option value="19:30">7:30pm</option>\
+					<option value="20:00">8:00pm</option>\
+					<option value="20:30">8:30pm</option>\
+					<option value="21:00">9:00pm</option>\
+					<option value="21:30">9:30pm</option>\
+					<option value="22:00">10:00pm</option>\
+					</select>\
+					</div>\
+					<div style="display: flex; justify-content: space-between; width:100%; margin-top: 10px" class="weekDays-selector">\
+					<input type="checkbox" name="weekday-check" data="1" id="weekday-mon" class="weekday" />\
+					<label for="weekday-mon">M</label>\
+					<input type="checkbox" name="weekday-check" data="2" id="weekday-tue" class="weekday" />\
+					<label for="weekday-tue">T</label>\
+					<input type="checkbox" name="weekday-check" data="3" id="weekday-wed" class="weekday" />\
+					<label for="weekday-wed">W</label>\
+					<input type="checkbox" name="weekday-check" data="4" id="weekday-thu" class="weekday" />\
+					<label for="weekday-thu">T</label>\
+					<input type="checkbox" name="weekday-check" data="5" id="weekday-fri" class="weekday" />\
+					<label for="weekday-fri">F</label>\
+					</div>\
+					<div style="display: flex;  justify-content: center;"><button id="event-button" class="btn btn-primary" type="button">Add Event</button></div>\
+				</div>',
+		placement: 'bottom',
+		container: 'body',
+		boundary: 'window',
+	});
+	$('#event-btn').on('shown.bs.popover', function () {
+		$('#event-button').click(function() {
+			var days = $('input[name=weekday-check]:checked');
+			weekDays = []
+			for (var i = 0; i < days.length; i++) {
+				weekDays.push(parseInt($(days[i]).attr("data")))
+			}
+			if ($("#event-name").val().length <= 0 || $("#event-name").val().length > 25) {
+				toastr.warning('Name must be between 1 and 25 characters.', 'Event Name');
+			}
+			else if ($("#event-start").val() >= $("#event-end").val()) {
+				toastr.warning('Start time must come before end time.', 'Event Time');
+			}
+			else if (weekDays.length == 0) {
+				toastr.warning('Must have at least 1 weekday selected.', 'Event Weekday');
+			}
+			else {
+				$('#cal').fullCalendar("renderEvent",{
+					id:	S4(),
+					groupId: S4(),
+					start: $("#event-start").val(),
+					end: $("#event-end").val(),
+					title: $("#event-name").val(),
+					dow: weekDays,
+					color: getRandomColorPair().color,
+					daysOfTheWeek: weekDays,
+					fullName: $("#event-name").val(),
+					eventType: CUSTOM_EVENT_TYPE
+				});
+				switchToMainCalendar();
 			}
 		});
 	});
@@ -874,41 +997,60 @@ $(document).ready(function() {
 			$('.popover').each(function () {
 				$(this).popover('hide');
 			});
-			element.popover({
-				html:true,
-				title: (event.fullName) ? event.fullName : '',
-				content:'<table style="width:100%; margin-bottom:3%">\
-						<tr>\
-							<td>Code</td>\
-							<td></td>\
-							<td align="right">'+event.groupId+'</td>\
-						</tr>\
-						<tr>\
-							<td>Location</td>\
-							<td></td>\
-							<td align="right">'+((event.location) ? event.location : '')+'</td>\
-						</tr>\
-						<tr>\
-							<td>Instructor</td>\
-							<td>&nbsp;&nbsp;</td>\
-							<td align="right">'+((event.instructor) ? createInstructorLinks(event.instructor) : 'N/A')+'</td>\
-						</tr>\
-						<tr>\
-							<td>Final</td>\
-							<td></td>\
-							<td align="right">'+ ((event.final !== '&nbsp;' ) ? ((event.final) ? event.final : 'N/A') : 'See Lecture')+'</td>\
-						</tr>\
-						<tr>\
-							<td>Color</td>\
-							<td></td>\
-							<td align="right"><input id="colorpicker-'+colorpickerId+'" type="text"/></td>\
-						</tr>\
-						</table>\
-						<button style="width:100%" class="btn btn-sm btn-outline-primary delete-event">Remove <i class="fas fa-trash-alt"></i></button>',
-				trigger:'focus',
-				placement:'right',
-				container:'body',
-			});
+			if (event.eventType == CUSTOM_EVENT_TYPE) {
+				element.popover({
+					html:true,
+					title: (event.fullName) ? event.fullName : '',
+					content:'<table style="width:100%; margin-bottom:3%">\
+							<tr>\
+								<td>Color</td>\
+								<td></td>\
+								<td align="right"><input id="colorpicker-'+colorpickerId+'" type="text"/></td>\
+							</tr>\
+							</table>\
+							<button style="width:100%" class="btn btn-sm btn-outline-primary delete-event">Remove <i class="fas fa-trash-alt"></i></button>',
+					trigger:'focus',
+					placement:'right',
+					container:'body',
+				});
+			}
+			else {
+				element.popover({
+					html:true,
+					title: (event.fullName) ? event.fullName : '',
+					content:'<table style="width:100%; margin-bottom:3%">\
+							<tr>\
+								<td>Code</td>\
+								<td></td>\
+								<td align="right">'+event.groupId+'</td>\
+							</tr>\
+							<tr>\
+								<td>Location</td>\
+								<td></td>\
+								<td align="right">'+((event.location) ? event.location : '')+'</td>\
+							</tr>\
+							<tr>\
+								<td>Instructor</td>\
+								<td>&nbsp;&nbsp;</td>\
+								<td align="right">'+((event.instructor) ? createInstructorLinks(event.instructor) : 'N/A')+'</td>\
+							</tr>\
+							<tr>\
+								<td>Final</td>\
+								<td></td>\
+								<td align="right">'+ ((event.final !== '&nbsp;' ) ? ((event.final) ? event.final : 'N/A') : 'See Lecture')+'</td>\
+							</tr>\
+							<tr>\
+								<td>Color</td>\
+								<td></td>\
+								<td align="right"><input id="colorpicker-'+colorpickerId+'" type="text"/></td>\
+							</tr>\
+							</table>\
+							<button style="width:100%" class="btn btn-sm btn-outline-primary delete-event">Remove <i class="fas fa-trash-alt"></i></button>',
+					trigger:'focus',
+					placement:'right',
+					container:'body',
+				});
+			}
 			element.on('inserted.bs.popover', function() {
 				$('#colorpicker-'+colorpickerId).spectrum({
 					color: event.color,
@@ -944,7 +1086,8 @@ $(document).ready(function() {
 							instructor: event.instructor,
 							final: event.final,
 							units: event.units,
-							courseTimes: event.courseTimes
+							courseTimes: event.courseTimes,
+							eventType: event.eventType
 						});
 					}
 				});
@@ -1102,7 +1245,8 @@ $(document).ready(function() {
 					instructor: instructor,
 					final: final,
 					units: units,
-					courseTimes: courseTimes
+					courseTimes: courseTimes,
+					eventType: COURSE_EVENT_TYPE
 				});
 			}
 			switchToMainCalendar();

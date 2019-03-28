@@ -18,6 +18,10 @@ th {
 	font-weight: normal;
 }
 
+ul {
+	padding-inline-start: 20px;
+}
+
 #left {
 	width: 50%;
 	float: left;
@@ -74,6 +78,10 @@ th {
 	display: none;
 	position: relative;
 	overflow: hidden;
+}
+
+#event-name {
+	margin-bottom: 10px;
 }
 
 @media print {
@@ -230,4 +238,30 @@ th {
 .btn-link:disabled, .btn-link.disabled {
 	color: #333 !important;
 	opacity: 1 !important;
+}
+
+.time {
+	width: 40%;
+	height: 50%
+}
+
+.weekDays-selector input {
+  display: none!important;
+}
+
+.weekDays-selector input[type=checkbox] + label {
+  display: inline-block;
+  border-radius: .25rem;
+  background: #e9ecef;
+  height: 30px;
+  width: 30px;
+  margin-right: 3px;
+  line-height: 30px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.weekDays-selector input[type=checkbox]:checked + label {
+  background: #007bff;
+  color: #ffffff;
 }

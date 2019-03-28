@@ -9,7 +9,10 @@ from os import environ as env
 LOG = logging.getLogger(__name__)
 dev_mode = env.get('SERVER_SOFTWARE', '').startswith('Development')
 use_memcache = env['USE_MEMCACHE'].lower() == 'true'
-
+# If new event attribute is added, it must be added here as well
+valid_params = ['id', 'groupId', 'title', 'start', 'end',\
+                'color','location', 'fullName', 'instructor', 'final',\
+                'dow', 'daysOfTheWeek', 'units', 'courseTimes', 'eventType' ]
 
 @app.route('/')
 def index():
@@ -44,26 +47,28 @@ def websoc_search():
     if not listing_html:
         listing_html = websoc.get_listing(request.query_string)
         if use_memcache:
-            memcache.add(key, listing_html, 60 * 60 * 24)
+            memcache.add(key, listing_html, 60 * 60)
     return render_template('websoc/listing.html', listing=listing_html)
 
 
 @app.route('/schedules/add', methods=['POST'])
 def save_schedule():
-    valid_params = ['id', 'groupId', 'title', 'start', 'end', 'color',\
-     'location', 'fullName', 'instructor', 'final', 'dow', 'daysOfTheWeek', 'units', 'courseTimes' ]
     username = request.form.get('username')
     data = request.form.get('data')
     try:
-        #Hot fix to prevent XSS vulnerability from fullcalendar event generation
-        #If there is an attribute called "url", it will execute it
         parsed_data = ast.literal_eval(data)
         for c in parsed_data:
+            # Ensures that no extra parameters are being added
             if filter(lambda p: p in valid_params, c) != c.keys():
                 raise AttributeError
+            # Ensures that each value is not too large
+            for v in c.values():
+                if len(str(v)) > 500:
+                    raise ValueError
         Schedule(key_name=username, data=data).put()
         return jsonify(success=True)
-    except:
+    except Exception as e:
+        LOG.error(e)
         return jsonify(success=False)
 
 
