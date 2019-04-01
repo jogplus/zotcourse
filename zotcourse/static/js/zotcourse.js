@@ -713,7 +713,7 @@ $(document).ready(function() {
 		var added = [];
 		for (var i in calRawData) {
 			// If valid eventType and not already added
-			if ([COURSE_EVENT_TYPE, ANTPLANNER_EVENT_TYPE].includes(calRawData[i].eventType) &&
+			if (calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
 			 	added.indexOf(calRawData[i].groupId) == -1) {
 				courseCodes += calRawData[i].groupId + ',';
 				added.push(calRawData[i].groupId);
