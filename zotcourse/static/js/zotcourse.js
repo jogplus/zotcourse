@@ -677,7 +677,7 @@ $(document).ready(function() {
 			var usedGroupIds = []
 			for (var i in calRawData) {
 				// Checks to make sure that finals attribute is not empty, TBA, or from import
-				if (calRawData[i].eventType == COURSE_EVENT_TYPE &&
+				if (calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
 					$.trim(calRawData[i].final.replace(/&nbsp;/g, '')) != '' &&
 					$.trim(calRawData[i].final.replace(/&nbsp;/g, '')) != 'TBA' &&
 					$.trim(calRawData[i].final.replace(/&nbsp;/g, '')) != 'N/A (due to import)' &&
