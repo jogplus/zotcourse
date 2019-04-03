@@ -265,3 +265,22 @@ ul {
   background: #007bff;
   color: #ffffff;
 }
+
+/* @media screen and (max-width: 800px) {
+	.fc-title{
+		font-size: .5em !important;
+	}
+	
+	.fc-time > span {
+		font-size: .5em !important;
+	}
+
+	.fc-axis > span {
+		font-size: .85em !important;
+	}
+
+	.popover {
+		max-width: 5em !important;
+		max-height: 5em !important;
+	}
+} */

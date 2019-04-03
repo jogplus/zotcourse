@@ -754,7 +754,7 @@ $(document).ready(function() {
 			var firstMonday;
 			for (var i in calRawData) {
 				// Prevents courses with no final or imported from Antplanner from being parsed
-				if (calRawData[i].eventType == COURSE_EVENT_TYPE &&
+				if (calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
 					calRawData[i].final.replace(/&nbsp;/g, '').trim() != '' && 
 					calRawData[i].final != 'N/A (due to import)' &&
 					calRawData[i].final != 'TBA') {
@@ -809,7 +809,7 @@ $(document).ready(function() {
 								'\\nFinal: '+calRawData[i].final,
 								calRawData[i].location, startDate, endDate, rrule);
 						}
-						if (calRawData[i].eventType == COURSE_EVENT_TYPE &&
+						if (calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
 							calRawData[i].final.replace(/&nbsp;/g, '').trim() != '' && 
 							calRawData[i].final != 'N/A (due to import)' &&
 							calRawData[i].final != 'TBA') {
