@@ -1071,24 +1071,27 @@ $(document).ready(function() {
 						$('#colorpicker-'+colorpickerId).hide();
 						// Must remove and rerender the event manually since updateEvent is not working
 						$('#cal').fullCalendar('removeEvents', event._id);
-						$('#cal').fullCalendar('renderEvent', {
-							_id: event._id,
-							id:	event.id,
-							groupId: event.groupId,
-							start: event.start.format('HH:mm'),
-							end: event.end.format('HH:mm'),
-							title: event.title,
-							dow: event.daysOfTheWeek,
-							color: color.toHexString(),
-							daysOfTheWeek: event.daysOfTheWeek,
-							location: event.location,
-							fullName: event.fullName,
-							instructor: event.instructor,
-							final: event.final,
-							units: event.units,
-							courseTimes: event.courseTimes,
-							eventType: event.eventType
-						});
+						for(var i in event.courseTimes) {
+							var parsed = event.courseTimes[i];
+							$('#cal').fullCalendar('renderEvent', {
+								_id: event._id,
+								id:	event.id,
+								groupId: event.groupId,
+								start: parsed.start,
+								end: parsed.end,
+								title: event.title,
+								dow: parsed.days,
+								color: color.toHexString(),
+								daysOfTheWeek: parsed.days,
+								location: parsed.room,
+								fullName: event.fullName,
+								instructor: event.instructor,
+								final: event.final,
+								units: event.units,
+								courseTimes: event.courseTimes,
+								eventType: event.eventType
+							});
+						}
 					}
 				});
 			});
