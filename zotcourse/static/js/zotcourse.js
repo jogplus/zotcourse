@@ -941,6 +941,11 @@ $(document).ready(function() {
 				toastr.warning('Must have at least 1 weekday selected.', 'Event Weekday');
 			}
 			else {
+				var courseTime = [{
+					start: $("#event-start").val(),
+					end: $("#event-end").val(),
+					days: weekDays
+				}];
 				$('#cal').fullCalendar("renderEvent",{
 					id:	S4(),
 					groupId: S4(),
@@ -951,7 +956,8 @@ $(document).ready(function() {
 					color: getRandomColorPair().color,
 					daysOfTheWeek: weekDays,
 					fullName: $("#event-name").val(),
-					eventType: CUSTOM_EVENT_TYPE
+					eventType: CUSTOM_EVENT_TYPE,
+					courseTimes: courseTime
 				});
 				switchToMainCalendar();
 			}
