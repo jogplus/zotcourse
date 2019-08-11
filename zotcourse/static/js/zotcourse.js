@@ -756,8 +756,8 @@ $(document).ready(function() {
 				// Prevents courses with no final or imported from Antplanner from being parsed
 				if (calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
 					calRawData[i].final.replace(/&nbsp;/g, '').trim() != '' && 
-					calRawData[i].final != 'N/A (due to import)' &&
-					calRawData[i].final != 'TBA') {
+					calRawData[i].final.replace(/&nbsp;/g, '') != 'N/A (due to import)' &&
+					calRawData[i].final.replace(/&nbsp;/g, '').trim() != 'TBA') {
 					// At least one class with a final is necessary since the final is the
 					// only way to determine when the first week of class is
 					var finalParsed = FinalParsedCourseTime(calRawData[i].final);
@@ -811,8 +811,8 @@ $(document).ready(function() {
 						}
 						if (calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
 							calRawData[i].final.replace(/&nbsp;/g, '').trim() != '' && 
-							calRawData[i].final != 'N/A (due to import)' &&
-							calRawData[i].final != 'TBA') {
+							calRawData[i].final.replace(/&nbsp;/g, '') != 'N/A (due to import)' &&
+							calRawData[i].final.replace(/&nbsp;/g, '').trim() != 'TBA') {
 							var finalTime = FinalParsedCourseTime(calRawData[i].final);
 							var startTime = new Date(year, monthToInt[finalTime.month], finalTime.day, finalTime.beginHour, finalTime.beginMin);
 							var endTime = new Date(year, monthToInt[finalTime.month], finalTime.day, finalTime.endHour, finalTime.endMin);
