@@ -1,28 +1,18 @@
-var today = new Date();
-var monthToInt = {'Jan':0,'Feb':1,'Mar':2,'Apr':3,'May':4,'Jun':5,'Jul':6,'Aug':7,'Sep':8,'Oct':9,'Nov':10,'Dec':11}
-var weekDayToString = {'1': 'MO','2': 'TU','3': 'WE','4': 'TH','5': 'FR'}
+var MONTH_TO_INT = {'Jan':0, 'Feb':1, 'Mar':2, 'Apr':3, 'May':4, 'Jun':5, 'Jul':6, 'Aug':7, 'Sep':8, 'Oct':9, 'Nov':10, 'Dec':11}
+var WEEKDAY_TO_STRING = {'1':'MO', '2':'TU', '3':'WE', '4':'TH', '5':'FR'}
+var MON=1, TUE=2, WED=3, THU=4, FRI=5;
 
 var COURSE_EVENT_TYPE = 0
 var CUSTOM_EVENT_TYPE = 1
 var ANTPLANNER_EVENT_TYPE = 2
 
-window.APP_YEAR  = today.getFullYear();
-window.APP_MONTH = today.getMonth();
-window.APP_DAY   = today.getDate();
-
-window.MON = 1;
-window.TUE = 2;
-window.WED = 3;
-window.THU = 4;
-window.FRI = 5;
-
-window.LISTING_CODE_INDEX = 0;
-window.LISTING_TYPE_INDEX = 1;
-window.LISTING_UNITS_INDEX = 3;
-window.LISTING_INSTRUCTOR_INDEX = 4;
-window.LISTING_TIME_INDEX = 5;
-window.LISTING_ROOM_INDEX = 6;
-window.LISTING_FINAL_INDEX = 7;
+var LISTING_CODE_INDEX = 0;
+var LISTING_TYPE_INDEX = 1;
+var LISTING_UNITS_INDEX = 3;
+var LISTING_INSTRUCTOR_INDEX = 4;
+var LISTING_TIME_INDEX = 5;
+var LISTING_ROOM_INDEX = 6;
+var LISTING_FINAL_INDEX = 7;
 
 function S4() {
    return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
@@ -66,11 +56,11 @@ function ParsedCourseTime(timeString) {
 	var isPm = endTime.indexOf('p') != -1;
 
 	var days = []
-	if(timeString.indexOf('M') != -1) {	days.push(window.MON); } 
-	if(timeString.indexOf('Tu') != -1) { days.push(window.TUE); } 
-	if(timeString.indexOf('W') != -1) {	days.push(window.WED); }
-	if(timeString.indexOf('Th') != -1) { days.push(window.THU); }
-	if(timeString.indexOf('F') != -1) {	days.push(window.FRI); }
+	if(timeString.indexOf('M') != -1) {	days.push(MON); } 
+	if(timeString.indexOf('Tu') != -1) { days.push(TUE); } 
+	if(timeString.indexOf('W') != -1) {	days.push(WED); }
+	if(timeString.indexOf('Th') != -1) { days.push(THU); }
+	if(timeString.indexOf('F') != -1) {	days.push(FRI); }
 
 	if(isPm) {
 		var military = endHour == 12 ? 12 : endHour + 12
@@ -111,9 +101,9 @@ function FinalParsedCourseTime(timeString) {
 	var weekDay = -1;
 	if(timeString.indexOf('Sun') != -1) {	weekDay = 0; } 
 	if(timeString.indexOf('Mon') != -1) {	weekDay = 1; } 
-	if(timeString.indexOf('Tue') != -1) { weekDay = 2; } 
+	if(timeString.indexOf('Tue') != -1) {	weekDay = 2; } 
 	if(timeString.indexOf('Wed') != -1) {	weekDay = 3; }
-	if(timeString.indexOf('Thu') != -1) { weekDay = 4; }
+	if(timeString.indexOf('Thu') != -1) {	weekDay = 4; }
 	if(timeString.indexOf('Fri') != -1) {	weekDay = 5; }
 	if(timeString.indexOf('Sat') != -1) {	weekDay = 6; } 
 
@@ -220,11 +210,9 @@ function getInstructorArray(html) {
 	var rawInstructorArray = html.split('<br>');
 	var cleanInstructorArray = [];
 	for (var i=0; i<rawInstructorArray.length; i++) {
-		if (rawInstructorArray[i] === '')
-			continue;
-		else if (rawInstructorArray[i] === 'STAFF')
+		if (rawInstructorArray[i] === 'STAFF')
 			cleanInstructorArray.push('STAFF');
-		else 
+		else if (rawInstructorArray[i] !== '')
 			cleanInstructorArray.push($(rawInstructorArray[i]).html());
 	}
 	return cleanInstructorArray;
@@ -238,7 +226,6 @@ function createInstructorLinks(instructorNames) {
 		// Links are not created for STAFF
 		if (instructorName == 'STAFF' || instructorName == 'N/A (due to import)') {
 			instructorLinks.push(instructorName);
-			continue;
 		}
 		// Splits by ',' to retrieve professor's first name
 		var instructorLastName = instructorName.split(',')[0];
@@ -400,11 +387,35 @@ function switchToMainCalendar() {
 function daysOfTheWeekToStr(dow) {
 	var dowStr = [];
 	for (var i in dow) {
-		dowStr.push(weekDayToString[dow[i]]);
+		dowStr.push(WEEKDAY_TO_STRING[dow[i]]);
 	}
 	return dowStr;
 }
 
+function sleep(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function hexAToRGBA(h) {
+	let r = 0, g = 0, b = 0, a = .3;
+  
+	if (h.length == 5) {
+	  r = "0x" + h[1] + h[1];
+	  g = "0x" + h[2] + h[2];
+	  b = "0x" + h[3] + h[3];
+	  a = "0x" + h[4] + h[4];
+  
+	} else if (h.length == 9) {
+	  r = "0x" + h[1] + h[2];
+	  g = "0x" + h[3] + h[4];
+	  b = "0x" + h[5] + h[6];
+	  a = "0x" + h[7] + h[8];
+	}
+	a = +(a / 255).toFixed(3);
+  
+	return "rgba(" + +r + "," + +g + "," + +b + "," + a + ")";
+}
+  
 // JQuery listeners
 $(document).ready(function() {
 	// Creates a resizable panels using Split.Js
@@ -638,13 +649,14 @@ $(document).ready(function() {
 		$('#unitCounter').text(0);
 	});
 
-	$('#resize-btn').click(function() {
+	$('#resize-btn').click(async function() {
 		$('.popover').each(function () {
 			$(this).popover('hide');
 		});
 		if ($(this).hasClass('active')) {
-			$('#finals').animate({width: '100%'});
-			$('#cal').animate({width: '100%'});
+			$('#finals').animate({width: '100%'}, 200, "swing");
+			$('#cal').animate({width: '100%'}, 200, "swing");
+			await sleep(200);
 			$('#soc').show();
 			$('.gutter').show();
 			$(this).removeClass('active');
@@ -653,8 +665,8 @@ $(document).ready(function() {
 			$(this).addClass('active');
 			$('#soc').hide();
 			$('.gutter').hide();
-			$('#cal').animate({width: $(document).width()});
-			$('#finals').animate({width: $(document).width()});
+			$('#cal').animate({width: $(document).width()}, 200, "swing");
+			$('#finals').animate({width: $(document).width()}, 200, "swing");
 		}
 	});
 
@@ -761,7 +773,7 @@ $(document).ready(function() {
 					// At least one class with a final is necessary since the final is the
 					// only way to determine when the first week of class is
 					var finalParsed = FinalParsedCourseTime(calRawData[i].final);
-					firstMonday = new Date(year, monthToInt[finalParsed.month], finalParsed.day, finalParsed.beginHour);
+					firstMonday = new Date(year, MONTH_TO_INT[finalParsed.month], finalParsed.day, finalParsed.beginHour);
 					// Gets the Monday AFTER finals week is over
 					// If Sat,Sun,Mon (6,0,1) add 7 to get Monday AFTER finals week
 					var shift = (1 + 7 - firstMonday.getDay()) % 7;
@@ -814,8 +826,8 @@ $(document).ready(function() {
 							calRawData[i].final.replace(/&nbsp;/g, '') != 'N/A (due to import)' &&
 							calRawData[i].final.replace(/&nbsp;/g, '').trim() != 'TBA') {
 							var finalTime = FinalParsedCourseTime(calRawData[i].final);
-							var startTime = new Date(year, monthToInt[finalTime.month], finalTime.day, finalTime.beginHour, finalTime.beginMin);
-							var endTime = new Date(year, monthToInt[finalTime.month], finalTime.day, finalTime.endHour, finalTime.endMin);
+							var startTime = new Date(year, MONTH_TO_INT[finalTime.month], finalTime.day, finalTime.beginHour, finalTime.beginMin);
+							var endTime = new Date(year, MONTH_TO_INT[finalTime.month], finalTime.day, finalTime.endHour, finalTime.endMin);
 							// Title is parsed from after the type of class (ie. Lec, Lab, Dis)
 							cal.addEvent('Final '+calRawData[i].title.split(/\s(.+)/)[1], 
 								'Course Title: '+calRawData[i].fullName+
@@ -1201,15 +1213,17 @@ $(document).ready(function() {
 		$courseRow.hover(
 			function() {
 				$(this).css({'color': '#ff0000', 'cursor': 'pointer'});
+				// $(this).append('<td class="overlay" style="height:'+$(this).outerHeight()+'px;"> </td>');
 			},
 			function() {
 				$(this).css({'color': '#000000', 'cursor': 'default'});
+				// $(this).closest('.overlay').remove();
 			}
 		);
 
 		$courseRow.on('click', function() {
-			var timeString = $(this).find('td').eq(window.LISTING_TIME_INDEX).html();
-			var roomString = $(this).find('td').eq(window.LISTING_ROOM_INDEX).html();
+			var timeString = $(this).find('td').eq(LISTING_TIME_INDEX).html();
+			var roomString = $(this).find('td').eq(LISTING_ROOM_INDEX).html();
 			var courseTimes = CourseTimeStringParser(timeString, roomString)
 
 			// Ignore if course is "TBA"
@@ -1218,7 +1232,7 @@ $(document).ready(function() {
 				return;
 			}
 
-			var courseCode = $(this).find('td').eq(window.LISTING_CODE_INDEX).text();
+			var courseCode = $(this).find('td').eq(LISTING_CODE_INDEX).text();
 
 			// Ignore if course already added
 			if(isCourseAdded(courseCode)) {
@@ -1229,10 +1243,10 @@ $(document).ready(function() {
 			// Parses Websoc result to find course elements in the row
 			var courseName = $.trim( $(this).prevAll().find('.CourseTitle').last().html().split('<font')[0].replace(/&nbsp;/g, '').replace(/&amp;/g, '&') )
 			var fullCourseName = $(this).prevAll().find('.CourseTitle').last().find('b').html();
-			var classType = $(this).find('td').eq(window.LISTING_TYPE_INDEX).html();
-			var instructor = getInstructorArray($(this).find('td').eq(window.LISTING_INSTRUCTOR_INDEX).html());
-			var final = $(this).find('td').eq(window.LISTING_FINAL_INDEX).html();
-			var units = $(this).find('td').eq(window.LISTING_UNITS_INDEX).html();
+			var classType = $(this).find('td').eq(LISTING_TYPE_INDEX).html();
+			var instructor = getInstructorArray($(this).find('td').eq(LISTING_INSTRUCTOR_INDEX).html());
+			var final = $(this).find('td').eq(LISTING_FINAL_INDEX).html();
+			var units = $(this).find('td').eq(LISTING_UNITS_INDEX).html();
 			var colorPair = getRandomColorPair();
 			$('#unitCounter').text(parseInt($('#unitCounter').text())+parseInt(units));
 
