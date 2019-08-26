@@ -1,0 +1,13 @@
+runtime: python37
+
+handlers:
+- url: /static
+  static_dir: zotcourse/static
+  secure: always
+
+# - url: .*
+#   script: main.app
+#   secure: always
+
+env_variables:
+  USE_MEMCACHE: true

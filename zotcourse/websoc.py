@@ -1,57 +1,45 @@
-from google.appengine.api import urlfetch
+import requests
 from bs4 import BeautifulSoup
 import urllib
-import logging
+# import logging
 import json
 import re
 from datetime import datetime, timedelta
 
-LOG = logging.getLogger(__name__)
-
-def get_search():
-    html = urlfetch.fetch("http://websoc.reg.uci.edu").content
-    inner = BeautifulSoup(html, 'lxml').find(
-        'form',
-        action='https://www.reg.uci.edu/perl/WebSoc/').renderContents()
-    return unicode(inner, errors='ignore')
+# LOG = logging.getLogger(__name__)
 
 def get_form_info():
     form_info = dict()
-    html = urlfetch.fetch("http://websoc.reg.uci.edu").content
+    html = requests.get("http://websoc.reg.uci.edu").content
+    parsed_html = BeautifulSoup(html, 'html.parser')
     # Parses for term info
-    term = BeautifulSoup(html, 'lxml').find(
-        'select', {"name":"YearTerm"}).find_all('option')
+    term = parsed_html.find('select', {"name":"YearTerm"}).find_all('option')
     form_info['default_term'] = term[0]['value']
     # Temporary hotfix to have default_term to be default selected item
     for t in term:
         if t.has_attr('selected'):
             form_info['default_term'] = t['value']
-    form_info['term'] = [str(line).replace("\xc2\xa0", "") for line in term]
+    form_info['term'] = term
     # Parses for GE info
-    general_ed = BeautifulSoup(html, 'lxml').find(
-        'select', {"name":"Breadth"}).find_all('option')
-    form_info['general_ed'] = [str(line).replace("\xc2\xa0", "") for line in general_ed]
+    general_ed = parsed_html.find('select', {"name":"Breadth"}).find_all('option')
+    form_info['general_ed'] = general_ed
     # Parses for department info
-    dept = BeautifulSoup(html, 'lxml').find(
-        'select', {"name":"Dept"}).find_all('option')
-    form_info['department'] = [str(line).replace("\xc2\xa0", "") for line in dept]
+    dept = parsed_html.find('select', {"name":"Dept"}).find_all('option')
+    form_info['department'] = dept
     return form_info
 
 def get_listing(form_data):
-    html = urlfetch.fetch(
-        "https://www.reg.uci.edu/perl/WebSoc?"+form_data,
-        method=urlfetch.GET,
-        headers={'Content-Type': 'application/x-www-form-urlencoded'}).content
-    listing = BeautifulSoup(html, 'lxml').find('div', 'course-list')
-    if listing:
-        return unicode(listing.encode(formatter='html'))
+    html = requests.get("https://www.reg.uci.edu/perl/WebSoc?"+str(form_data, 'utf-8')).content
+    listing = BeautifulSoup(html, 'html.parser')
+    course_list = listing.find('div', 'course-list')
+    if course_list:
+        return course_list.decode()
     else:
         # We come here if course-list was not found
-        return unicode(BeautifulSoup(html).encode(formatter='html'))
+        return listing.decode()
 
 def get_backup_from_antplanner(username):
-    encoded = urllib.quote(username)
-    raw = urlfetch.fetch("https://antplanner.appspot.com/schedule/load?username="+encoded).content
+    raw = requests.get("https://antplanner.appspot.com/schedule/load?username="+urllib.parse.quote(username)).content
     # Catch for when Antplanner returns 500
     try:
         clean = json.loads(raw)
