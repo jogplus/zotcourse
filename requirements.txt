@@ -1,5 +1,5 @@
-BeautifulSoup4
-flask
-requests
-redis
-google-cloud-datastore
+BeautifulSoup4==4.8.0
+flask==1.1.1
+requests==2.22.0
+redis==3.3.8
+google-cloud-datastore==1.9.0

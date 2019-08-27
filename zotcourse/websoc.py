@@ -15,7 +15,7 @@ class FormInfo:
     Can be constructed from dict and converted into dict
     """
     def __init__(self, dictionary=None):
-        if isinstance(dictionary) is dict:
+        if isinstance(dictionary, dict):
             for k, v in dictionary.items():
                 setattr(self, k, v)
         else:
