@@ -10,4 +10,8 @@ handlers:
 #   secure: always
 
 env_variables:
-  USE_MEMCACHE: true
+  USE_MEMCACHE: false
+  USE_GCP: false
+  REDIS_HOST: your-redis-host
+  REDIS_PORT: your-redis-port
+  REDIS_PASSWORD: your-redis-password
