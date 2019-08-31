@@ -1,18 +1,18 @@
-var MONTH_TO_INT = {'Jan':0, 'Feb':1, 'Mar':2, 'Apr':3, 'May':4, 'Jun':5, 'Jul':6, 'Aug':7, 'Sep':8, 'Oct':9, 'Nov':10, 'Dec':11}
-var WEEKDAY_TO_STRING = {'1':'MO', '2':'TU', '3':'WE', '4':'TH', '5':'FR'}
-var MON=1, TUE=2, WED=3, THU=4, FRI=5;
+const MONTH_TO_INT = {'Jan':0, 'Feb':1, 'Mar':2, 'Apr':3, 'May':4, 'Jun':5, 'Jul':6, 'Aug':7, 'Sep':8, 'Oct':9, 'Nov':10, 'Dec':11}
+const WEEKDAY_TO_STRING = {'1':'MO', '2':'TU', '3':'WE', '4':'TH', '5':'FR'}
+const MON=1, TUE=2, WED=3, THU=4, FRI=5;
 
-var COURSE_EVENT_TYPE = 0
-var CUSTOM_EVENT_TYPE = 1
-var ANTPLANNER_EVENT_TYPE = 2
+const COURSE_EVENT_TYPE = 0
+const CUSTOM_EVENT_TYPE = 1
+const ANTPLANNER_EVENT_TYPE = 2
 
-var LISTING_CODE_INDEX = 0;
-var LISTING_TYPE_INDEX = 1;
-var LISTING_UNITS_INDEX = 3;
-var LISTING_INSTRUCTOR_INDEX = 4;
-var LISTING_TIME_INDEX = 5;
-var LISTING_ROOM_INDEX = 6;
-var LISTING_FINAL_INDEX = 7;
+const LISTING_CODE_INDEX = 0;
+const LISTING_TYPE_INDEX = 1;
+const LISTING_UNITS_INDEX = 3;
+const LISTING_INSTRUCTOR_INDEX = 4;
+const LISTING_TIME_INDEX = 5;
+const LISTING_ROOM_INDEX = 6;
+const LISTING_FINAL_INDEX = 7;
 
 function S4() {
    return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
@@ -289,7 +289,8 @@ function saveSchedule(username) {
 		success: function(data) {
 			if (data.success) {
 				toastr.success(username, 'Schedule Saved!');
-				localStorage.username = username;
+				localStorage.setItem('username', username);
+				addToRecentSchedules(username);
 				$('#scheduleNameForPrint').html('Zotcourse schedule name: '+username);
 			}
 			else {
@@ -334,7 +335,8 @@ function loadSchedule(username) {
 				$('#unitCounter').text(unitCounter);
 				$('#scheduleNameForPrint').html('Zotcourse schedule name: '+username);
 				toastr.success(username, 'Schedule Loaded!');
-				localStorage.username = username;
+				localStorage.setItem('username', username);
+				addToRecentSchedules(username);
 				switchToMainCalendar();
 			}
 			else {
@@ -396,24 +398,34 @@ function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function hexAToRGBA(h) {
-	let r = 0, g = 0, b = 0, a = .3;
-  
-	if (h.length == 5) {
-	  r = "0x" + h[1] + h[1];
-	  g = "0x" + h[2] + h[2];
-	  b = "0x" + h[3] + h[3];
-	  a = "0x" + h[4] + h[4];
-  
-	} else if (h.length == 9) {
-	  r = "0x" + h[1] + h[2];
-	  g = "0x" + h[3] + h[4];
-	  b = "0x" + h[5] + h[6];
-	  a = "0x" + h[7] + h[8];
+function addToRecentSchedules(scheduleName) {
+	var recents = JSON.parse(localStorage.getItem("recentSchedules"));
+	indexOfScheduleName = recents.indexOf(scheduleName);
+	if (indexOfScheduleName === -1) {
+		recents.unshift(scheduleName);
+		if (recents.length > 5) {
+			recents.pop();
+		}
 	}
-	a = +(a / 255).toFixed(3);
-  
-	return "rgba(" + +r + "," + +g + "," + +b + "," + a + ")";
+	else {
+		recents.splice(indexOfScheduleName, 1);
+		recents.unshift(scheduleName);
+	}
+	localStorage.setItem("recentSchedules", JSON.stringify(recents));
+}
+
+function arrToTable(str) {
+	var recents = '<tr><td style="color:rgb(206, 212, 218)">Empty</tr></td>'
+	if (str !== '[]') {
+		recents = str.replace(/",/g,'</td></tr><tr><td><a class="recentSchedule" href="#">')
+					.replace('["','<tr><td><a class="recentSchedule" href="#">')
+					.replace('"]','</a></td></tr>')
+					.replace(/"/g,'');
+	}
+	return '<table style="width:100%">\
+				<tr style="border-bottom:solid 1px"><th>Recent Schedules</th><th><a id="clearRecents" href="#">Clear<a></th></tr>\
+				'+recents+'\
+			</table>';
 }
   
 // JQuery listeners
@@ -478,30 +490,38 @@ $(document).ready(function() {
 		boundary: 'window',
 	});
 
-	$('#save-btn').popover({
-		html: true,
-		title: "Save Schedule",
-		content:'<div class="input-group input-group-sm mb-3">\
-					<input id="save-input" value="'+(localStorage.username ? localStorage.username : '')+'" type="text" class="form-control save-input" placeholder="ex. Student Id" aria-label="Schedule\'s save name" aria-describedby="basic-addon2">\
-					<div class="input-group-append">\
-						<button id="save-button" class="btn btn-outline-primary" type="button">Submit</button>\
+	$('#save-btn').click(function() {
+		if (!localStorage.getItem("recentSchedules"))
+			localStorage.setItem("recentSchedules", JSON.stringify([]));
+		$('#save-btn').popover({
+			trigger: 'manual',
+			html: true,
+			title: "Save Schedule",
+			content: function() {
+					return '<div class="input-group input-group-sm mb-3">\
+						<input id="save-input" value="'+(localStorage.getItem("username") ? localStorage.getItem("username") : '')+'" type="text" class="form-control save-input" placeholder="Schedule Name" aria-label="Schedule\'s save name" aria-describedby="basic-addon2">\
+						<div class="input-group-append">\
+							<button id="save-button" class="btn btn-outline-primary" type="button">Submit</button>\
+						</div>\
 					</div>\
-				</div>',
-		placement: 'bottom',
-		container: 'body',
-		boundary: 'window',
+					<div>'+arrToTable(localStorage.getItem("recentSchedules"))+'</div>'
+			},
+			placement: 'bottom',
+			container: 'body',
+			boundary: 'window',
+		});
+		$('#save-btn').popover('toggle');
 	});
 
 	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
 	$('#save-btn').on('shown.bs.popover', function () {
 		// Workaround for popover disappearing on mobile devices
 		if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-			var defaultName = localStorage.username ? localStorage.username : '';
+			var defaultName = localStorage.getItem(username) ? localStorage.getItem(username) : '';
 			var username = prompt('Please enter your username', defaultName);
 			saveSchedule(username);
 			$('#save-btn').popover('hide');
 		}
-		$('#save-input').val(localStorage.username);
 		$('#save-input').focus();
 		$("#save-input").keypress(function(e){
 			if (!e) 
@@ -512,36 +532,54 @@ $(document).ready(function() {
 				$('#save-btn').popover('hide');
 			}
 		});
+		$('.recentSchedule').on('click', function() {
+			$('#save-input').val($(this).text());
+			saveSchedule($('#save-input').val());
+			$('#save-btn').popover('hide');
+		});
+		$('#clearRecents').click(function() {
+			localStorage.removeItem('recentSchedules');
+			localStorage.removeItem('username');
+			$('#save-btn').popover('hide');
+		});
 		$('#save-button').click(function() {
 			saveSchedule($('#save-input').val());
 			$('#save-btn').popover('hide');
 		});
 	});
 
-	$('#load-btn').popover({
-		html: true,
-		title: "Load Schedule",
-		content:'<div class="input-group input-group-sm mb-3">\
-					<input id="load-input" value="'+(localStorage.username ? localStorage.username : '')+'" type="text" class="form-control" placeholder="ex. Student Id" aria-label="Schedule\'s load name" aria-describedby="basic-addon2">\
-					<div class="input-group-append">\
-						<button id="load-button" class="btn btn-outline-primary" type="button">Submit</button>\
+	$('#load-btn').click(function() {
+		if (!localStorage.getItem("recentSchedules"))
+			localStorage.setItem("recentSchedules", JSON.stringify([]));
+		$('#load-btn').popover({
+			trigger: 'manual',
+			html: true,
+			title: "Load Schedule",
+			content: function() {
+					return '<div class="input-group input-group-sm mb-3">\
+						<input id="load-input" value="'+(localStorage.getItem("username") ? localStorage.getItem("username") : '')+'" type="text" class="form-control" placeholder="Schedule Name" aria-label="Schedule\'s load name" aria-describedby="basic-addon2">\
+						<div class="input-group-append">\
+							<button id="load-button" class="btn btn-outline-primary" type="button">Submit</button>\
+						</div>\
 					</div>\
-				</div>',
-		placement: 'bottom',
-		container: 'body',
-		boundary: 'window',
+					<div>'+arrToTable(localStorage.getItem("recentSchedules"))+'</div>'
+			},
+			placement: 'bottom',
+			container: 'body',
+			boundary: 'window',
+		});
+		$('#load-btn').popover('toggle');
 	});
 
 	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
 	$('#load-btn').on('shown.bs.popover', function () {
 		// Workaround for popover disappearing on mobile devices
 		if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-			var defaultName = localStorage.username ? localStorage.username : '';
+			var defaultName = localStorage.getItem("username") ? localStorage.getItem("username") : '';
 			var username = prompt('Please enter your username', defaultName);
 			loadSchedule(username);
 			$('#load-btn').popover('hide');
 		}
-		$('#load-input').val(localStorage.username);
 		$('#load-input').focus();
 		$("#load-input").keypress(function(e){
 			if (!e) 
@@ -551,6 +589,16 @@ $(document).ready(function() {
 				loadSchedule($('#load-input').val());
 				$('#load-btn').popover('hide');
 			}
+		});
+		$('.recentSchedule').on('click', function() {
+			$('#load-input').val($(this).text());
+			loadSchedule($('#load-input').val());
+			$('#load-btn').popover('hide');
+		});
+		$('#clearRecents').click(function() {
+			localStorage.removeItem('recentSchedules');
+			localStorage.removeItem('username');
+			$('#load-btn').popover('hide');
 		});
 		$('#load-button').click(function() {
 			loadSchedule($('#load-input').val());
@@ -563,7 +611,7 @@ $(document).ready(function() {
 		title: "Import from Antplanner",
 		content:'<div class="input-group input-group-sm mb-3">\
 					<div style="padding-bottom: 8px">Note: Not all course info will be available in event popup.</div>\
-					<input id="load-ap-input" type="text" class="form-control" placeholder="ex. Student Id" aria-label="Schedule\'s AP load name" aria-describedby="basic-addon2">\
+					<input id="load-ap-input" type="text" class="form-control" placeholder="Schedule Name" aria-label="Schedule\'s AP load name" aria-describedby="basic-addon2">\
 					<div class="input-group-append">\
 						<button id="load-ap-button" class="btn btn-outline-primary" type="button">Submit</button>\
 					</div>\
@@ -577,7 +625,7 @@ $(document).ready(function() {
 	$('#load-ap-btn').on('shown.bs.popover', function () {
 		// Workaround for popover disappearing on mobile devices
 		if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-			var defaultName = localStorage.username ? localStorage.username : '';
+			var defaultName = localStorage.getItem("username") ? localStorage.getItem("username") : '';
 			var username = prompt('Please enter your Antplanner username', defaultName);
 			loadAPSchedule(username);
 			$('#load-ap-btn').popover('hide');
