@@ -17,8 +17,9 @@ from zotcourse import app, websoc
 FORM_EXPIRE_TIME = 60 * 60 * 24
 LISTING_EXPIRE_TIME = 60 * 60
 
-USE_MEMCACHE = os.environ.get('USE_MEMCACHE', 'false') == 'true'
-USE_DATASTORE = os.environ.get('USE_DATASTORE', 'false') == 'true'
+USE_MEMCACHE = os.environ.get('USE_MEMCACHE', 'false').upper() == 'TRUE'
+USE_DATASTORE = os.environ.get('USE_DATASTORE', 'false').upper() == 'TRUE'
+
 if USE_MEMCACHE:
     REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
     REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))

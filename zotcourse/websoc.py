@@ -20,7 +20,7 @@ class FormInfo:
                 setattr(self, k, v)
         else:
             html = requests.get("http://websoc.reg.uci.edu").content
-            parsed_html = BeautifulSoup(html, 'html.parser')
+            parsed_html = BeautifulSoup(html, 'lxml')
             # Parses for term info
             term = parsed_html.find('select', {"name":"YearTerm"}).find_all('option')
             # Fix to have default_term to be default selected item
@@ -44,7 +44,7 @@ class FormInfo:
 
 def get_listing(form_data):
     html = requests.get("https://www.reg.uci.edu/perl/WebSoc?"+form_data).content
-    listing = BeautifulSoup(html, 'html.parser')
+    listing = BeautifulSoup(html, 'lxml')
     course_list = listing.find('div', 'course-list')
     if course_list:
         return course_list.decode()
@@ -63,7 +63,7 @@ def get_backup_from_antplanner(username):
     clean_data = json.loads(clean['data'])
     clean_without_duplicates = []
     added_group_ids = []
-    for event_num in enumerate(clean_data):
+    for event_num, _value in enumerate(clean_data):
         if clean_data[event_num]['groupId'] not in added_group_ids:
             # Creates a list of unique Days of the Week a class meets
             seven_hour_diff = timedelta(seconds=25200)
