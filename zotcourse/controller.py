@@ -5,11 +5,11 @@ Currently requires Redis and GCP Datastore account if
 USE_MEMCACHE and USE_DATASTORE are enabled respectively
 """
 from __future__ import absolute_import
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import ast
 import os
+import urllib
 import flask
-import redis
 from google.cloud import datastore
 from zotcourse import app, websoc
 
@@ -20,37 +20,46 @@ LISTING_EXPIRE_TIME = 60 * 60
 USE_MEMCACHE = os.environ.get('USE_MEMCACHE', 'false').upper() == 'TRUE'
 USE_DATASTORE = os.environ.get('USE_DATASTORE', 'false').upper() == 'TRUE'
 
-if USE_MEMCACHE:
-    REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
-    REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
-    REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD', None)
-    REDIS_CLIENT = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
-if USE_DATASTORE:
+if USE_DATASTORE or USE_MEMCACHE:
     DATASTORE_CLIENT = datastore.Client()
 
 # If new event attribute is added, it must be added here as well
 VALID_PARAMS = ('id', 'groupId', 'title', 'start', 'end', 'color', 'location', 'fullName', \
     'instructor', 'final', 'dow', 'daysOfTheWeek', 'units', 'courseTimes', 'eventType')
 
-def redis_wrapper_get(key):
+def listing_get(key, time):
     if USE_MEMCACHE:
-        return REDIS_CLIENT.get(key)
+        key = DATASTORE_CLIENT.key('Listing', key)
+        result = DATASTORE_CLIENT.get(key)
+        if result and isinstance(result['modified_at'], str):
+            parsed_time = datetime.fromisoformat(result['modified_at'])
+        # If cached listing has passed expiration, fetch new listing
+        if not result or parsed_time + timedelta(seconds=time) < datetime.now(timezone.utc):
+            return None
+        return result
 
-def redis_wrapper_set(key, value, time):
+def listing_set(key, data):
     if USE_MEMCACHE:
-        REDIS_CLIENT.set(key, value)
-        REDIS_CLIENT.expire(key, time)
+        key = DATASTORE_CLIENT.key('Listing', key)
+        # Must `exclude_from_indexes` in order to allow values > 150 characters
+        entity = datastore.Entity(key=key, exclude_from_indexes=['data'])
+        entity.update({
+            'data': data,
+            'modified_at': datetime.now(timezone.utc).isoformat(),
+        })
+        DATASTORE_CLIENT.put(entity)
 
-def datastore_get(key):
+def schedule_get(key):
     if USE_DATASTORE:
         key = DATASTORE_CLIENT.key('Schedule', key)
         result = DATASTORE_CLIENT.get(key)
         return result
 
-def datastore_set(key, data):
+def schedule_set(key, data):
     if USE_DATASTORE:
         key = DATASTORE_CLIENT.key('Schedule', key)
-        entity = datastore.Entity(key=key)
+        # Must `exclude_from_indexes` in order to allow values > 150 characters
+        entity = datastore.Entity(key=key, exclude_from_indexes=['data'])
         entity.update({
             'data': data,
             'modified_at': datetime.now(),
@@ -59,34 +68,63 @@ def datastore_set(key, data):
 
 @app.route('/')
 def index():
-    form_info = redis_wrapper_get('form')
+    form_info = listing_get('form', FORM_EXPIRE_TIME)
+    # Checks if valid cached search form, if not fetches new search form
     if form_info:
-        form_info = websoc.FormInfo(ast.literal_eval(form_info.decode('utf-8')))
+        form_info = websoc.FormInfo(ast.literal_eval(form_info['data']))
     if not form_info:
         form_info = websoc.FormInfo()
-        redis_wrapper_set('form', str(dict(form_info)), FORM_EXPIRE_TIME)
+        listing_set('form', str(dict(form_info)))
     return flask.render_template('index.html', default_term=form_info.default_term)
 
 @app.route('/websoc/search', methods=['GET'])
 def websoc_search_form():
-    form_info = redis_wrapper_get('form')
+    form_info = listing_get('form', FORM_EXPIRE_TIME)
+    # Checks if valid cached search form, if not fetches new search form
     if form_info:
-        form_info = websoc.FormInfo(ast.literal_eval(form_info.decode('utf-8')))
+        form_info = websoc.FormInfo(ast.literal_eval(form_info['data']))
     if not form_info:
         form_info = websoc.FormInfo()
-        redis_wrapper_set('form', str(dict(form_info)), FORM_EXPIRE_TIME)
+        listing_set('form', str(dict(form_info)))
     return flask.render_template('websoc/search.html', terms=form_info.terms, \
     general_eds=form_info.general_eds, departments=form_info.departments)
 
 @app.route('/websoc/listing', methods=['GET'])
 def websoc_search():
-    key = str(flask.request.query_string, 'utf-8')
-    listing_html = redis_wrapper_get(key)
-    if not listing_html:
+    listing_html = str()
+    # If query includes `CourseCodes`, break up request into groups of 10 `CourseCodes`
+    # This is to bypass Websoc limitation of 10 `CourseCodes` per request
+    # `CourseCodes` queries are not cached
+    if flask.request.args.get('CourseCodes') != '':
+        args = flask.request.args.copy()
+        course_codes = args.get('CourseCodes').strip(',').split(',')
+        if len(course_codes) > 10:
+            grouped_course_codes = [course_codes[n:n+10] for n in range(0, len(course_codes), 10)]
+            for group in grouped_course_codes:
+                seperator = ','
+                args['CourseCodes'] = seperator.join(group)
+                key = urllib.parse.urlencode(args)
+                # Appends group of 10 `CourseCodes` to listing
+                listing_html += websoc.get_listing(key)
+        else:
+            key = urllib.parse.urlencode(args)
+            listing_html += websoc.get_listing(key)
+    # Forces hard refresh for listing
+    elif flask.request.args.get('Units') == '-1':
+        args = flask.request.args.copy()
+        args['Units'] = ''
+        key = urllib.parse.urlencode(args)
         listing_html = websoc.get_listing(key)
-        redis_wrapper_set(key, listing_html, LISTING_EXPIRE_TIME)
+        listing_set(key, listing_html)
+    # Checks if valid cached listing, if not fetches new listing
     else:
-        listing_html = listing_html.decode()
+        key = str(flask.request.query_string, 'utf-8')
+        listing_html = listing_get(key, LISTING_EXPIRE_TIME)
+        if not listing_html:
+            listing_html = websoc.get_listing(key)
+            listing_set(key, listing_html)
+        else:
+            listing_html = listing_html['data']
     return flask.render_template('websoc/listing.html', listing=listing_html)
 
 @app.route('/schedules/add', methods=['POST'])
@@ -103,18 +141,18 @@ def save_schedule():
             for v in c.values():
                 if len(str(v)) > 500:
                     raise ValueError
-        datastore_set(username, data)
+        schedule_set(username, data)
         return flask.jsonify(success=True)
     except Exception as error:
-        return flask.jsonify(success=False, error=error)
+        return flask.jsonify(success=False, error=error), 400
 
 @app.route('/schedule/load')
 def load_schedule():
     username = flask.request.args.get('username')
-    schedule = datastore_get(username)
+    schedule = schedule_get(username)
     if schedule:
         return flask.jsonify(success=True, data=schedule['data'])
-    return flask.jsonify(success=False)
+    return flask.jsonify(success=False), 400
 
 @app.route('/schedule/loadap')
 def load_ap_schedule():
@@ -122,4 +160,4 @@ def load_ap_schedule():
     schedule_json = websoc.get_backup_from_antplanner(username)
     if schedule_json:
         return flask.jsonify(schedule_json)
-    return flask.jsonify(success=False)
+    return flask.jsonify(success=False), 400

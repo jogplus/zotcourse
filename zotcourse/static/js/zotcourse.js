@@ -195,11 +195,40 @@ function getRandomColorPair() {
 	return palette[Math.floor(Math.random() * palette.length)];
 }
 
-function isCourseAdded(courseCode) {
+function isCourseAdded(courseCode, final) {
 	var calEvents  = $('#cal').fullCalendar('clientEvents');
 	for (var i in calEvents){
-		if (calEvents[i].groupId === courseCode)
+		// If course is already added, but final is updated, update the saved course
+		if (calEvents[i].groupId === courseCode && calEvents[i].final !== final) {
+			$('#cal').fullCalendar('removeEvents', calEvents[i]._id);
+			for(var j in calEvents[i].courseTimes) {
+				var parsed = calEvents[i].courseTimes[j];
+				$('#cal').fullCalendar('renderEvent', {
+					_id: calEvents[i]._id,
+					id:	calEvents[i].id,
+					groupId: calEvents[i].groupId,
+					start: parsed.start,
+					end: parsed.end,
+					title: calEvents[i].title,
+					dow: parsed.days,
+					color: calEvents[i].color,
+					daysOfTheWeek: parsed.days,
+					location: parsed.room,
+					fullName: calEvents[i].fullName,
+					instructor: calEvents[i].instructor,
+					final: final,
+					units: calEvents[i].units,
+					courseTimes: calEvents[i].courseTimes,
+					eventType: calEvents[i].eventType
+				});
+			}
+			toastr.success('Updated Course Final');
 			return true;
+		}
+		if (calEvents[i].groupId === courseCode) {
+			toastr.warning('Course Already Added');
+			return true;
+		}
 	}
 	return false;
 }
@@ -227,14 +256,16 @@ function createInstructorLinks(instructorNames) {
 		if (instructorName == 'STAFF' || instructorName == 'N/A (due to import)') {
 			instructorLinks.push(instructorName);
 		}
-		// Splits by ',' to retrieve professor's first name
-		var instructorLastName = instructorName.split(',')[0];
-		// Splits in case professors have a '-' in their name which causes the RateMyProfessor query to fail
-		if (instructorLastName.indexOf('-') !== -1) {
-			instructorLastName = instructorName.split('-')[0];
+		else {
+			// Splits by ',' to retrieve professor's first name
+			var instructorLastName = instructorName.split(',')[0];
+			// Splits in case professors have a '-' in their name which causes the RateMyProfessor query to fail
+			if (instructorLastName.indexOf('-') !== -1) {
+				instructorLastName = instructorName.split('-')[0];
+			}
+			var link = "https://www.ratemyprofessors.com/search.jsp?queryoption=HEADER&queryBy=teacherName&schoolName=University+of+California+Irvine&schoolID=1074&query="+instructorLastName;
+			instructorLinks.push('<a class="instructor-link" href="'+link+'" target="_blank">'+instructorName+'</a>');
 		}
-		var link = "https://www.ratemyprofessors.com/search.jsp?queryoption=HEADER&queryBy=teacherName&schoolName=University+of+California+Irvine&schoolID=1074&query="+instructorLastName;
-		instructorLinks.push('<a class="instructor-link" href="'+link+'" target="_blank">'+instructorName+'</a>');
 	}
 	return instructorLinks.join('<br>');
 }
@@ -414,16 +445,17 @@ function addToRecentSchedules(scheduleName) {
 	localStorage.setItem("recentSchedules", JSON.stringify(recents));
 }
 
+// Creates html table from a string array
 function arrToTable(str) {
 	var recents = '<tr><td style="color:rgb(206, 212, 218)">Empty</tr></td>'
 	if (str !== '[]') {
-		recents = str.replace(/",/g,'</td></tr><tr><td><a class="recentSchedule" href="#">')
-					.replace('["','<tr><td><a class="recentSchedule" href="#">')
+		recents = str.replace(/",/g,'</a></td></tr><tr><td><a class=\'recentSchedule\' href=\'#\'>')
+					.replace('["','<tr><td><a class=\'recentSchedule\' href=\'#\'>')
 					.replace('"]','</a></td></tr>')
 					.replace(/"/g,'');
 	}
 	return '<table style="width:100%">\
-				<tr style="border-bottom:solid 1px"><th>Recent Schedules</th><th><a id="clearRecents" href="#">Clear<a></th></tr>\
+				<tr style="border-bottom:solid 1px"><th>Recent Schedules</th><th><a id="clearRecents" href="#">Clear All<a></th></tr>\
 				'+recents+'\
 			</table>';
 }
@@ -448,6 +480,21 @@ $(document).ready(function() {
 	});
 	// Adds the ellipsis icon within the gutter
 	$('.gutter').append('<i class="fas fa-ellipsis-v"></i>');
+
+	// If on a mobile device, show fullscreen calendar
+	if(/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+		$('#resize-btn').addClass('active');
+
+		$('#right').hide();
+		$('#right').width($(document).width());
+		$('#right').css('margin-left', '0px');
+
+		$('#left').width($(document).width());
+		$('#cal').width($(document).width());
+		$('#finals').width($(document).width());
+
+		$('.gutter').hide();
+	}
 
 	//#region Button Creation
 	// Triggers before popover has been shown and hides the other toolbar popovers
@@ -490,6 +537,7 @@ $(document).ready(function() {
 		boundary: 'window',
 	});
 
+	// Re-build popover on click so that contents update
 	$('#save-btn').click(function() {
 		if (!localStorage.getItem("recentSchedules"))
 			localStorage.setItem("recentSchedules", JSON.stringify([]));
@@ -519,7 +567,8 @@ $(document).ready(function() {
 		if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
 			var defaultName = localStorage.getItem(username) ? localStorage.getItem(username) : '';
 			var username = prompt('Please enter your username', defaultName);
-			saveSchedule(username);
+			if (username)
+				saveSchedule(username);
 			$('#save-btn').popover('hide');
 		}
 		$('#save-input').focus();
@@ -534,8 +583,7 @@ $(document).ready(function() {
 		});
 		$('.recentSchedule').on('click', function() {
 			$('#save-input').val($(this).text());
-			saveSchedule($('#save-input').val());
-			$('#save-btn').popover('hide');
+			$('#save-input').focus();
 		});
 		$('#clearRecents').click(function() {
 			localStorage.removeItem('recentSchedules');
@@ -548,6 +596,7 @@ $(document).ready(function() {
 		});
 	});
 
+	// Re-build popover on click so that contents update
 	$('#load-btn').click(function() {
 		if (!localStorage.getItem("recentSchedules"))
 			localStorage.setItem("recentSchedules", JSON.stringify([]));
@@ -577,7 +626,8 @@ $(document).ready(function() {
 		if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
 			var defaultName = localStorage.getItem("username") ? localStorage.getItem("username") : '';
 			var username = prompt('Please enter your username', defaultName);
-			loadSchedule(username);
+			if (username)
+				loadSchedule(username);
 			$('#load-btn').popover('hide');
 		}
 		$('#load-input').focus();
@@ -592,8 +642,7 @@ $(document).ready(function() {
 		});
 		$('.recentSchedule').on('click', function() {
 			$('#load-input').val($(this).text());
-			loadSchedule($('#load-input').val());
-			$('#load-btn').popover('hide');
+			$('#load-input').focus();
 		});
 		$('#clearRecents').click(function() {
 			localStorage.removeItem('recentSchedules');
@@ -627,7 +676,8 @@ $(document).ready(function() {
 		if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
 			var defaultName = localStorage.getItem("username") ? localStorage.getItem("username") : '';
 			var username = prompt('Please enter your Antplanner username', defaultName);
-			loadAPSchedule(username);
+			if (username)
+				loadAPSchedule(username);
 			$('#load-ap-btn').popover('hide');
 		}
 		$('#load-ap-input').focus();
@@ -702,19 +752,36 @@ $(document).ready(function() {
 			$(this).popover('hide');
 		});
 		if ($(this).hasClass('active')) {
-			$('#finals').animate({width: '100%'}, 200, "swing");
-			$('#cal').animate({width: '100%'}, 200, "swing");
-			await sleep(200);
-			$('#soc').show();
-			$('.gutter').show();
+			if(/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+				$('#finals').animate({width: 0}, 200, "swing");
+				$('#cal').animate({width: 0}, 200, "swing");
+				await sleep(200);
+				$('#left').width('0px');
+				$('#right').show();
+			}
+			else {
+				$('#finals').animate({width: '100%'}, 200, "swing");
+				$('#cal').animate({width: '100%'}, 200, "swing");
+				await sleep(200);
+				$('#soc').show();
+				$('.gutter').show();
+			}
 			$(this).removeClass('active');
 		}
 		else {
+			if(/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+				$('#right').hide();
+				$('#left').width($(document).width());				
+				$('#cal').animate({width: $(document).width()}, 200, "swing");
+				$('#finals').animate({width: $(document).width()}, 200, "swing");
+			}
+			else {
+				$('#soc').hide();
+				$('.gutter').hide();
+				$('#cal').animate({width: $(document).width()}, 200, "swing");
+				$('#finals').animate({width: $(document).width()}, 200, "swing");
+			}
 			$(this).addClass('active');
-			$('#soc').hide();
-			$('.gutter').hide();
-			$('#cal').animate({width: $(document).width()}, 200, "swing");
-			$('#finals').animate({width: $(document).width()}, 200, "swing");
 		}
 	});
 
@@ -726,7 +793,7 @@ $(document).ready(function() {
 			$('#finals').hide();
 			$('#cal').show();
 			$(this).removeClass('active');
-			$('#cal').fullCalendar( 'rerenderEvents' );
+			$('#cal').fullCalendar('rerenderEvents');
 		}
 		else {
 			$('#finals').show();
@@ -734,8 +801,14 @@ $(document).ready(function() {
 			$(this).addClass('active');
 			$('#finals').fullCalendar('removeEvents');
 			var calRawData  = $('#cal').fullCalendar('clientEvents');
-			var usedGroupIds = []
+			var usedGroupIds = [];
+			var hasTBACourse = false;
 			for (var i in calRawData) {
+				// Checks if any course has TBA final so that user can update it
+				if (calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
+					$.trim(calRawData[i].final.replace(/&nbsp;/g, '')) == 'TBA') {
+					hasTBACourse = true;
+				}
 				// Checks to make sure that finals attribute is not empty, TBA, or from import
 				if (calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
 					$.trim(calRawData[i].final.replace(/&nbsp;/g, '')) != '' &&
@@ -759,6 +832,8 @@ $(document).ready(function() {
 					usedGroupIds.push(calRawData[i].groupId);
 				}
 			}
+			if (hasTBACourse)
+				toastr.warning('One of your courses have TBA finals. Please use the List buttton to re-add and update the course.', 'TBA Finals');
 			$('#finals').fullCalendar('rerenderEvents');
 		}
 		$(window).trigger('resize');
@@ -1084,7 +1159,12 @@ $(document).ready(function() {
 				element.popover({
 					html:true,
 					title: (event.fullName) ? event.fullName : '',
-					content:'<table style="width:100%; margin-bottom:3%">\
+					content:'<table style="width:100%; margin-bottom:3%;">\
+							<tr>\
+								<td>Name</td>\
+								<td></td>\
+								<td align="right">'+event.title+'</td>\
+							</tr>\
 							<tr>\
 								<td>Code</td>\
 								<td></td>\
@@ -1099,11 +1179,6 @@ $(document).ready(function() {
 								<td>Instructor</td>\
 								<td>&nbsp;&nbsp;</td>\
 								<td align="right">'+((event.instructor) ? createInstructorLinks(event.instructor) : 'N/A')+'</td>\
-							</tr>\
-							<tr>\
-								<td>Final</td>\
-								<td></td>\
-								<td align="right">'+ ((event.final !== '&nbsp;' ) ? ((event.final) ? event.final : 'N/A') : 'See Lecture')+'</td>\
 							</tr>\
 							<tr>\
 								<td>Color</td>\
@@ -1210,6 +1285,11 @@ $(document).ready(function() {
 				title: (event.fullName) ? event.fullName : '',
 				content:'<table style="width:100%">\
 						<tr>\
+							<td>Name</td>\
+							<td></td>\
+							<td align="right">'+event.title+'</td>\
+						</tr>\
+						<tr>\
 							<td>Code</td>\
 							<td></td>\
 							<td align="right">'+event.groupId+'</td>\
@@ -1282,21 +1362,20 @@ $(document).ready(function() {
 
 			var courseCode = $(this).find('td').eq(LISTING_CODE_INDEX).text();
 
-			// Ignore if course already added
-			if(isCourseAdded(courseCode)) {
-				toastr.warning('Course Already Added');
-				return;
-			}
-
 			// Parses Websoc result to find course elements in the row
 			var courseName = $.trim( $(this).prevAll().find('.CourseTitle').last().html().split('<font')[0].replace(/&nbsp;/g, '').replace(/&amp;/g, '&') )
 			var fullCourseName = $(this).prevAll().find('.CourseTitle').last().find('b').html();
 			var classType = $(this).find('td').eq(LISTING_TYPE_INDEX).html();
 			var instructor = getInstructorArray($(this).find('td').eq(LISTING_INSTRUCTOR_INDEX).html());
-			var final = $(this).find('td').eq(LISTING_FINAL_INDEX).html();
+			var final = $(this).find('td').eq(LISTING_FINAL_INDEX).html().replace(/&nbsp;/g, '').trim();
 			var units = $(this).find('td').eq(LISTING_UNITS_INDEX).html();
 			var colorPair = getRandomColorPair();
 			$('#unitCounter').text(parseInt($('#unitCounter').text())+parseInt(units));
+
+			// Ignore if course already added or if course final update
+			if(isCourseAdded(courseCode, final)) {
+				return;
+			}
 
 			// Iterate through course times (a course may have different meeting times)
 			var courseID = S4()

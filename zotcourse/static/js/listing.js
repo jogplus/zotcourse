@@ -14,6 +14,18 @@ $(document).ready(function() {
             $(this).attr("target", "_blank");
         }
     });
+    
+    // Retrieve largest width of tables from a query that returned multiple groups of 10 course codes
+    var largest_width = 0;
+    $("table").each(function() {
+        if ($(this).width() > largest_width) {
+            largest_width = $(this).width();
+        }
+    });
+    $("table").each(function() {
+        $(this).width(largest_width);
+    });
+
     $("tr").each(function() {
         // To delete the useless 'textbooks' column and title
         // $("th:eq(13)", this).remove();
