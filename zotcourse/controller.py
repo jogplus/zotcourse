@@ -95,7 +95,7 @@ def websoc_search():
     # If query includes `CourseCodes`, break up request into groups of 10 `CourseCodes`
     # This is to bypass Websoc limitation of 10 `CourseCodes` per request
     # `CourseCodes` queries are not cached
-    if flask.request.args.get('CourseCodes') != '':
+    if flask.request.args.get('CourseCodes') and flask.request.args.get('CourseCodes') != '':
         args = flask.request.args.copy()
         course_codes = args.get('CourseCodes').strip(',').split(',')
         if len(course_codes) > 10:

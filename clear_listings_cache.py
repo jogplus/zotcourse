@@ -14,3 +14,4 @@ def clear_listings_cache(request):
     results = list(query.fetch())
     for listing in results:
         datastore_client.delete(listing.key)
+        

@@ -324,9 +324,9 @@ function saveSchedule(username) {
 				addToRecentSchedules(username);
 				$('#scheduleNameForPrint').html('Zotcourse schedule name: '+username);
 			}
-			else {
-				toastr.error(username, 'Schedule Not Saved');
-			}
+		},
+		error: function(data) {
+			toastr.error(username, 'Schedule Not Saved');
 		}
 	});
 }
@@ -370,9 +370,9 @@ function loadSchedule(username) {
 				addToRecentSchedules(username);
 				switchToMainCalendar();
 			}
-			else {
-				toastr.error(username, 'Schedule Not Found');
-			}
+		},
+		error: function(data) {
+			toastr.error(username, 'Schedule Not Found');
 		}
 	});
 }
@@ -941,7 +941,7 @@ $(document).ready(function() {
 								'Course Title: '+calRawData[i].fullName+
 								'\\nInstructor: '+calRawData[i].instructor+
 								'\\nCode: '+calRawData[i].groupId+
-								'\\nFinal: '+calRawData[i].final,
+								'\\nFinal: '+(calRawData[i].final !== '' ? calRawData[i].final : 'See Lecture'),
 								calRawData[i].location, startDate, endDate, rrule);
 						}
 						if (calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
@@ -1341,11 +1341,9 @@ $(document).ready(function() {
 		$courseRow.hover(
 			function() {
 				$(this).css({'color': '#ff0000', 'cursor': 'pointer'});
-				// $(this).append('<td class="overlay" style="height:'+$(this).outerHeight()+'px;"> </td>');
 			},
 			function() {
 				$(this).css({'color': '#000000', 'cursor': 'default'});
-				// $(this).closest('.overlay').remove();
 			}
 		);
 
@@ -1370,12 +1368,14 @@ $(document).ready(function() {
 			var final = $(this).find('td').eq(LISTING_FINAL_INDEX).html().replace(/&nbsp;/g, '').trim();
 			var units = $(this).find('td').eq(LISTING_UNITS_INDEX).html();
 			var colorPair = getRandomColorPair();
-			$('#unitCounter').text(parseInt($('#unitCounter').text())+parseInt(units));
 
 			// Ignore if course already added or if course final update
 			if(isCourseAdded(courseCode, final)) {
 				return;
 			}
+
+			// Increment unit counter
+			$('#unitCounter').text(parseInt($('#unitCounter').text())+parseInt(units));
 
 			// Iterate through course times (a course may have different meeting times)
 			var courseID = S4()

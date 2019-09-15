@@ -18,7 +18,7 @@
                 "REDIS_HOST": "your-redis-host",
                 "REDIS_PORT": "your-redis-port",
                 "REDIS_PASSWORD": "your-redis-password",
-                "GOOGLE_APPLICATION_CREDENTIALS": "your-gcp_credentials",
+                "GOOGLE_APPLICATION_CREDENTIALS": "your-gcp_credentials"
             },
             "args": [
                 "run",

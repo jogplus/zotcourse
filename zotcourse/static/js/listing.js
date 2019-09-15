@@ -15,15 +15,9 @@ $(document).ready(function() {
         }
     });
     
-    // Retrieve largest width of tables from a query that returned multiple groups of 10 course codes
-    var largest_width = 0;
+    // Makes table stretch to fill the iframe
     $("table").each(function() {
-        if ($(this).width() > largest_width) {
-            largest_width = $(this).width();
-        }
-    });
-    $("table").each(function() {
-        $(this).width(largest_width);
+        $(this).width("100%");
     });
 
     $("tr").each(function() {
