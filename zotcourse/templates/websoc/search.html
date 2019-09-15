@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="robots" content="noindex">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Zotcourse - Search</title>
   <link rel="stylesheet" href="{{url_for('static', filename="css/main.css")}}">
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
@@ -15,7 +16,7 @@
         <label class="input-group-text search-top" for="inputGroupSelect01">Term</label>
       </div>
       <select name="YearTerm" class="custom-select" id="inputGroupSelect01">
-        {{term | safe}}
+        {{terms | safe}}
       </select>
     </div>
     <div class="input-group mb-3">
@@ -23,7 +24,7 @@
         <label class="input-group-text search-top" for="inputGroupSelect01">General Ed</label>
       </div>
       <select name="Breadth" class="custom-select" id="inputGroupSelect01">
-        {{general_ed | safe}}
+        {{general_eds | safe}}
       </select>
     </div>
     <div class="input-group mb-3">
@@ -31,7 +32,7 @@
         <label class="input-group-text search-top" for="inputGroupSelect01">Department</label>
       </div>
       <select name="Dept" class="custom-select" id="inputGroupSelect01">
-        {{department | safe}}
+        {{departments | safe}}
       </select>
     </div>
     <div class="form-row">
@@ -189,16 +190,20 @@
       </div>
     </div>
     <div class="input-group mb-3">
-        <button type="submit" class="btn btn-primary">Submit Search</button>
+        <button type="submit" onclick="showLoading()" class="btn btn-primary">Submit Search</button>
         <button type="reset" class="btn btn-link btn-sm" value="Reset">Reset</button>
         <button type="button" id="moreOptionsButton" onclick="toggleOptions()" class="btn btn-link btn-sm" style="margin-left: auto;">Show More Options...</button>
     </div>
+    <div id="loading" class="lds-ring" style="display:none"><div></div><div></div><div></div><div></div></div>
     <input type="checkbox" name="ShowComments" checked="checked" style="display: none">
     <input type="checkbox" name="ShowFinals" checked="checked" style="display: none">
     <input id="moreOptionsClosed" type="checkbox" checked="checked" style="display: none">
   </form>
 </body>
 <script>
+  function showLoading() {
+    document.getElementById("loading").style.display = "block";
+  }
   var isClosed = document.getElementById("moreOptionsClosed");
   if (!isClosed.checked) {
     toggleOptions();

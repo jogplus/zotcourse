@@ -30,26 +30,32 @@ Please feel free to make a PR and contribute!
 
 ## How to run locally for testing
 
-1. Create a new Google Cloud Platform project and App Engine application using the GCP Console
-2. Download and install the [Cloud SDK](https://cloud.google.com/appengine/docs/standard/python/download) (Make sure it is added to your PATH)
-3. Run the following command to install the gcloud component that includes the App Engine extension for Python:
+1. Create and activate your python virtual env
     ```
-    gcloud components install app-engine-python
+    $ python3 -m venv env
+    $ source env/bin/activate
     ```
-4. Make sure you have ```pip``` and ```virtualenv``` [installed](https://uoa-eresearch.github.io/eresearch-cookbook/recipe/2014/11/26/python-virtual-env/) and activate your virutal environment.
-5. Navigate to the root of the zotcourse folder, and run the following:
+2. Navigate to the root of the zotcourse folder, and run the following:
     ```
-    pip install -r requirements.txt
+    $ pip3 install -r requirements.txt
     ```
-6. While still in the root of the zotcourse folder run the following to start the server locally:
+3. While still in the root of the zotcourse folder run the following to start the server locally:
     ```
-    dev_appserver.py app.yaml
+    $ export FLASK_APP=main.py
+    $ flask run
     ```
-7. If you are using Windows and are having problems starting the server, try replacing `'lxml'` with `'html.parser'` in `zotcourse/websoc.py`
-8. If you are looking to see how this project works, the main files of interest are:
+4. If debugging using VS Code:
+    * Copy `launch.json` into your `.vscode` folder
+    * Fill in `env_variables`
+5. If deploying to App Engine on GCP:
+    * Create a new Google Cloud Platform project and App Engine application using the GCP Console
+    * Download and install the [Cloud SDK](https://cloud.google.com/appengine/docs/standard/python/download) (Make sure it is added to your PATH)
+    * Rename `sample.app.yaml` to `app.yaml`
+    * Fill in `env_variables`
+6. If you are looking to see how this project works, the main files of interest are:
     ```
     zotcourse/static/js/zotcourse.js
-    zotcourse/views.py
+    zotcourse/controller.py
     zotcourse/websoc.py
     ```
 

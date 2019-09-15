@@ -1,18 +1,18 @@
-var MONTH_TO_INT = {'Jan':0, 'Feb':1, 'Mar':2, 'Apr':3, 'May':4, 'Jun':5, 'Jul':6, 'Aug':7, 'Sep':8, 'Oct':9, 'Nov':10, 'Dec':11}
-var WEEKDAY_TO_STRING = {'1':'MO', '2':'TU', '3':'WE', '4':'TH', '5':'FR'}
-var MON=1, TUE=2, WED=3, THU=4, FRI=5;
+const MONTH_TO_INT = {'Jan':0, 'Feb':1, 'Mar':2, 'Apr':3, 'May':4, 'Jun':5, 'Jul':6, 'Aug':7, 'Sep':8, 'Oct':9, 'Nov':10, 'Dec':11}
+const WEEKDAY_TO_STRING = {'1':'MO', '2':'TU', '3':'WE', '4':'TH', '5':'FR'}
+const MON=1, TUE=2, WED=3, THU=4, FRI=5;
 
-var COURSE_EVENT_TYPE = 0
-var CUSTOM_EVENT_TYPE = 1
-var ANTPLANNER_EVENT_TYPE = 2
+const COURSE_EVENT_TYPE = 0
+const CUSTOM_EVENT_TYPE = 1
+const ANTPLANNER_EVENT_TYPE = 2
 
-var LISTING_CODE_INDEX = 0;
-var LISTING_TYPE_INDEX = 1;
-var LISTING_UNITS_INDEX = 3;
-var LISTING_INSTRUCTOR_INDEX = 4;
-var LISTING_TIME_INDEX = 5;
-var LISTING_ROOM_INDEX = 6;
-var LISTING_FINAL_INDEX = 7;
+const LISTING_CODE_INDEX = 0;
+const LISTING_TYPE_INDEX = 1;
+const LISTING_UNITS_INDEX = 3;
+const LISTING_INSTRUCTOR_INDEX = 4;
+const LISTING_TIME_INDEX = 5;
+const LISTING_ROOM_INDEX = 6;
+const LISTING_FINAL_INDEX = 7;
 
 function S4() {
    return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
@@ -195,11 +195,40 @@ function getRandomColorPair() {
 	return palette[Math.floor(Math.random() * palette.length)];
 }
 
-function isCourseAdded(courseCode) {
+function isCourseAdded(courseCode, final) {
 	var calEvents  = $('#cal').fullCalendar('clientEvents');
 	for (var i in calEvents){
-		if (calEvents[i].groupId === courseCode)
+		// If course is already added, but final is updated, update the saved course
+		if (calEvents[i].groupId === courseCode && calEvents[i].final !== final) {
+			$('#cal').fullCalendar('removeEvents', calEvents[i]._id);
+			for(var j in calEvents[i].courseTimes) {
+				var parsed = calEvents[i].courseTimes[j];
+				$('#cal').fullCalendar('renderEvent', {
+					_id: calEvents[i]._id,
+					id:	calEvents[i].id,
+					groupId: calEvents[i].groupId,
+					start: parsed.start,
+					end: parsed.end,
+					title: calEvents[i].title,
+					dow: parsed.days,
+					color: calEvents[i].color,
+					daysOfTheWeek: parsed.days,
+					location: parsed.room,
+					fullName: calEvents[i].fullName,
+					instructor: calEvents[i].instructor,
+					final: final,
+					units: calEvents[i].units,
+					courseTimes: calEvents[i].courseTimes,
+					eventType: calEvents[i].eventType
+				});
+			}
+			toastr.success('Updated Course Final');
 			return true;
+		}
+		if (calEvents[i].groupId === courseCode) {
+			toastr.warning('Course Already Added');
+			return true;
+		}
 	}
 	return false;
 }
@@ -227,14 +256,16 @@ function createInstructorLinks(instructorNames) {
 		if (instructorName == 'STAFF' || instructorName == 'N/A (due to import)') {
 			instructorLinks.push(instructorName);
 		}
-		// Splits by ',' to retrieve professor's first name
-		var instructorLastName = instructorName.split(',')[0];
-		// Splits in case professors have a '-' in their name which causes the RateMyProfessor query to fail
-		if (instructorLastName.indexOf('-') !== -1) {
-			instructorLastName = instructorName.split('-')[0];
+		else {
+			// Splits by ',' to retrieve professor's first name
+			var instructorLastName = instructorName.split(',')[0];
+			// Splits in case professors have a '-' in their name which causes the RateMyProfessor query to fail
+			if (instructorLastName.indexOf('-') !== -1) {
+				instructorLastName = instructorName.split('-')[0];
+			}
+			var link = "https://www.ratemyprofessors.com/search.jsp?queryoption=HEADER&queryBy=teacherName&schoolName=University+of+California+Irvine&schoolID=1074&query="+instructorLastName;
+			instructorLinks.push('<a class="instructor-link" href="'+link+'" target="_blank">'+instructorName+'</a>');
 		}
-		var link = "https://www.ratemyprofessors.com/search.jsp?queryoption=HEADER&queryBy=teacherName&schoolName=University+of+California+Irvine&schoolID=1074&query="+instructorLastName;
-		instructorLinks.push('<a class="instructor-link" href="'+link+'" target="_blank">'+instructorName+'</a>');
 	}
 	return instructorLinks.join('<br>');
 }
@@ -289,12 +320,13 @@ function saveSchedule(username) {
 		success: function(data) {
 			if (data.success) {
 				toastr.success(username, 'Schedule Saved!');
-				localStorage.username = username;
+				localStorage.setItem('username', username);
+				addToRecentSchedules(username);
 				$('#scheduleNameForPrint').html('Zotcourse schedule name: '+username);
 			}
-			else {
-				toastr.error(username, 'Schedule Not Saved');
-			}
+		},
+		error: function(data) {
+			toastr.error(username, 'Schedule Not Saved');
 		}
 	});
 }
@@ -334,12 +366,13 @@ function loadSchedule(username) {
 				$('#unitCounter').text(unitCounter);
 				$('#scheduleNameForPrint').html('Zotcourse schedule name: '+username);
 				toastr.success(username, 'Schedule Loaded!');
-				localStorage.username = username;
+				localStorage.setItem('username', username);
+				addToRecentSchedules(username);
 				switchToMainCalendar();
 			}
-			else {
-				toastr.error(username, 'Schedule Not Found');
-			}
+		},
+		error: function(data) {
+			toastr.error(username, 'Schedule Not Found');
 		}
 	});
 }
@@ -396,24 +429,35 @@ function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function hexAToRGBA(h) {
-	let r = 0, g = 0, b = 0, a = .3;
-  
-	if (h.length == 5) {
-	  r = "0x" + h[1] + h[1];
-	  g = "0x" + h[2] + h[2];
-	  b = "0x" + h[3] + h[3];
-	  a = "0x" + h[4] + h[4];
-  
-	} else if (h.length == 9) {
-	  r = "0x" + h[1] + h[2];
-	  g = "0x" + h[3] + h[4];
-	  b = "0x" + h[5] + h[6];
-	  a = "0x" + h[7] + h[8];
+function addToRecentSchedules(scheduleName) {
+	var recents = JSON.parse(localStorage.getItem("recentSchedules"));
+	indexOfScheduleName = recents.indexOf(scheduleName);
+	if (indexOfScheduleName === -1) {
+		recents.unshift(scheduleName);
+		if (recents.length > 5) {
+			recents.pop();
+		}
 	}
-	a = +(a / 255).toFixed(3);
-  
-	return "rgba(" + +r + "," + +g + "," + +b + "," + a + ")";
+	else {
+		recents.splice(indexOfScheduleName, 1);
+		recents.unshift(scheduleName);
+	}
+	localStorage.setItem("recentSchedules", JSON.stringify(recents));
+}
+
+// Creates html table from a string array
+function arrToTable(str) {
+	var recents = '<tr><td style="color:rgb(206, 212, 218)">Empty</tr></td>'
+	if (str !== '[]') {
+		recents = str.replace(/",/g,'</a></td></tr><tr><td><a class=\'recentSchedule\' href=\'#\'>')
+					.replace('["','<tr><td><a class=\'recentSchedule\' href=\'#\'>')
+					.replace('"]','</a></td></tr>')
+					.replace(/"/g,'');
+	}
+	return '<table style="width:100%">\
+				<tr style="border-bottom:solid 1px"><th>Recent Schedules</th><th><a id="clearRecents" href="#">Clear All<a></th></tr>\
+				'+recents+'\
+			</table>';
 }
   
 // JQuery listeners
@@ -436,6 +480,21 @@ $(document).ready(function() {
 	});
 	// Adds the ellipsis icon within the gutter
 	$('.gutter').append('<i class="fas fa-ellipsis-v"></i>');
+
+	// If on a mobile device, show fullscreen calendar
+	if(/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+		$('#resize-btn').addClass('active');
+
+		$('#right').hide();
+		$('#right').width($(document).width());
+		$('#right').css('margin-left', '0px');
+
+		$('#left').width($(document).width());
+		$('#cal').width($(document).width());
+		$('#finals').width($(document).width());
+
+		$('.gutter').hide();
+	}
 
 	//#region Button Creation
 	// Triggers before popover has been shown and hides the other toolbar popovers
@@ -478,30 +537,40 @@ $(document).ready(function() {
 		boundary: 'window',
 	});
 
-	$('#save-btn').popover({
-		html: true,
-		title: "Save Schedule",
-		content:'<div class="input-group input-group-sm mb-3">\
-					<input id="save-input" value="'+(localStorage.username ? localStorage.username : '')+'" type="text" class="form-control save-input" placeholder="ex. Student Id" aria-label="Schedule\'s save name" aria-describedby="basic-addon2">\
-					<div class="input-group-append">\
-						<button id="save-button" class="btn btn-outline-primary" type="button">Submit</button>\
+	// Re-build popover on click so that contents update
+	$('#save-btn').click(function() {
+		if (!localStorage.getItem("recentSchedules"))
+			localStorage.setItem("recentSchedules", JSON.stringify([]));
+		$('#save-btn').popover({
+			trigger: 'manual',
+			html: true,
+			title: "Save Schedule",
+			content: function() {
+					return '<div class="input-group input-group-sm mb-3">\
+						<input id="save-input" value="'+(localStorage.getItem("username") ? localStorage.getItem("username") : '')+'" type="text" class="form-control save-input" placeholder="Schedule Name" aria-label="Schedule\'s save name" aria-describedby="basic-addon2">\
+						<div class="input-group-append">\
+							<button id="save-button" class="btn btn-outline-primary" type="button">Submit</button>\
+						</div>\
 					</div>\
-				</div>',
-		placement: 'bottom',
-		container: 'body',
-		boundary: 'window',
+					<div>'+arrToTable(localStorage.getItem("recentSchedules"))+'</div>'
+			},
+			placement: 'bottom',
+			container: 'body',
+			boundary: 'window',
+		});
+		$('#save-btn').popover('toggle');
 	});
 
 	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
 	$('#save-btn').on('shown.bs.popover', function () {
 		// Workaround for popover disappearing on mobile devices
 		if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-			var defaultName = localStorage.username ? localStorage.username : '';
+			var defaultName = localStorage.getItem(username) ? localStorage.getItem(username) : '';
 			var username = prompt('Please enter your username', defaultName);
-			saveSchedule(username);
+			if (username)
+				saveSchedule(username);
 			$('#save-btn').popover('hide');
 		}
-		$('#save-input').val(localStorage.username);
 		$('#save-input').focus();
 		$("#save-input").keypress(function(e){
 			if (!e) 
@@ -512,36 +581,55 @@ $(document).ready(function() {
 				$('#save-btn').popover('hide');
 			}
 		});
+		$('.recentSchedule').on('click', function() {
+			$('#save-input').val($(this).text());
+			$('#save-input').focus();
+		});
+		$('#clearRecents').click(function() {
+			localStorage.removeItem('recentSchedules');
+			localStorage.removeItem('username');
+			$('#save-btn').popover('hide');
+		});
 		$('#save-button').click(function() {
 			saveSchedule($('#save-input').val());
 			$('#save-btn').popover('hide');
 		});
 	});
 
-	$('#load-btn').popover({
-		html: true,
-		title: "Load Schedule",
-		content:'<div class="input-group input-group-sm mb-3">\
-					<input id="load-input" value="'+(localStorage.username ? localStorage.username : '')+'" type="text" class="form-control" placeholder="ex. Student Id" aria-label="Schedule\'s load name" aria-describedby="basic-addon2">\
-					<div class="input-group-append">\
-						<button id="load-button" class="btn btn-outline-primary" type="button">Submit</button>\
+	// Re-build popover on click so that contents update
+	$('#load-btn').click(function() {
+		if (!localStorage.getItem("recentSchedules"))
+			localStorage.setItem("recentSchedules", JSON.stringify([]));
+		$('#load-btn').popover({
+			trigger: 'manual',
+			html: true,
+			title: "Load Schedule",
+			content: function() {
+					return '<div class="input-group input-group-sm mb-3">\
+						<input id="load-input" value="'+(localStorage.getItem("username") ? localStorage.getItem("username") : '')+'" type="text" class="form-control" placeholder="Schedule Name" aria-label="Schedule\'s load name" aria-describedby="basic-addon2">\
+						<div class="input-group-append">\
+							<button id="load-button" class="btn btn-outline-primary" type="button">Submit</button>\
+						</div>\
 					</div>\
-				</div>',
-		placement: 'bottom',
-		container: 'body',
-		boundary: 'window',
+					<div>'+arrToTable(localStorage.getItem("recentSchedules"))+'</div>'
+			},
+			placement: 'bottom',
+			container: 'body',
+			boundary: 'window',
+		});
+		$('#load-btn').popover('toggle');
 	});
 
 	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
 	$('#load-btn').on('shown.bs.popover', function () {
 		// Workaround for popover disappearing on mobile devices
 		if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-			var defaultName = localStorage.username ? localStorage.username : '';
+			var defaultName = localStorage.getItem("username") ? localStorage.getItem("username") : '';
 			var username = prompt('Please enter your username', defaultName);
-			loadSchedule(username);
+			if (username)
+				loadSchedule(username);
 			$('#load-btn').popover('hide');
 		}
-		$('#load-input').val(localStorage.username);
 		$('#load-input').focus();
 		$("#load-input").keypress(function(e){
 			if (!e) 
@@ -551,6 +639,15 @@ $(document).ready(function() {
 				loadSchedule($('#load-input').val());
 				$('#load-btn').popover('hide');
 			}
+		});
+		$('.recentSchedule').on('click', function() {
+			$('#load-input').val($(this).text());
+			$('#load-input').focus();
+		});
+		$('#clearRecents').click(function() {
+			localStorage.removeItem('recentSchedules');
+			localStorage.removeItem('username');
+			$('#load-btn').popover('hide');
 		});
 		$('#load-button').click(function() {
 			loadSchedule($('#load-input').val());
@@ -563,7 +660,7 @@ $(document).ready(function() {
 		title: "Import from Antplanner",
 		content:'<div class="input-group input-group-sm mb-3">\
 					<div style="padding-bottom: 8px">Note: Not all course info will be available in event popup.</div>\
-					<input id="load-ap-input" type="text" class="form-control" placeholder="ex. Student Id" aria-label="Schedule\'s AP load name" aria-describedby="basic-addon2">\
+					<input id="load-ap-input" type="text" class="form-control" placeholder="Schedule Name" aria-label="Schedule\'s AP load name" aria-describedby="basic-addon2">\
 					<div class="input-group-append">\
 						<button id="load-ap-button" class="btn btn-outline-primary" type="button">Submit</button>\
 					</div>\
@@ -577,9 +674,10 @@ $(document).ready(function() {
 	$('#load-ap-btn').on('shown.bs.popover', function () {
 		// Workaround for popover disappearing on mobile devices
 		if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-			var defaultName = localStorage.username ? localStorage.username : '';
+			var defaultName = localStorage.getItem("username") ? localStorage.getItem("username") : '';
 			var username = prompt('Please enter your Antplanner username', defaultName);
-			loadAPSchedule(username);
+			if (username)
+				loadAPSchedule(username);
 			$('#load-ap-btn').popover('hide');
 		}
 		$('#load-ap-input').focus();
@@ -654,19 +752,36 @@ $(document).ready(function() {
 			$(this).popover('hide');
 		});
 		if ($(this).hasClass('active')) {
-			$('#finals').animate({width: '100%'}, 200, "swing");
-			$('#cal').animate({width: '100%'}, 200, "swing");
-			await sleep(200);
-			$('#soc').show();
-			$('.gutter').show();
+			if(/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+				$('#finals').animate({width: 0}, 200, "swing");
+				$('#cal').animate({width: 0}, 200, "swing");
+				await sleep(200);
+				$('#left').width('0px');
+				$('#right').show();
+			}
+			else {
+				$('#finals').animate({width: '100%'}, 200, "swing");
+				$('#cal').animate({width: '100%'}, 200, "swing");
+				await sleep(200);
+				$('#soc').show();
+				$('.gutter').show();
+			}
 			$(this).removeClass('active');
 		}
 		else {
+			if(/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+				$('#right').hide();
+				$('#left').width($(document).width());				
+				$('#cal').animate({width: $(document).width()}, 200, "swing");
+				$('#finals').animate({width: $(document).width()}, 200, "swing");
+			}
+			else {
+				$('#soc').hide();
+				$('.gutter').hide();
+				$('#cal').animate({width: $(document).width()}, 200, "swing");
+				$('#finals').animate({width: $(document).width()}, 200, "swing");
+			}
 			$(this).addClass('active');
-			$('#soc').hide();
-			$('.gutter').hide();
-			$('#cal').animate({width: $(document).width()}, 200, "swing");
-			$('#finals').animate({width: $(document).width()}, 200, "swing");
 		}
 	});
 
@@ -678,7 +793,7 @@ $(document).ready(function() {
 			$('#finals').hide();
 			$('#cal').show();
 			$(this).removeClass('active');
-			$('#cal').fullCalendar( 'rerenderEvents' );
+			$('#cal').fullCalendar('rerenderEvents');
 		}
 		else {
 			$('#finals').show();
@@ -686,8 +801,14 @@ $(document).ready(function() {
 			$(this).addClass('active');
 			$('#finals').fullCalendar('removeEvents');
 			var calRawData  = $('#cal').fullCalendar('clientEvents');
-			var usedGroupIds = []
+			var usedGroupIds = [];
+			var hasTBACourse = false;
 			for (var i in calRawData) {
+				// Checks if any course has TBA final so that user can update it
+				if (calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
+					$.trim(calRawData[i].final.replace(/&nbsp;/g, '')) == 'TBA') {
+					hasTBACourse = true;
+				}
 				// Checks to make sure that finals attribute is not empty, TBA, or from import
 				if (calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
 					$.trim(calRawData[i].final.replace(/&nbsp;/g, '')) != '' &&
@@ -711,6 +832,8 @@ $(document).ready(function() {
 					usedGroupIds.push(calRawData[i].groupId);
 				}
 			}
+			if (hasTBACourse)
+				toastr.warning('One of your courses have TBA finals. Please use the List buttton to re-add and update the course.', 'TBA Finals');
 			$('#finals').fullCalendar('rerenderEvents');
 		}
 		$(window).trigger('resize');
@@ -818,7 +941,7 @@ $(document).ready(function() {
 								'Course Title: '+calRawData[i].fullName+
 								'\\nInstructor: '+calRawData[i].instructor+
 								'\\nCode: '+calRawData[i].groupId+
-								'\\nFinal: '+calRawData[i].final,
+								'\\nFinal: '+(calRawData[i].final !== '' ? calRawData[i].final : 'See Lecture'),
 								calRawData[i].location, startDate, endDate, rrule);
 						}
 						if (calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
@@ -1036,7 +1159,12 @@ $(document).ready(function() {
 				element.popover({
 					html:true,
 					title: (event.fullName) ? event.fullName : '',
-					content:'<table style="width:100%; margin-bottom:3%">\
+					content:'<table style="width:100%; margin-bottom:3%;">\
+							<tr>\
+								<td>Name</td>\
+								<td></td>\
+								<td align="right">'+event.title+'</td>\
+							</tr>\
 							<tr>\
 								<td>Code</td>\
 								<td></td>\
@@ -1051,11 +1179,6 @@ $(document).ready(function() {
 								<td>Instructor</td>\
 								<td>&nbsp;&nbsp;</td>\
 								<td align="right">'+((event.instructor) ? createInstructorLinks(event.instructor) : 'N/A')+'</td>\
-							</tr>\
-							<tr>\
-								<td>Final</td>\
-								<td></td>\
-								<td align="right">'+ ((event.final !== '&nbsp;' ) ? ((event.final) ? event.final : 'N/A') : 'See Lecture')+'</td>\
 							</tr>\
 							<tr>\
 								<td>Color</td>\
@@ -1162,6 +1285,11 @@ $(document).ready(function() {
 				title: (event.fullName) ? event.fullName : '',
 				content:'<table style="width:100%">\
 						<tr>\
+							<td>Name</td>\
+							<td></td>\
+							<td align="right">'+event.title+'</td>\
+						</tr>\
+						<tr>\
 							<td>Code</td>\
 							<td></td>\
 							<td align="right">'+event.groupId+'</td>\
@@ -1213,11 +1341,9 @@ $(document).ready(function() {
 		$courseRow.hover(
 			function() {
 				$(this).css({'color': '#ff0000', 'cursor': 'pointer'});
-				// $(this).append('<td class="overlay" style="height:'+$(this).outerHeight()+'px;"> </td>');
 			},
 			function() {
 				$(this).css({'color': '#000000', 'cursor': 'default'});
-				// $(this).closest('.overlay').remove();
 			}
 		);
 
@@ -1234,20 +1360,21 @@ $(document).ready(function() {
 
 			var courseCode = $(this).find('td').eq(LISTING_CODE_INDEX).text();
 
-			// Ignore if course already added
-			if(isCourseAdded(courseCode)) {
-				toastr.warning('Course Already Added');
-				return;
-			}
-
 			// Parses Websoc result to find course elements in the row
 			var courseName = $.trim( $(this).prevAll().find('.CourseTitle').last().html().split('<font')[0].replace(/&nbsp;/g, '').replace(/&amp;/g, '&') )
 			var fullCourseName = $(this).prevAll().find('.CourseTitle').last().find('b').html();
 			var classType = $(this).find('td').eq(LISTING_TYPE_INDEX).html();
 			var instructor = getInstructorArray($(this).find('td').eq(LISTING_INSTRUCTOR_INDEX).html());
-			var final = $(this).find('td').eq(LISTING_FINAL_INDEX).html();
+			var final = $(this).find('td').eq(LISTING_FINAL_INDEX).html().replace(/&nbsp;/g, '').trim();
 			var units = $(this).find('td').eq(LISTING_UNITS_INDEX).html();
 			var colorPair = getRandomColorPair();
+
+			// Ignore if course already added or if course final update
+			if(isCourseAdded(courseCode, final)) {
+				return;
+			}
+
+			// Increment unit counter
 			$('#unitCounter').text(parseInt($('#unitCounter').text())+parseInt(units));
 
 			// Iterate through course times (a course may have different meeting times)

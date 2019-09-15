@@ -14,6 +14,12 @@ $(document).ready(function() {
             $(this).attr("target", "_blank");
         }
     });
+    
+    // Makes table stretch to fill the iframe
+    $("table").each(function() {
+        $(this).width("100%");
+    });
+
     $("tr").each(function() {
         // To delete the useless 'textbooks' column and title
         // $("th:eq(13)", this).remove();

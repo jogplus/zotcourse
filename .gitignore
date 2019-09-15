@@ -2,3 +2,7 @@
 *.pyc
 env/
 .vscode/
+env3/
+app.yaml
+zotcourse*.json
+__pycache__
