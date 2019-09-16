@@ -8,6 +8,7 @@ from __future__ import absolute_import
 from datetime import datetime, timedelta, timezone
 import ast
 import os
+import re
 import urllib
 import flask
 from google.cloud import datastore
@@ -133,18 +134,29 @@ def save_schedule():
     data = flask.request.form.get('data')
     try:
         parsed_data = ast.literal_eval(data)
+        # Maximum of 50 courses can be assigned to one schedule
+        if len(parsed_data) > 50:
+            raise ValueError
         for c in parsed_data:
             # Ensures that no extra parameters are being added
             if list(filter(lambda p: p in VALID_PARAMS, c)) != list(c.keys()):
                 raise AttributeError
-            # Ensures that each value is not too large
-            for v in c.values():
-                if len(str(v)) > 500:
+            for value in [str(v) for v in c.values()]:
+                # Ensures that each value is not too large
+                if len(str(value)) > 500:
                     raise ValueError
+                # Ensures that no malicious javascript is injected
+                if 'javascript' in value or 'onclick' in value or re.search('<\s*script', value):
+                    raise ValueError
+                # Ensures that no malicious links are included
+                links = re.findall('href\s*=\s*"\s*(?:https?:\/\/)?(?:[^@\/\n]+@)?(?:www\.)?([^:\/?\n]+)', value)
+                for match in links:
+                    if match != 'classrooms.uci.edu':
+                        raise ValueError
         schedule_set(username, data)
         return flask.jsonify(success=True)
     except Exception as error:
-        return flask.jsonify(success=False, error=error), 400
+        return flask.jsonify(success=False, error=repr(error)), 400
 
 @app.route('/schedule/load')
 def load_schedule():
@@ -152,7 +164,7 @@ def load_schedule():
     schedule = schedule_get(username)
     if schedule:
         return flask.jsonify(success=True, data=schedule['data'])
-    return flask.jsonify(success=False), 400
+    return flask.jsonify(success=False, error='Schedule not found'), 400
 
 @app.route('/schedule/loadap')
 def load_ap_schedule():
@@ -160,4 +172,4 @@ def load_ap_schedule():
     schedule_json = websoc.get_backup_from_antplanner(username)
     if schedule_json:
         return flask.jsonify(schedule_json)
-    return flask.jsonify(success=False), 400
+    return flask.jsonify(success=False, error='Schedule not found on Antplanner'), 400

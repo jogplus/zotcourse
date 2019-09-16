@@ -138,9 +138,14 @@ function parseRoomString(roomString) {
     // This will match non-markup text that is followed by the opening of a tag,
     // or with the ending of the string
     var regex = /(\w|\s)+(?=<|$)/g;
-    var info = roomString.match(regex) || [];
+	var without_link = roomString.match(regex) || [];
 
-    return info;
+	// Match <a> link for classroom location
+	// If no link is found, uses location without_link
+	var tagRegex = /<a.*?>.*?<\/a>/g;
+	var with_link = roomString.match(tagRegex) || without_link;
+
+    return with_link;
 }
 
 function CourseTimeStringParser(courseString, roomString) {
@@ -913,7 +918,7 @@ $(document).ready(function() {
 				var added = [];
 				var cal = ics();
 				for (i in calRawData) {
-					if (added.indexOf(calRawData[i].groupId) == -1) {
+					if (added.indexOf([calRawData[i].groupId, calRawData[i].daysOfTheWeek].toString()) == -1) {
 						var startDate = new Date(firstMonday);
 						var daysOfTheWeek = calRawData[i].daysOfTheWeek.sort();
 						// Add the number of days until first meeting starting from Monday (0)
@@ -937,12 +942,14 @@ $(document).ready(function() {
 							cal.addEvent(calRawData[i].title, '', '', startDate, endDate, rrule);
 						}
 						else {
+							var regex = /(\w|\s)+(?=<|$)/g;
+							var location = calRawData[i].location.match(regex) || [calRawData[i].location];
 							cal.addEvent(calRawData[i].title, 
 								'Course Title: '+calRawData[i].fullName+
 								'\\nInstructor: '+calRawData[i].instructor+
 								'\\nCode: '+calRawData[i].groupId+
 								'\\nFinal: '+(calRawData[i].final !== '' ? calRawData[i].final : 'See Lecture'),
-								calRawData[i].location, startDate, endDate, rrule);
+								location.toString(), startDate, endDate, rrule);
 						}
 						if (calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
 							calRawData[i].final.replace(/&nbsp;/g, '').trim() != '' && 
@@ -958,7 +965,7 @@ $(document).ready(function() {
 								'\\nCode: '+calRawData[i].groupId,
 								'Check portal.uci.edu', startTime, endTime);
 						}
-						added.push(calRawData[i].groupId);
+						added.push([calRawData[i].groupId, calRawData[i].daysOfTheWeek].toString());
 					}
 				}
 				cal.download();

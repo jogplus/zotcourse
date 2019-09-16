@@ -316,21 +316,22 @@ ul {
 	}
 } 
 
-/* @media screen and (max-width: 800px) {
+@media screen and (max-width: 800px) {
 	.fc-title{
-		font-size: .5em !important;
+		font-size: .65rem !important;
+		line-height: 1.0 !important;
 	}
 	
 	.fc-time > span {
-		font-size: .5em !important;
+		font-size: .55rem !important;
 	}
 
 	.fc-axis > span {
-		font-size: .85em !important;
+		font-size: .85rem !important;
 	}
+}
 
-	.popover {
-		max-width: 5em !important;
-		max-height: 5em !important;
-	}
-} */
+.col {
+	flex-basis: 0;
+	min-width: 20rem;
+}
