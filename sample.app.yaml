@@ -6,6 +6,8 @@ handlers:
 - url: /static
   static_dir: zotcourse/static
   secure: always
+- url: .*
+  secure: always
 
 env_variables:
   USE_MEMCACHE: false
