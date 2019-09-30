@@ -1,4 +1,6 @@
 runtime: python37
+env: standard
+instance_class: F1
 
 handlers:
 - url: /static
@@ -8,6 +10,8 @@ handlers:
 env_variables:
   USE_MEMCACHE: false
   USE_GCP: false
-  REDIS_HOST: your-redis-host
-  REDIS_PORT: your-redis-port
-  REDIS_PASSWORD: your-redis-password
+
+automatic_scaling:
+  max_idle_instances: 1
+  max_instances: 1
+  max_pending_latency: 15s
