@@ -10,8 +10,8 @@ handlers:
   secure: always
 
 env_variables:
-  USE_MEMCACHE: false
-  USE_GCP: false
+  USE_MEMCACHE: true
+  USE_DATASTORE: true
 
 automatic_scaling:
   max_idle_instances: 1

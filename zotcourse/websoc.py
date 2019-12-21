@@ -19,7 +19,11 @@ class FormInfo:
             for k, v in dictionary.items():
                 setattr(self, k, v)
         else:
-            html = requests.get("http://websoc.reg.uci.edu").content
+            s = requests.Session()
+            headers = {
+                'User-Agent': 'User-Agent'
+            }
+            html = s.get("http://websoc.reg.uci.edu1", headers=headers).content
             parsed_html = BeautifulSoup(html, 'lxml')
             # Parses for term info
             term = parsed_html.find('select', {"name":"YearTerm"}).find_all('option')
@@ -43,7 +47,11 @@ class FormInfo:
         yield 'departments', self.departments
 
 def get_listing(form_data):
-    html = requests.get("https://www.reg.uci.edu/perl/WebSoc?"+form_data).content
+    s = requests.Session()
+    headers = {
+        'User-Agent': 'User-Agent'
+    }
+    html = s.get("https://www.reg.uci.edu/perl/WebSoc?"+form_data, headers=headers).content
     listing = BeautifulSoup(html, 'lxml')
     course_list = listing.find('div', 'course-list')
     if course_list:

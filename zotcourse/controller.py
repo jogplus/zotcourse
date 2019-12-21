@@ -1,8 +1,8 @@
 """Zotcourse Controller
 
 Provides all of the endpoints.
-Currently requires Redis and GCP Datastore account if
-USE_MEMCACHE and USE_DATASTORE are enabled respectively
+Currently requires GCP Datastore account if
+USE_MEMCACHE and USE_DATASTORE are enabled
 """
 from __future__ import absolute_import
 from datetime import datetime, timedelta, timezone
@@ -15,8 +15,9 @@ from google.cloud import datastore
 from zotcourse import app, websoc
 
 # Time (seconds) until cache will expire for form and listing
-FORM_EXPIRE_TIME = 60 * 60 * 24
+FORM_EXPIRE_TIME = 60 * 60 * 4
 LISTING_EXPIRE_TIME = 60 * 60
+IGNORE_TIME = -1
 
 USE_MEMCACHE = os.environ.get('USE_MEMCACHE', 'false').upper() == 'TRUE'
 USE_DATASTORE = os.environ.get('USE_DATASTORE', 'false').upper() == 'TRUE'
@@ -35,12 +36,12 @@ def listing_get(key, time):
         if result and isinstance(result['modified_at'], str):
             parsed_time = datetime.fromisoformat(result['modified_at'])
         # If cached listing has passed expiration, fetch new listing
-        if not result or parsed_time + timedelta(seconds=time) < datetime.now(timezone.utc):
+        if not result or parsed_time + timedelta(seconds=time) < datetime.now(timezone.utc) and time != IGNORE_TIME:
             return None
         return result
 
 def listing_set(key, data):
-    if USE_MEMCACHE:
+    if USE_MEMCACHE and data:
         key = DATASTORE_CLIENT.key('Listing', key)
         # Must `exclude_from_indexes` in order to allow values > 150 characters
         entity = datastore.Entity(key=key, exclude_from_indexes=['data'])
@@ -57,7 +58,7 @@ def schedule_get(key):
         return result
 
 def schedule_set(key, data):
-    if USE_DATASTORE:
+    if USE_DATASTORE and data:
         key = DATASTORE_CLIENT.key('Schedule', key)
         # Must `exclude_from_indexes` in order to allow values > 150 characters
         entity = datastore.Entity(key=key, exclude_from_indexes=['data'])
@@ -73,9 +74,13 @@ def index():
     # Checks if valid cached search form, if not fetches new search form
     if form_info:
         form_info = websoc.FormInfo(ast.literal_eval(form_info['data']))
-    if not form_info:
-        form_info = websoc.FormInfo()
-        listing_set('form', str(dict(form_info)))
+    else:
+        try:
+            form_info = websoc.FormInfo()
+            listing_set('form', str(dict(form_info)))
+        except Exception:
+            form_info = listing_get('form', IGNORE_TIME)
+            form_info = websoc.FormInfo(ast.literal_eval(form_info['data']))
     return flask.render_template('index.html', default_term=form_info.default_term)
 
 @app.route('/websoc/search', methods=['GET'])
@@ -84,9 +89,13 @@ def websoc_search_form():
     # Checks if valid cached search form, if not fetches new search form
     if form_info:
         form_info = websoc.FormInfo(ast.literal_eval(form_info['data']))
-    if not form_info:
-        form_info = websoc.FormInfo()
-        listing_set('form', str(dict(form_info)))
+    else:
+        try:
+            form_info = websoc.FormInfo()
+            listing_set('form', str(dict(form_info)))
+        except Exception:
+            form_info = listing_get('form', IGNORE_TIME)
+            form_info = websoc.FormInfo(ast.literal_eval(form_info['data']))
     return flask.render_template('websoc/search.html', terms=form_info.terms, \
     general_eds=form_info.general_eds, departments=form_info.departments)
 
@@ -121,11 +130,15 @@ def websoc_search():
     else:
         key = str(flask.request.query_string, 'utf-8')
         listing_html = listing_get(key, LISTING_EXPIRE_TIME)
-        if not listing_html:
-            listing_html = websoc.get_listing(key)
-            listing_set(key, listing_html)
-        else:
+        if listing_html:
             listing_html = listing_html['data']
+        else:
+            try:
+                listing_html = websoc.get_listing(key)
+                listing_set(key, listing_html)
+            except Exception:
+                listing_html = listing_get(key, IGNORE_TIME)
+                listing_html = listing_html['data']
     return flask.render_template('websoc/listing.html', listing=listing_html)
 
 @app.route('/schedules/add', methods=['POST'])
