@@ -81,7 +81,8 @@ def index():
         except Exception:
             form_info = listing_get('form', IGNORE_TIME)
             form_info = websoc.FormInfo(ast.literal_eval(form_info['data']))
-    return flask.render_template('index.html', default_term=form_info.default_term)
+    return flask.render_template('index.html', default_term=form_info.default_term, terms=form_info.terms, \
+    general_eds=form_info.general_eds, departments=form_info.departments)
 
 @app.route('/websoc/search', methods=['GET'])
 def websoc_search_form():
@@ -129,7 +130,7 @@ def websoc_search():
     # Checks if valid cached listing, if not fetches new listing
     else:
         key = str(flask.request.query_string, 'utf-8')
-        listing_html = listing_get(key, LISTING_EXPIRE_TIME)
+        listing_html = None#listing_get(key, LISTING_EXPIRE_TIME)
         if listing_html:
             listing_html = listing_html['data']
         else:

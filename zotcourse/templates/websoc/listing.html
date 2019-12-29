@@ -1,20 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Zotcourse - Listing</title>
-  <link rel="stylesheet" href="{{url_for('static', filename="css/reset.css")}}">
-  <link rel="stylesheet" href="{{url_for('static', filename="css/main.css")}}">
-  <link rel="stylesheet" href="{{url_for('static', filename="css/listing.css")}}">
-</head>
-<body>
-  <header>
-    <button type="button" class="btn btn-sm btn-primary" onclick="javascript: history.go(-1)" style="position: fixed;">Go Back</button>
-  </header>
-  <div class="space2"></div>
-  {{listing | safe}}
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
-  <script src="{{url_for('static', filename="js/listing.js")}}"></script>
-</body>
-</html>
+<div class="listing-row">
+  <button type="button" id="back-btn" class="btn btn-sm btn-primary listing-btn">Go Back</button>
+  <button type="button" class="btn btn-sm btn-primary listing-btn"><i class="fas fa-search-plus"></i></button>
+  <button type="button" class="btn btn-sm btn-primary"><i class="fas fa-search-minus"></i></button>
+</div>
+<div class="space2"></div>
+{{listing | safe}}

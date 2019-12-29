@@ -53,6 +53,14 @@ def get_listing(form_data):
     }
     html = s.get("https://www.reg.uci.edu/perl/WebSoc?"+form_data, headers=headers).content
     listing = BeautifulSoup(html, 'lxml')
+    tr_removed_classes = ['college-title', 'college-comment', 'dept-comment', 'ccode-range-comment', 'white-bar', 'white-bar-thick']
+    div_removed_classes = ['title-bar', 'contact-footer', 'contact-date', 'reg-banner-container']
+    for tr in listing.find_all('tr', class_=tr_removed_classes):
+        tr.decompose()
+    for div in listing.find_all('div', class_=div_removed_classes):
+        div.decompose()
+    listing.find('table', id='reg-nav-bar').decompose()
+    listing.find('map', id='RegBannerMain').decompose()
     course_list = listing.find('div', 'course-list')
     if course_list:
         return course_list.decode()

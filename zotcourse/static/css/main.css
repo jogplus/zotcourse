@@ -45,7 +45,7 @@ ul {
 #soc {
 	height: 100%;
 	width: 100%;
-	display: block;
+	display: none;
 }
 
 #upper {
@@ -334,4 +334,36 @@ ul {
 .col {
 	flex-basis: 0;
 	min-width: 20rem;
+}
+
+.dept-title {
+	background: #eee;
+	font-weight: bold;
+}
+.course-list {
+	font-size: .7vw;
+	line-height: /*1.25*/ 1vw;
+}
+
+/* Makes table stretch to fill the iframe */
+.course-list > table {
+	width: 100%;
+}
+
+.college-title, .college-comment, .dept-comment, .ccode-range-comment,
+#contact-footer, .title-bar, #reg-nav-bar, #contact-date, #RegBannerMain,
+#reg-banner-container, .white-bar, .white-bar-thick {
+	display: none;
+}
+
+#search {
+	padding: 20px
+}
+
+.listing-row {
+	position: fixed;
+}
+
+.listing-btn {
+	padding-right: 10px;
 }

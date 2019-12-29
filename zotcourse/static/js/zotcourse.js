@@ -464,27 +464,326 @@ function arrToTable(str) {
 				'+recents+'\
 			</table>';
 }
+
+function swapToListing(data) {
+	$('#search').hide();
+	$("#loading").hide();
+	$('#soc').html(data);
+	$('#soc').show();
+	$('#back-btn').on('click', function() {
+		$('#soc').hide();
+		$('#search').show();
+	});
+}
+
+function setupListingListeners() {
+	var $listingContext = $('.course-list', $('#right').contents());
+	var $courseRow = $("tr[valign*='top']:not([bgcolor='#fff0ff'])", $listingContext);
+
+	$courseRow.hover(
+		function() {
+			$(this).css({'color': '#ff0000', 'cursor': 'pointer'});
+		},
+		function() {
+			$(this).css({'color': '#000000', 'cursor': 'default'});
+		}
+	);
+
+	$courseRow.on('click', function() {
+		var timeString = $(this).find('td').eq(LISTING_TIME_INDEX).html();
+		var roomString = $(this).find('td').eq(LISTING_ROOM_INDEX).html();
+		var courseTimes = CourseTimeStringParser(timeString, roomString)
+
+		// Ignore if course is "TBA"
+		if(courseTimes.length == 0) {
+			toastr.warning('Course is TBA');
+			return;
+		}
+
+		var courseCode = $(this).find('td').eq(LISTING_CODE_INDEX).text();
+
+		// Parses Websoc result to find course elements in the row
+		var courseName = $.trim( $(this).prevAll().find('.CourseTitle').last().html().split('<font')[0].replace(/&nbsp;/g, '').replace(/&amp;/g, '&') )
+		var fullCourseName = $(this).prevAll().find('.CourseTitle').last().find('b').html();
+		var classType = $(this).find('td').eq(LISTING_TYPE_INDEX).html();
+		var instructor = getInstructorArray($(this).find('td').eq(LISTING_INSTRUCTOR_INDEX).html());
+		var final = $(this).find('td').eq(LISTING_FINAL_INDEX).html().replace(/&nbsp;/g, '').trim();
+		var units = $(this).find('td').eq(LISTING_UNITS_INDEX).html();
+		var colorPair = getRandomColorPair();
+
+		// Ignore if course already added or if course final update
+		if(isCourseAdded(courseCode, final)) {
+			return;
+		}
+
+		// Increment unit counter
+		$('#unitCounter').text(parseInt($('#unitCounter').text())+parseInt(units));
+
+		// Iterate through course times (a course may have different meeting times)
+		var courseID = S4()
+		for(var i in courseTimes) {
+			var parsed = courseTimes[i];
+			$('#cal').fullCalendar("renderEvent",{
+				id:	courseID,
+				groupId: courseCode,
+				start: parsed.start,
+				end: parsed.end,
+				title: classType + ' ' + courseName,
+				dow: parsed.days,
+				color: colorPair.color,
+				daysOfTheWeek: parsed.days,
+				location: parsed.room,
+				fullName: fullCourseName,
+				instructor: instructor,
+				final: final,
+				units: units,
+				courseTimes: courseTimes,
+				eventType: COURSE_EVENT_TYPE
+			});
+		}
+		switchToMainCalendar();
+	});
+
+	// Stop propagation from reaching the parent (the click handler for the course row)
+	$(".course-list td a").click(function(e) {
+		e.stopPropagation();
+	});
+
+	$(".same-link").on("click", function(event) {				
+		event.preventDefault();
+		$.ajax({
+			url: $(this).attr("href"),
+			type: 'GET',
+			success: function(data) {
+				swapToListing(data);
+				cleanListing();
+				setupListingListeners();
+				mobileRescale();
+			},
+			error: function() {
+				toastr.error('Cannot load classes');
+			}
+		});
+	});
+}
+
+function cleanListing() {
+	if ($("#right").find('tr').length == 0) {
+		$('.course-list').text('No courses matched your search criteria for this term.');
+	}
+	// console.log('before a', new Date().toLocaleTimeString());
+	console.time();
+	$("#right a").each(function() {
+		if ($(this).attr("href").indexOf("reg.uci.edu/perl/") !== -1) {
+			var query = $(this).attr("href").split("?")[1];
+			$(this).attr("href", "/websoc/listing?" + query);
+			$(this).removeAttr("target");
+			$(this).addClass("same-link");
+		}
+		// all other links open in a new tab
+		else {
+			$(this).attr("target", "_blank");
+		}
+	});
+	console.timeEnd();
+
+	// console.log('before th', new Date().toLocaleTimeString());
+	console.time('th');
+	var textbooks_index;
+	var web_index;
+	console.time('space tr');
+	$('#right tr');
+	console.timeEnd('space tr');
+	console.time('find tr');
+	$('#right').find('tr');
+	console.timeEnd('find tr');
+	var $tr = $('#right tr');
+	$("#right th").each(function() {
+		var $th = $(this);
+		if ($th.text() === "Textbooks") {
+			textbooks_index = ($th).index();
+			// console.log($('th').eq(textbooks_index));
+			// console.log($('th:eq(' + textbooks_index + ')'));
+			// console.log($tr.find($('td').eq(textbooks_index)));
+			// console.log($('#right th').get(textbooks_index));
+			// console.log($tr.find('td:eq(' + textbooks_index + ')'));
+			// $tr.find($('th').eq(textbooks_index)).remove();
+			// $tr.find($('td').eq(textbooks_index)).remove();
+			$('#right tr').find('th:eq(' + textbooks_index + ')').remove();
+			$('#right tr').find('td:eq(' + textbooks_index + ')').remove();
+		}
+		else if ($th.text() === "Web") {
+			web_index = ($th).index();
+			// $tr.find('th').eq(web_index).remove();
+			// $tr.find('td').eq(web_index).remove();
+			$('#right tr').find('th:eq(' + web_index + ')').remove();
+			$('#right tr').find('td:eq(' + web_index + ')').remove();
+		}
+		if (textbooks_index && web_index) {
+			return false;
+		}
+	});
+	console.timeEnd('th');
+
+	// console.log('before tr', new Date().toLocaleTimeString());
+	console.time();
+	$("#right tr").each(function() {
+		// To delete the useless 'textbooks' column and title
+		// $("th:eq(13)", this).remove();
+		// $("td:eq(13)", this).remove();
+		// After textbooks column is deleted, deletes the 'web' column and title
+		// $("th:eq(13)", this).remove();
+		// $("td:eq(13)", this).remove();
+		// Reduces the column width after deleting the two columns
+		var td_close = $("td", this);
+		if (td_close.attr('colspan')) {
+		    td_close.attr('colspan', 14);
+		}
+		// Removes the indentions for the "same as class" and "enrollment" info
+		var td_0 = $("td:eq(0)", this);
+		if (td_0.html() == "&nbsp;") {
+			td_0.remove();
+			var td_0_new = $("td:eq(0)", this);
+		    if (td_0_new.html() == "&nbsp;") {
+		        td_0_new.remove();
+			}
+			var td_2 = $("td:eq(2)", this)
+		    if (td_2.html() == "&nbsp;" && $(this).attr('bgcolor') == '#fff0ff') {
+		        td_2.remove();
+		    }
+		}
+		
+		// Used to add registrar restrictions link for each row
+		// If only the header needs the link, use th instead of td
+		var td_13 = $("td:eq(12)", this)
+		if (td_13.html() != "&nbsp;") {
+			td_13.html("<a href='https://www.reg.uci.edu/enrollment/restrict_codes.html' target='_blank'>"+td_13.text()+"</a>")
+		}
+
+		// The 4th child is typically the instructor column
+		var element = $("td:eq(4)", this);
+		var elementText = element.text();
+
+		// Check to see if it's similar to an instructor's name:
+		//     LASTNAME, F.
+		//     SMITH, J.
+		if (elementText.indexOf(',') !== -1 && elementText.indexOf('.') !== -1) {
+			var instructorNames = element.html().split('<br>');
+			var instructorLinks = [];
+			for (var i = 0; i < instructorNames.length; i++) {
+				var instructorName = instructorNames[i].trim();
+				// Ignore STAFF instructors
+				if (instructorName == 'STAFF') {
+					instructorLinks.push('STAFF');
+					continue;
+				}
+
+				if (instructorName == '') {
+					continue;
+				}
+
+				// Build the link to RateMyProfessors
+				var instructorLastName = instructorName.split(',')[0];
+				if (instructorLastName.indexOf('-') !== -1) {
+					instructorLastName = instructorName.split('-')[0]
+				}
+				var link = "https://www.ratemyprofessors.com/search.jsp?queryoption=HEADER&queryBy=teacherName&schoolName=University+of+California+Irvine&schoolID=1074&query="+instructorLastName;
+				instructorLinks.push('<a class="instructor-link" href="'+link+'" target="_blank">'+instructorName+'</a>');
+			}
+			element.html(instructorLinks.join('<br />'));
+		}
+	});
+	console.timeEnd();
+	// console.log('before end', new Date().toLocaleTimeString());
+}
+
+function toggleOptions() {
+	var div = document.getElementById("moreOptions");
+	var button = document.getElementById("moreOptionsButton");
+	if (div.style.display === "none") {
+		div.style.display = "block";
+		button.innerText = "Show Less Options..."
+	} else {
+		div.style.display = "none";
+		button.innerText = "Show More Options..." 
+	}
+}
+
+function mobileRescale() {
+	if(/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+		$('.course-list').css('font-size', '3vw');
+		$('.course-list').css('line-height', '3vw');
+	}
+}
   
 // JQuery listeners
 $(document).ready(function() {
 	// Creates a resizable panels using Split.Js
 	window.Split(['#left', '#right'], {
-		sizes: [50, 50],
+		sizes: [45, 55],
 		gutterSize: 10,
 		minSize: 20,
 		elementStyle: function(dim, size, gutterSize){
 			return {
-				'width': 'calc(' + size + '% - ' + gutterSize*2 + 'px)',
+				'width': 'calc(' + size + '% - ' + gutterSize*1.5 + 'px)',
 			};
-		},
-		// Workaround for when iframe can't scroll after dragging on Safari
-		onDragEnd: function() {
-			$('iframe').css('display', 'none').height();
-			$('iframe').css('display', 'block');
 		}
 	});
 	// Adds the ellipsis icon within the gutter
 	$('.gutter').append('<i class="fas fa-ellipsis-v"></i>');
+
+	lscache.flushExpired();
+
+	$("#search-form").submit(function( event ) {
+		$("#loading").show();
+		event.preventDefault();
+		// console.log('before data', new Date().toLocaleTimeString());
+		var data = lscache.get($("#search-form").serialize());
+		// console.log('after', new Date().toLocaleTimeString());
+		if (data) {
+			console.time('swap');
+			swapToListing(data);
+			console.timeEnd('swap');
+			// console.log('after swap', new Date().toLocaleTimeString());
+			console.time('clean');
+			cleanListing();
+			console.timeEnd('clean');
+			// console.log('after clean', new Date().toLocaleTimeString());
+			console.time('listener');
+			setupListingListeners();
+			console.timeEnd('listener');
+
+			console.time('mobile');
+			mobileRescale();
+			console.timeEnd('mobile');
+		}
+		else {
+			$.ajax({
+				url: $('#search-form').attr('action'),
+				type: 'GET',
+				data: $("#search-form").serializeArray(),
+				success: function(data) {
+					swapToListing(data);
+					cleanListing();
+					setupListingListeners();
+					mobileRescale();
+					lscache.set($("#search-form").serialize(), data, 30);
+				},
+				error: function() {
+					toastr.error('Cannot load classes');
+				}
+			});
+		}
+		lscache.flushExpired();
+	});
+
+	if ($("#moreOptionsButton").checked) {
+		toggleOptions();
+	}
+
+	$("#moreOptionsButton").on('click', function() {
+		toggleOptions();
+	})
 
 	// If on a mobile device, show fullscreen calendar
 	if(/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
@@ -714,7 +1013,6 @@ $(document).ready(function() {
 			$('#cal').css('width', '100%');
 			$('th, td, tr').css('border', '2px solid #bfbfbf');
 			$('.fc-minor').css('border-top', '3px dotted #bfbfbf')
-			$('#soc').show();
 			$('#resize-btn').removeClass('active');
 			// Sets the name of the schedule as the header for the page
 			document.title = ($('#scheduleNameForPrint').html() ? $('#scheduleNameForPrint').html() : 'Zotcourse - Schedule Planner for UCI' );
@@ -730,7 +1028,7 @@ $(document).ready(function() {
 			// Resets page back to original size
 			$("#right").show();
 			$('.gutter').show();
-			$("#left").outerWidth(tempLeftSize-20);
+			$("#left").outerWidth(tempLeftSize);
 			$('th, td, tr').css('border', '');
 			$('.fc-time-grid .fc-slats td').css({
 				'height': ($('#left').outerHeight() - $('#upper').outerHeight()) / 31,
@@ -863,11 +1161,24 @@ $(document).ready(function() {
 			toastr.warning('Must have at least 1 course added.', 'Cannot List Courses');
 		}
 		else {
+			$("#loading").show();
 			// 'data-term' attribute is rendered from index template and defaults to latest term
-			document.getElementById('soc').src = '/websoc/listing?YearTerm='+$('#list-btn').attr('data-term')+'&\
-			Breadth=ANY&Dept=&CourseCodes='+courseCodes+'&CourseNum=&Division=ANY&\
-			InstrName=&CourseTitle=&ClassType=ALL&Units=&Days=&StartTime=&EndTime=&\
-			FullCourses=ANY&ShowComments=on&ShowFinals=on';
+			$.ajax({
+				url: '/websoc/listing?YearTerm='+$('#list-btn').attr('data-term')+'&\
+				Breadth=ANY&Dept=&CourseCodes='+courseCodes+'&CourseNum=&Division=ANY&\
+				InstrName=&CourseTitle=&ClassType=ALL&Units=&Days=&StartTime=&EndTime=&\
+				FullCourses=ANY&ShowComments=on&ShowFinals=on',
+				type: 'GET',
+				success: function(data) {
+					swapToListing(data);
+					cleanListing();
+					setupListingListeners();
+					mobileRescale();
+				},
+				error: function() {
+					toastr.error('Cannot load classes');
+				}
+			});
 		}
 	});
 
@@ -1340,73 +1651,4 @@ $(document).ready(function() {
 
 	// Causes fullCalendar to resize after row height was adjusted.
 	$(window).trigger('resize');
-
-	$('#soc').bind('load', function(){
-		var $listingContext = $('.course-list', $('#soc').contents());
-		var $courseRow = $("tr[valign*='top']:not([bgcolor='#fff0ff'])", $listingContext);
-
-		$courseRow.hover(
-			function() {
-				$(this).css({'color': '#ff0000', 'cursor': 'pointer'});
-			},
-			function() {
-				$(this).css({'color': '#000000', 'cursor': 'default'});
-			}
-		);
-
-		$courseRow.on('click', function() {
-			var timeString = $(this).find('td').eq(LISTING_TIME_INDEX).html();
-			var roomString = $(this).find('td').eq(LISTING_ROOM_INDEX).html();
-			var courseTimes = CourseTimeStringParser(timeString, roomString)
-
-			// Ignore if course is "TBA"
-			if(courseTimes.length == 0) {
-				toastr.warning('Course is TBA');
-				return;
-			}
-
-			var courseCode = $(this).find('td').eq(LISTING_CODE_INDEX).text();
-
-			// Parses Websoc result to find course elements in the row
-			var courseName = $.trim( $(this).prevAll().find('.CourseTitle').last().html().split('<font')[0].replace(/&nbsp;/g, '').replace(/&amp;/g, '&') )
-			var fullCourseName = $(this).prevAll().find('.CourseTitle').last().find('b').html();
-			var classType = $(this).find('td').eq(LISTING_TYPE_INDEX).html();
-			var instructor = getInstructorArray($(this).find('td').eq(LISTING_INSTRUCTOR_INDEX).html());
-			var final = $(this).find('td').eq(LISTING_FINAL_INDEX).html().replace(/&nbsp;/g, '').trim();
-			var units = $(this).find('td').eq(LISTING_UNITS_INDEX).html();
-			var colorPair = getRandomColorPair();
-
-			// Ignore if course already added or if course final update
-			if(isCourseAdded(courseCode, final)) {
-				return;
-			}
-
-			// Increment unit counter
-			$('#unitCounter').text(parseInt($('#unitCounter').text())+parseInt(units));
-
-			// Iterate through course times (a course may have different meeting times)
-			var courseID = S4()
-			for(var i in courseTimes) {
-				var parsed = courseTimes[i];
-				$('#cal').fullCalendar("renderEvent",{
-					id:	courseID,
-					groupId: courseCode,
-					start: parsed.start,
-					end: parsed.end,
-					title: classType + ' ' + courseName,
-					dow: parsed.days,
-					color: colorPair.color,
-					daysOfTheWeek: parsed.days,
-					location: parsed.room,
-					fullName: fullCourseName,
-					instructor: instructor,
-					final: final,
-					units: units,
-					courseTimes: courseTimes,
-					eventType: COURSE_EVENT_TYPE
-				});
-			}
-			switchToMainCalendar();
-		});
-	});
 });
