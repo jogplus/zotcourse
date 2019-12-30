@@ -1,7 +1,9 @@
-<div class="listing-row">
-  <button type="button" id="back-btn" class="btn btn-sm btn-primary listing-btn">Go Back</button>
-  <button type="button" class="btn btn-sm btn-primary listing-btn"><i class="fas fa-search-plus"></i></button>
-  <button type="button" class="btn btn-sm btn-primary"><i class="fas fa-search-minus"></i></button>
+<div>
+  <div class="listing-row">
+    <button type="button" id="back-btn" class="btn btn-sm btn-primary listing-btn">Go Back</button>
+    <button type="button" class="btn btn-sm btn-primary listing-btn"><i class="fas fa-search-plus"></i></button>
+    <button type="button" class="btn btn-sm btn-primary"><i class="fas fa-search-minus"></i></button>
+  </div>
+  <div class="space2"></div>
+  {{listing | safe}}
 </div>
-<div class="space2"></div>
-{{listing | safe}}
