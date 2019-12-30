@@ -130,7 +130,7 @@ def websoc_search():
     # Checks if valid cached listing, if not fetches new listing
     else:
         key = str(flask.request.query_string, 'utf-8')
-        listing_html = None#listing_get(key, LISTING_EXPIRE_TIME)
+        listing_html = listing_get(key, LISTING_EXPIRE_TIME)
         if listing_html:
             listing_html = listing_html['data']
         else:

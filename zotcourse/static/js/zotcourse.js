@@ -470,10 +470,6 @@ function swapToListing(data) {
 	$("#loading").hide();
 	$('#soc').html(data);
 	$('#soc').show();
-	$('#back-btn').on('click', function() {
-		$('#soc').hide();
-		$('#search').show();
-	});
 }
 
 function setupListingListeners() {
@@ -565,15 +561,19 @@ function setupListingListeners() {
 			}
 		});
 	});
+
+	$('#back-btn').on('click', function() {
+		$('#soc').hide();
+		$('#search').show();
+	});
 }
 
 function cleanListing() {
 	if ($("#right").find('tr').length == 0) {
 		$('.course-list').text('No courses matched your search criteria for this term.');
 	}
-	// console.log('before a', new Date().toLocaleTimeString());
-	console.time();
-	$("#right a").each(function() {
+
+	$("#right").find("a").each(function() {
 		if ($(this).attr("href").indexOf("reg.uci.edu/perl/") !== -1) {
 			var query = $(this).attr("href").split("?")[1];
 			$(this).attr("href", "/websoc/listing?" + query);
@@ -585,49 +585,32 @@ function cleanListing() {
 			$(this).attr("target", "_blank");
 		}
 	});
-	console.timeEnd();
 
-	// console.log('before th', new Date().toLocaleTimeString());
-	console.time('th');
 	var textbooks_index;
 	var web_index;
-	console.time('space tr');
-	$('#right tr');
-	console.timeEnd('space tr');
-	console.time('find tr');
-	$('#right').find('tr');
-	console.timeEnd('find tr');
-	var $tr = $('#right tr');
-	$("#right th").each(function() {
+	var $tr = $('#right').find('tr');
+	$('#right').find('th').each(function() {
 		var $th = $(this);
 		if ($th.text() === "Textbooks") {
 			textbooks_index = ($th).index();
-			// console.log($('th').eq(textbooks_index));
-			// console.log($('th:eq(' + textbooks_index + ')'));
-			// console.log($tr.find($('td').eq(textbooks_index)));
-			// console.log($('#right th').get(textbooks_index));
-			// console.log($tr.find('td:eq(' + textbooks_index + ')'));
 			// $tr.find($('th').eq(textbooks_index)).remove();
 			// $tr.find($('td').eq(textbooks_index)).remove();
-			$('#right tr').find('th:eq(' + textbooks_index + ')').remove();
-			$('#right tr').find('td:eq(' + textbooks_index + ')').remove();
+			$tr.find('th:eq(' + textbooks_index + ')').remove();
+			$tr.find('td:eq(' + textbooks_index + ')').remove();
 		}
 		else if ($th.text() === "Web") {
 			web_index = ($th).index();
 			// $tr.find('th').eq(web_index).remove();
 			// $tr.find('td').eq(web_index).remove();
-			$('#right tr').find('th:eq(' + web_index + ')').remove();
-			$('#right tr').find('td:eq(' + web_index + ')').remove();
+			$tr.find('th:eq(' + web_index + ')').remove();
+			$tr.find('td:eq(' + web_index + ')').remove();
 		}
 		if (textbooks_index && web_index) {
 			return false;
 		}
 	});
-	console.timeEnd('th');
 
-	// console.log('before tr', new Date().toLocaleTimeString());
-	console.time();
-	$("#right tr").each(function() {
+	$tr.each(function() {
 		// To delete the useless 'textbooks' column and title
 		// $("th:eq(13)", this).remove();
 		// $("td:eq(13)", this).remove();
@@ -693,8 +676,6 @@ function cleanListing() {
 			element.html(instructorLinks.join('<br />'));
 		}
 	});
-	console.timeEnd();
-	// console.log('before end', new Date().toLocaleTimeString());
 }
 
 function toggleOptions() {
@@ -737,25 +718,19 @@ $(document).ready(function() {
 	$("#search-form").submit(function( event ) {
 		$("#loading").show();
 		event.preventDefault();
-		// console.log('before data', new Date().toLocaleTimeString());
 		var data = lscache.get($("#search-form").serialize());
-		// console.log('after', new Date().toLocaleTimeString());
 		if (data) {
-			console.time('swap');
+			// console.time('swap');
 			swapToListing(data);
-			console.timeEnd('swap');
-			// console.log('after swap', new Date().toLocaleTimeString());
-			console.time('clean');
-			cleanListing();
-			console.timeEnd('clean');
-			// console.log('after clean', new Date().toLocaleTimeString());
-			console.time('listener');
-			setupListingListeners();
-			console.timeEnd('listener');
+			// console.timeEnd('swap');
 
-			console.time('mobile');
+			// console.time('listener');
+			setupListingListeners();
+			// console.timeEnd('listener');
+
+			// console.time('mobile');
 			mobileRescale();
-			console.timeEnd('mobile');
+			// console.timeEnd('mobile');
 		}
 		else {
 			$.ajax({
@@ -767,7 +742,7 @@ $(document).ready(function() {
 					cleanListing();
 					setupListingListeners();
 					mobileRescale();
-					lscache.set($("#search-form").serialize(), data, 30);
+					lscache.set($("#search-form").serialize(), $('#soc').html(), 30);
 				},
 				error: function() {
 					toastr.error('Cannot load classes');
@@ -824,18 +799,7 @@ $(document).ready(function() {
 	$('#whatsnew').popover({
 		html: true,
 		title: "What's New! 🎉",
-		content:'<ul style="list-style-type:disc;">\
-				<li>Click on a calendar event for more course info</li>\
-				<li>Change course event color</li>\
-				<li>RateMyProfessor links</li>\
-				<li>View your finals\' schedule</li>\
-				<li>View all your courses\' info using the List button</li>\
-				<li>Create a custom event</li>\
-				<li>Enrolled unit counter</li>\
-				<li>Import schedule from Antplanner</li> \
-				<li>Resizable panes</li>\
-				</ul>\
-				<a href="https://goo.gl/forms/YdeevICkr4Ei6HHg1" target="_blank">Bugs or Suggestions?</a>',
+		content: $('#whatsnew-html').html(),
 		placement: 'bottom',
 		container: 'body',
 		boundary: 'window',
@@ -904,19 +868,13 @@ $(document).ready(function() {
 	$('#load-btn').click(function() {
 		if (!localStorage.getItem("recentSchedules"))
 			localStorage.setItem("recentSchedules", JSON.stringify([]));
+		$('#load-input').attr("value", localStorage.getItem("username") ? localStorage.getItem("username") : '');
+		$('#load-recent').html(arrToTable(localStorage.getItem("recentSchedules")));
 		$('#load-btn').popover({
 			trigger: 'manual',
 			html: true,
 			title: "Load Schedule",
-			content: function() {
-					return '<div class="input-group input-group-sm mb-3">\
-						<input id="load-input" value="'+(localStorage.getItem("username") ? localStorage.getItem("username") : '')+'" type="text" class="form-control" placeholder="Schedule Name" aria-label="Schedule\'s load name" aria-describedby="basic-addon2">\
-						<div class="input-group-append">\
-							<button id="load-button" class="btn btn-outline-primary" type="button">Submit</button>\
-						</div>\
-					</div>\
-					<div>'+arrToTable(localStorage.getItem("recentSchedules"))+'</div>'
-			},
+			content: $('#load-html').html(),
 			placement: 'bottom',
 			container: 'body',
 			boundary: 'window',
@@ -962,13 +920,7 @@ $(document).ready(function() {
 	$('#load-ap-btn').popover({
 		html: true,
 		title: "Import from Antplanner",
-		content:'<div class="input-group input-group-sm mb-3">\
-					<div style="padding-bottom: 8px">Note: Not all course info will be available in event popup.</div>\
-					<input id="load-ap-input" type="text" class="form-control" placeholder="Schedule Name" aria-label="Schedule\'s AP load name" aria-describedby="basic-addon2">\
-					<div class="input-group-append">\
-						<button id="load-ap-button" class="btn btn-outline-primary" type="button">Submit</button>\
-					</div>\
-				</div>',
+		content: $('#load-ap-html').html(),
 		placement: 'bottom',
 		container: 'body',
 		boundary: 'window',
@@ -1185,11 +1137,7 @@ $(document).ready(function() {
 	$('#export-btn').popover({
 		html: true,
 		title: "Export to iCal",
-		content:'<div class="input-group input-group-sm mb-3">\
-					<div style="padding-bottom: 8px">Downloads an .ics file which can import your courses into Google Calendar. \
-					<a target="_blank" href="https://support.google.com/calendar/answer/37118#import_to_gcal">Click here to learn how.</a></div>\
-					<div style="margin:auto;"><button id="export-button" class="btn btn-primary" type="button">Download</button></div>\
-				</div>',
+		content: $('#export-html').html(),
 		placement: 'bottom',
 		container: 'body',
 		boundary: 'window',
@@ -1290,89 +1238,7 @@ $(document).ready(function() {
 	$('#event-btn').popover({
 		html: true,
 		title: "Add a Custom Event",
-		content:'<div>\
-					<input id="event-name" type="text" placeholder="Event Name" class="form-control form-control-lg">\
-					<div style="display: flex; justify-content: space-between; width:100%">\
-					<select id="event-start" class="time custom-select">\
-					<option value="07:00">7:00am</option>\
-					<option value="07:30">7:30am</option>\
-					<option value="08:00">8:00am</option>\
-					<option value="08:30">8:30am</option>\
-					<option value="09:00">9:00am</option>\
-					<option value="09:30">9:30am</option>\
-					<option value="10:00">10:00am</option>\
-					<option value="10:30">10:30am</option>\
-					<option value="11:00">11:00am</option>\
-					<option value="11:30">11:30am</option>\
-					<option value="12:00" selected>12:00pm</option>\
-					<option value="12:30">12:30pm</option>\
-					<option value="13:00">1:00pm</option>\
-					<option value="13:30">1:30pm</option>\
-					<option value="14:00">2:00pm</option>\
-					<option value="14:30">2:30pm</option>\
-					<option value="15:00">3:00pm</option>\
-					<option value="15:30">3:30pm</option>\
-					<option value="16:00">4:00pm</option>\
-					<option value="16:30">4:30pm</option>\
-					<option value="17:00">5:00pm</option>\
-					<option value="17:30">5:30pm</option>\
-					<option value="18:00">6:00pm</option>\
-					<option value="18:30">6:30pm</option>\
-					<option value="19:00">7:00pm</option>\
-					<option value="19:30">7:30pm</option>\
-					<option value="20:00">8:00pm</option>\
-					<option value="20:30">8:30pm</option>\
-					<option value="21:00">9:00pm</option>\
-					<option value="21:30">9:30pm</option>\
-					</select>\
-					<span style="padding-top: 10px; margin-left:10px; margin-right:10px">to</span>\
-					<select id="event-end" class="time custom-select">\
-					<option value="07:30">7:30am</option>\
-					<option value="08:00">8:00am</option>\
-					<option value="08:30">8:30am</option>\
-					<option value="09:00">9:00am</option>\
-					<option value="09:30">9:30am</option>\
-					<option value="10:00">10:00am</option>\
-					<option value="10:30">10:30am</option>\
-					<option value="11:00">11:00am</option>\
-					<option value="11:30">11:30am</option>\
-					<option value="12:00">12:00pm</option>\
-					<option value="12:30">12:30pm</option>\
-					<option value="13:00" selected>1:00pm</option>\
-					<option value="13:30">1:30pm</option>\
-					<option value="14:00">2:00pm</option>\
-					<option value="14:30">2:30pm</option>\
-					<option value="15:00">3:00pm</option>\
-					<option value="15:30">3:30pm</option>\
-					<option value="16:00">4:00pm</option>\
-					<option value="16:30">4:30pm</option>\
-					<option value="17:00">5:00pm</option>\
-					<option value="17:30">5:30pm</option>\
-					<option value="18:00">6:00pm</option>\
-					<option value="18:30">6:30pm</option>\
-					<option value="19:00">7:00pm</option>\
-					<option value="19:30">7:30pm</option>\
-					<option value="20:00">8:00pm</option>\
-					<option value="20:30">8:30pm</option>\
-					<option value="21:00">9:00pm</option>\
-					<option value="21:30">9:30pm</option>\
-					<option value="22:00">10:00pm</option>\
-					</select>\
-					</div>\
-					<div style="display: flex; justify-content: space-between; width:100%; margin-top: 10px" class="weekDays-selector">\
-					<input type="checkbox" name="weekday-check" data="1" id="weekday-mon" class="weekday" />\
-					<label for="weekday-mon">M</label>\
-					<input type="checkbox" name="weekday-check" data="2" id="weekday-tue" class="weekday" />\
-					<label for="weekday-tue">T</label>\
-					<input type="checkbox" name="weekday-check" data="3" id="weekday-wed" class="weekday" />\
-					<label for="weekday-wed">W</label>\
-					<input type="checkbox" name="weekday-check" data="4" id="weekday-thu" class="weekday" />\
-					<label for="weekday-thu">T</label>\
-					<input type="checkbox" name="weekday-check" data="5" id="weekday-fri" class="weekday" />\
-					<label for="weekday-fri">F</label>\
-					</div>\
-					<div style="display: flex;  justify-content: center;"><button id="event-button" class="btn btn-primary" type="button">Add Event</button></div>\
-				</div>',
+		content: $("#event-html").html(),
 		placement: 'bottom',
 		container: 'body',
 		boundary: 'window',
@@ -1474,37 +1340,15 @@ $(document).ready(function() {
 				});
 			}
 			else {
+				$('#full-event-name').html(event.title);
+				$('#full-event-code').html(event.groupId);
+				$('#full-event-location').html(((event.location) ? event.location : ''));
+				$('#full-event-instructor').html(((event.instructor) ? createInstructorLinks(event.instructor) : 'N/A'));
+				$('#full-event-colorpicker').children('input').attr('id', 'colorpicker-'+colorpickerId);
 				element.popover({
 					html:true,
 					title: (event.fullName) ? event.fullName : '',
-					content:'<table style="width:100%; margin-bottom:3%;">\
-							<tr>\
-								<td>Name</td>\
-								<td></td>\
-								<td align="right">'+event.title+'</td>\
-							</tr>\
-							<tr>\
-								<td>Code</td>\
-								<td></td>\
-								<td align="right">'+event.groupId+'</td>\
-							</tr>\
-							<tr>\
-								<td>Location</td>\
-								<td></td>\
-								<td align="right">'+((event.location) ? event.location : '')+'</td>\
-							</tr>\
-							<tr>\
-								<td>Instructor</td>\
-								<td>&nbsp;&nbsp;</td>\
-								<td align="right">'+((event.instructor) ? createInstructorLinks(event.instructor) : 'N/A')+'</td>\
-							</tr>\
-							<tr>\
-								<td>Color</td>\
-								<td></td>\
-								<td align="right"><input id="colorpicker-'+colorpickerId+'" type="text"/></td>\
-							</tr>\
-							</table>\
-							<button style="width:100%" class="btn btn-sm btn-outline-primary delete-event">Remove <i class="fas fa-trash-alt"></i></button>',
+					content:$('#full-event-html').html(),
 					trigger:'focus',
 					placement:'right',
 					container:'body',
@@ -1598,31 +1442,14 @@ $(document).ready(function() {
 			$('.popover').each(function () {
 				$(this).popover('hide');
 			});
+			$('#final-event-name').html(event.title);
+			$('#final-event-code').html(event.groupId);
+			$('#final-event-date').html(event.date);
+			$('#final-event-instructor').html(((event.instructor) ? createInstructorLinks(event.instructor) : 'N/A'));
 			element.popover({
 				html:true,
 				title: (event.fullName) ? event.fullName : '',
-				content:'<table style="width:100%">\
-						<tr>\
-							<td>Name</td>\
-							<td></td>\
-							<td align="right">'+event.title+'</td>\
-						</tr>\
-						<tr>\
-							<td>Code</td>\
-							<td></td>\
-							<td align="right">'+event.groupId+'</td>\
-						</tr>\
-						<tr>\
-							<td>Date</td>\
-							<td></td>\
-							<td align="right">'+event.date+'</td>\
-						</tr>\
-						<tr>\
-							<td>Instructor</td>\
-							<td>&nbsp;&nbsp;</td>\
-							<td align="right">'+((event.instructor) ? createInstructorLinks(event.instructor) : 'N/A')+'</td>\
-						</tr>\
-						</table>',
+				content:$('#final-event-html').html(),
 				trigger:'focus',
 				placement:'right',
 				container:'body',
