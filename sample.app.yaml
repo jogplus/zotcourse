@@ -1,6 +1,7 @@
 runtime: python37
 env: standard
 instance_class: F1
+entrypoint: gunicorn -b :$PORT main:app --timeout 90
 
 handlers:
 - url: /static
@@ -8,10 +9,6 @@ handlers:
   secure: always
 - url: .*
   secure: always
-
-env_variables:
-  USE_MEMCACHE: true
-  USE_DATASTORE: true
 
 automatic_scaling:
   max_idle_instances: 1

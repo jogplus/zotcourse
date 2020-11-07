@@ -1,1 +1,1 @@
-from zotcourse import app
+from zotcourse.views import app

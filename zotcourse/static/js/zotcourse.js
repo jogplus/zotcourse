@@ -1,1613 +1,1816 @@
-const MONTH_TO_INT = {'Jan':0, 'Feb':1, 'Mar':2, 'Apr':3, 'May':4, 'Jun':5, 'Jul':6, 'Aug':7, 'Sep':8, 'Oct':9, 'Nov':10, 'Dec':11}
-const WEEKDAY_TO_STRING = {'1':'MO', '2':'TU', '3':'WE', '4':'TH', '5':'FR'}
-const MON=1, TUE=2, WED=3, THU=4, FRI=5;
+let catalogue_cache = {};
 
-const COURSE_EVENT_TYPE = 0
-const CUSTOM_EVENT_TYPE = 1
-const ANTPLANNER_EVENT_TYPE = 2
+const WEEKDAY_TO_STRING = { 1: "MO", 2: "TU", 3: "WE", 4: "TH", 5: "FR" };
+const COURSE_EVENT_TYPE = 0;
+const CUSTOM_EVENT_TYPE = 1;
+const ANTPLANNER_EVENT_TYPE = 2;
+const COURSE_2_EVENT_TYPE = 3;
+const isMobile = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+const isiPad = navigator.userAgent.match(/Mac/) && navigator.maxTouchPoints && navigator.maxTouchPoints > 2;
+const restrictions = {
+    A: "Prerequisite required",
+    B: "Authorization code required",
+    C: "Fee required",
+    D: "Pass/Not Pass option only",
+    E: "Freshmen only",
+    F: "Sophomores only",
+    G: "Lower-division only",
+    H: "Juniors only",
+    I: "Seniors only",
+    J: "Upper-division only",
+    K: "Graduate only",
+    L: "Major only",
+    M: "Non-major only",
+    N: "School major only",
+    O: "Non-school major only",
+    R: "Biomedical Pass/Fail course (School of Medicine only)",
+    S: "Satisfactory/Unsatisfactory only",
+    X: "Separate authorization codes required to add, drop, or change enrollment",
+};
+const colorPalette = [
+    "#C4A883",
+    "#A7A77D",
+    "#85AAA5",
+    "#94A2BE",
+    "#8997A5",
+    "#A992A9",
+    "#A88383",
+    "#E6804D",
+    "#F2A640",
+    "#E0C240",
+    "#BFBF4D",
+    "#8CBF40",
+    "#4CB052",
+    "#65AD89",
+    "#59BFB3",
+    "#668CD9",
+    "#668CB3",
+    "#8C66D9",
+    "#B373B3",
+    "#E67399",
+    "#D96666",
+];
 
-const LISTING_CODE_INDEX = 0;
-const LISTING_TYPE_INDEX = 1;
-const LISTING_UNITS_INDEX = 3;
-const LISTING_INSTRUCTOR_INDEX = 4;
-const LISTING_TIME_INDEX = 5;
-const LISTING_ROOM_INDEX = 6;
-const LISTING_FINAL_INDEX = 7;
-
-function S4() {
-   return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
+function randomNum() {
+    return Math.floor(Math.random() * 90000) + 10000;
 }
 
-function ParsedCourseTime(timeString) {
-	/*
-	Used to parse the horribly inconsistent time string formats
-	
-	Assumptions:
-	1. earliest possible course time is 6am
-	2. latest possible course time is 9pm
-	3. course durations never exceed 5 hours
-
-	Acceptable Inputs:
-	valid start hours        6,7,8,9,10,11,12,1,2,3,4,5,6,7,8,9
-	valid start am hours     6,7,8,9,10,11
-	valid start pm hours                   12,1,2,3,4,5,6,7,8,9
-
-	valid end hours            7,8,9,10,11,12,1,2,3,4,5,6,7,8,9,10
-	valid end am hours         7,8,9,10,11
-	valid end pm hours                     12,1,2,3,4,5,6,7,8,9,10
-	
-	no +12h                                12
-	
-	Input: "Th &nbsp; 12:30-12:50p "
-	*/
-	var MAX_DURATION = 5;
-
-	var dashedSplit = timeString.split('-'); // ex. ["Th &nbsp; 12:30", "12:50p "]
-	var dayBeginSplit = dashedSplit[0].split('&nbsp;'); // ex. ["Th ", " 12:30"]
-
-	var beginTime = $.trim( dayBeginSplit[dayBeginSplit.length - 1] ); // ex. "6:00"
-	var endTime   = $.trim( dashedSplit[1] ); // "6:50p"
-
-	var beginHour = parseInt( beginTime.split(':')[0] );
-	var beginMin  = parseInt( beginTime.split(':')[1] );
-	
-	var endHour = parseInt( endTime.split(':')[0] );
-	var endMin = parseInt( endTime.split(':')[1].replace('p', '') );
-	var isPm = endTime.indexOf('p') != -1;
-
-	var days = []
-	if(timeString.indexOf('M') != -1) {	days.push(MON); } 
-	if(timeString.indexOf('Tu') != -1) { days.push(TUE); } 
-	if(timeString.indexOf('W') != -1) {	days.push(WED); }
-	if(timeString.indexOf('Th') != -1) { days.push(THU); }
-	if(timeString.indexOf('F') != -1) {	days.push(FRI); }
-
-	if(isPm) {
-		var military = endHour == 12 ? 12 : endHour + 12
-		if(military - beginHour > MAX_DURATION) {
-			beginHour += 12;
-		} 
-		if(endHour != 12) {
-			endHour += 12;
-		}
-	}
-
-	// Ensures that minutes is always two digits
-	return {
-		'start': beginHour + ':' + ("0" + beginMin).slice(-2),
-		'end': endHour + ':' + ("0" + endMin).slice(-2),
-		'days': days
-	}
-}
-
+// TODO: Remove
 function FinalParsedCourseTime(timeString) {
-	var MAX_DURATION = 5;
-	var daySplit = timeString.split(',');
-	var timeSplit = daySplit[2].split('-');
+    var MAX_DURATION = 5;
+    var daySplit = timeString.split(",");
+    var timeSplit = daySplit[2].split("-");
 
-	var date = $.trim( daySplit[1] );
-	var month = date.split(' ')[0];
-	var day = parseInt(date.split(' ')[1]);
-	var beginTime = $.trim( timeSplit[0] ); // ex. "6:00"
-	var endTime   = $.trim( timeSplit[1] ); // "6:50p"
+    var date = $.trim(daySplit[1]);
+    var month = date.split(" ")[0];
+    var day = parseInt(date.split(" ")[1]);
+    var beginTime = $.trim(timeSplit[0]); // ex. "6:00"
+    var endTime = $.trim(timeSplit[1]); // "6:50p"
 
-	var beginHour = parseInt( beginTime.split(':')[0] );
-	var beginMin  = parseInt( beginTime.split(':')[1] );
-	
-	var endHour = parseInt( endTime.split(':')[0] );
-	var endMin = parseInt( endTime.split(':')[1].replace('pm', '') );
-	var isPm = endTime.indexOf('pm') != -1;
+    var beginHour = parseInt(beginTime.split(":")[0]);
+    var beginMin = parseInt(beginTime.split(":")[1]);
 
-	var weekDay = -1;
-	if(timeString.indexOf('Sun') != -1) {	weekDay = 0; } 
-	if(timeString.indexOf('Mon') != -1) {	weekDay = 1; } 
-	if(timeString.indexOf('Tue') != -1) {	weekDay = 2; } 
-	if(timeString.indexOf('Wed') != -1) {	weekDay = 3; }
-	if(timeString.indexOf('Thu') != -1) {	weekDay = 4; }
-	if(timeString.indexOf('Fri') != -1) {	weekDay = 5; }
-	if(timeString.indexOf('Sat') != -1) {	weekDay = 6; } 
+    var endHour = parseInt(endTime.split(":")[0]);
+    var endMin = parseInt(endTime.split(":")[1].replace("pm", ""));
+    var isPm = endTime.indexOf("pm") != -1;
 
-	if(isPm) {
-		var military = endHour == 12 ? 12 : endHour + 12
-		if(military - beginHour > MAX_DURATION) {
-			beginHour += 12;
-		} 
-		if(endHour != 12) {
-			endHour += 12;
-		}
-	}
+    var weekDay = -1;
+    if (timeString.indexOf("Sun") != -1) {
+        weekDay = 0;
+    }
+    if (timeString.indexOf("Mon") != -1) {
+        weekDay = 1;
+    }
+    if (timeString.indexOf("Tue") != -1) {
+        weekDay = 2;
+    }
+    if (timeString.indexOf("Wed") != -1) {
+        weekDay = 3;
+    }
+    if (timeString.indexOf("Thu") != -1) {
+        weekDay = 4;
+    }
+    if (timeString.indexOf("Fri") != -1) {
+        weekDay = 5;
+    }
+    if (timeString.indexOf("Sat") != -1) {
+        weekDay = 6;
+    }
 
-	return {
-		'beginHour': beginHour,
-		'beginMin': beginMin,
-		'endHour': endHour,
-		'endMin': endMin,
-		'weekDay': weekDay,
-		'month': month,
-		'day': day,
-		'date': date
-	}
+    if (isPm) {
+        var military = endHour == 12 ? 12 : endHour + 12;
+        if (military - beginHour > MAX_DURATION) {
+            beginHour += 12;
+        }
+        if (endHour != 12) {
+            endHour += 12;
+        }
+    }
+
+    return {
+        beginHour: beginHour,
+        beginMin: beginMin,
+        endHour: endHour,
+        endMin: endMin,
+        weekDay: weekDay,
+        month: month,
+        day: day,
+        date: date,
+    };
 }
 
-function parseRoomString(roomString) {
-    // Accepts an html room string (there may or may not be an a tag for any room)
-    // Example: <a href="http://www.classrooms.uci.edu/GAC/HH112.html" target="_blank">HH 112</a><br>HH 112
-    // Returns an array of rooms. If there are no matches, an empty array is returned.
-    roomString = roomString.trim();
-
-    // This will match non-markup text that is followed by the opening of a tag,
-    // or with the ending of the string
-    var regex = /(\w|\s)+(?=<|$)/g;
-	var without_link = roomString.match(regex) || [];
-
-	// Match <a> link for classroom location
-	// If no link is found, uses location without_link
-	var tagRegex = /<a.*?>.*?<\/a>/g;
-	var with_link = roomString.match(tagRegex) || without_link;
-
-    return with_link;
-}
-
-function CourseTimeStringParser(courseString, roomString) {
-	/* 
-	Accepts:
-	
-	"M &nbsp;  6:30- 8:50p<br>Th &nbsp;  9:00-10:50p"
-	MW &nbsp;  6:00- 6:20p 
-	Th &nbsp; 12:30-12:50p 
-	*/
-	var courseTimes = []
-	var splitTimes = courseString.split('<br>');
-	var rooms = parseRoomString(roomString);
-	for(var i in splitTimes) {
-		var room = "TBA";
-		if (i in rooms && rooms[i].length > 0) {
-			room = rooms[i];
-		}
-		if (splitTimes[i].indexOf('TBA') == -1) {
-			var parsedCourse = ParsedCourseTime(splitTimes[i])
-			parsedCourse['room'] = room
-			courseTimes.push(parsedCourse)
-		}
-	}
-	return courseTimes;
-}
-
-function getRandomColorPair() {
-	var palette = [
-		{color: '#C4A883', borderColor: '#B08B59'},
-		{color: '#A7A77D', borderColor: '#898951'},
-		{color: '#85AAA5', borderColor: '#5C8D87'},
-		{color: '#94A2BE', borderColor: '#5C8D87'},
-		{color: '#8997A5', borderColor: '#627487'},
-		{color: '#A992A9', borderColor: '#8C6D8C'},
-		{color: '#A88383', borderColor: '#A87070'},
-		{color: '#E6804D', borderColor: '#DD5511'},
-		{color: '#F2A640', borderColor: '#EE8800'},
-		{color: '#E0C240', borderColor: '#D6AE00'},
-		{color: '#BFBF4D', borderColor: '#AAAA11'},
-		{color: '#8CBF40', borderColor: '#66AA00'},
-		{color: '#4CB052', borderColor: '#109618'},
-		{color: '#65AD89', borderColor: '#329262'},
-		{color: '#59BFB3', borderColor: '#22AA99'},
-		{color: '#668CD9', borderColor: '#3366CC'},
-		{color: '#668CB3', borderColor: '#336699'},
-		{color: '#8C66D9', borderColor: '#6633CC'},
-		{color: '#B373B3', borderColor: '#994499'},
-		{color: '#E67399', borderColor: '#DD4477'},
-		{color: '#D96666', borderColor: '#CC3333'}
-	];
-	return palette[Math.floor(Math.random() * palette.length)];
-}
-
-function isCourseAdded(courseCode, final) {
-	var calEvents  = $('#cal').fullCalendar('clientEvents');
-	for (var i in calEvents){
-		// If course is already added, but final is updated, update the saved course
-		if (calEvents[i].groupId === courseCode && calEvents[i].final !== final) {
-			$('#cal').fullCalendar('removeEvents', calEvents[i]._id);
-			for(var j in calEvents[i].courseTimes) {
-				var parsed = calEvents[i].courseTimes[j];
-				$('#cal').fullCalendar('renderEvent', {
-					_id: calEvents[i]._id,
-					id:	calEvents[i].id,
-					groupId: calEvents[i].groupId,
-					start: parsed.start,
-					end: parsed.end,
-					title: calEvents[i].title,
-					dow: parsed.days,
-					color: calEvents[i].color,
-					daysOfTheWeek: parsed.days,
-					location: parsed.room,
-					fullName: calEvents[i].fullName,
-					instructor: calEvents[i].instructor,
-					final: final,
-					units: calEvents[i].units,
-					courseTimes: calEvents[i].courseTimes,
-					eventType: calEvents[i].eventType
-				});
-			}
-			toastr.success('Updated Course Final');
-			return true;
-		}
-		if (calEvents[i].groupId === courseCode) {
-			toastr.warning('Course Already Added');
-			return true;
-		}
-	}
-	return false;
-}
-
-// Parses the Websoc html to create an array of professor names
-// for the createInstructorLinks function
-function getInstructorArray(html) {
-	var rawInstructorArray = html.split('<br>');
-	var cleanInstructorArray = [];
-	for (var i=0; i<rawInstructorArray.length; i++) {
-		if (rawInstructorArray[i] === 'STAFF')
-			cleanInstructorArray.push('STAFF');
-		else if (rawInstructorArray[i] !== '')
-			cleanInstructorArray.push($(rawInstructorArray[i]).html());
-	}
-	return cleanInstructorArray;
-}
-
-// Creates an array of html link elements that direct to RateMyProfessor
-function createInstructorLinks(instructorNames) {
-	var instructorLinks = [];
-	for (var i = 0; i < instructorNames.length; i++) {
-		var instructorName = instructorNames[i].trim();
-		// Links are not created for STAFF
-		if (instructorName == 'STAFF' || instructorName == 'N/A (due to import)') {
-			instructorLinks.push(instructorName);
-		}
-		else {
-			// Splits by ',' to retrieve professor's first name
-			var instructorLastName = instructorName.split(',')[0];
-			// Splits in case professors have a '-' in their name which causes the RateMyProfessor query to fail
-			if (instructorLastName.indexOf('-') !== -1) {
-				instructorLastName = instructorName.split('-')[0];
-			}
-			var link = "https://www.ratemyprofessors.com/search.jsp?queryoption=HEADER&queryBy=teacherName&schoolName=University+of+California+Irvine&schoolID=1074&query="+instructorLastName;
-			instructorLinks.push('<a class="instructor-link" href="'+link+'" target="_blank">'+instructorName+'</a>');
-		}
-	}
-	return instructorLinks.join('<br>');
+function getRandomColor() {
+    return colorPalette[Math.floor(Math.random() * colorPalette.length)];
 }
 
 function saveSchedule(username) {
-	// Retrieves all events currently in the calendar
-	var calRawData  = $('#cal').fullCalendar('clientEvents');
-	var calCleanData = []
-	var usedGroupIds = []
-	// Validation
-	if (calRawData.length == 0) {
-		toastr.warning('Must add at least one course.', 'Empty Schedule');
-		return;
-	}
-	if (username == null || username.length < 5) {
-		toastr.warning('Must be at least 5 characters.', 'Schedule Name Too Short');
-		return;
-	}		
-	for (var i in calRawData){
-		// Removes duplicate events based on groupId (which is the course code)
-		// Duplicates are caused by a class occuring on multiple days
-		if (!(usedGroupIds.indexOf(calRawData[i].groupId) >= 0)) {
-			var calEventData = {
-				id: calRawData[i].id,
-				groupId: calRawData[i].groupId,
-				title: calRawData[i].title,
-				start: calRawData[i].start.format('HH:mm'),
-				end: calRawData[i].end.format('HH:mm'),
-				color: calRawData[i].color,
-				location: calRawData[i].location,
-				fullName: calRawData[i].fullName,
-				instructor: calRawData[i].instructor,
-				final: calRawData[i].final,
-				dow: calRawData[i].daysOfTheWeek,
-				daysOfTheWeek: calRawData[i].daysOfTheWeek,
-				units: calRawData[i].units,
-				courseTimes: calRawData[i].courseTimes,
-				eventType: calRawData[i].eventType,
-			}
-			calCleanData.push(calEventData)
-			usedGroupIds.push(calRawData[i].groupId)
-		}
-	}
-	// Save to server
-	$.ajax({
-		url: "/schedules/add",
-		type: 'POST',
-		data: {
-			username: username,
-			data: JSON.stringify(calCleanData)
-		},
-		success: function(data) {
-			if (data.success) {
-				toastr.success(username, 'Schedule Saved!');
-				localStorage.setItem('username', username);
-				addToRecentSchedules(username);
-				$('#scheduleNameForPrint').html('Zotcourse schedule name: '+username);
-			}
-		},
-		error: function(data) {
-			toastr.error(username, 'Schedule Not Saved');
-		}
-	});
+    // Retrieves all events currently in the calendar
+    var calRawData = $("#cal").fullCalendar("clientEvents");
+    var calCleanData = [];
+    var usedGroupIds = [];
+    // Validation
+    if (calRawData.length == 0) {
+        toastr.warning("Must add at least one course.", "Empty Schedule");
+        return;
+    }
+    if (username == null || username.length < 5) {
+        toastr.warning("Must be at least 5 characters.", "Schedule Name Too Short");
+        return;
+    }
+    for (var i in calRawData) {
+        // Removes duplicate events based on groupId (which is the course code)
+        // Duplicates are caused by a class occuring on multiple days
+        if (!(usedGroupIds.indexOf(calRawData[i].groupId) >= 0)) {
+            if (calRawData[i].eventType === COURSE_2_EVENT_TYPE) {
+                var calEventData = {
+                    color: calRawData[i].color,
+                    eventType: COURSE_2_EVENT_TYPE,
+                    course: calRawData[i].course,
+                };
+                calCleanData.push(calEventData);
+                usedGroupIds.push(calRawData[i].groupId);
+            } else if (calRawData[i].eventType === CUSTOM_EVENT_TYPE) {
+                var calEventData = {
+                    title: calRawData[i].title,
+                    start: calRawData[i].start.format("HH:mm"),
+                    end: calRawData[i].end.format("HH:mm"),
+                    color: calRawData[i].color,
+                    dow: calRawData[i].daysOfTheWeek,
+                    eventType: CUSTOM_EVENT_TYPE,
+                };
+                calCleanData.push(calEventData);
+                usedGroupIds.push(calRawData[i].groupId);
+            } else {
+                toastr.error("Please re-add your courses", "Unsupported Courses");
+                return;
+            }
+        }
+    }
+    // Save to server
+    $.ajax({
+        url: "/schedules/add",
+        type: "POST",
+        dataType: "json",
+        contentType: "application/json",
+        data: JSON.stringify({
+            username: username,
+            data: calCleanData,
+        }),
+        success: function (data) {
+            if (data.success) {
+                toastr.success(username, "Schedule Saved!");
+                localStorage.setItem("username", username);
+                addToRecentSchedules(username);
+            }
+        },
+        error: function (data) {
+            toastr.error(username, "Schedule Not Saved");
+        },
+    });
 }
 
 function loadSchedule(username) {
-	if (username == null || username == '') {
-		toastr.error(username, 'Schedule Not Found');
-		return;
-	}
-	$.ajax({
-		url: '/schedule/load',
-		data: { username: username },
-		success: function(data) {
-			if(data.success) {
-				var scheduleJSON = JSON.parse(data.data)
-				$('#cal').fullCalendar('removeEvents');
-				$('#finals').fullCalendar('removeEvents');
-				var unitCounter = 0;
-				for (var i = 0; i < scheduleJSON.length; i++) {
-					// If a single course has different meeting times (ie. Tu 5:00- 7:50p and Th 5:00- 6:20p)
-					if (scheduleJSON[i].courseTimes) {
-						for (var j = 0; j < scheduleJSON[i].courseTimes.length; j++) {
-							scheduleJSON[i].start = scheduleJSON[i].courseTimes[j].start;
-							scheduleJSON[i].end = scheduleJSON[i].courseTimes[j].end;
-							scheduleJSON[i].dow = scheduleJSON[i].courseTimes[j].days;
-							scheduleJSON[i].location = scheduleJSON[i].courseTimes[j].room;
-							$('#cal').fullCalendar('renderEvent', scheduleJSON[i]);
-						}
-					}
-					else {
-						$('#cal').fullCalendar('renderEvent', scheduleJSON[i]);
-					}
-					if (scheduleJSON[i].units) {
-						unitCounter += parseInt(scheduleJSON[i].units);
-					}
-				}
-				$('#unitCounter').text(unitCounter);
-				$('#scheduleNameForPrint').html('Zotcourse schedule name: '+username);
-				toastr.success(username, 'Schedule Loaded!');
-				localStorage.setItem('username', username);
-				addToRecentSchedules(username);
-				switchToMainCalendar();
-			}
-		},
-		error: function(data) {
-			toastr.error(username, 'Schedule Not Found');
-		}
-	});
-}
+    if (username == null || username == "") {
+        toastr.error(username, "Schedule Not Found");
+        return;
+    }
+    $.ajax({
+        url: "/schedule/load",
+        data: { username: username },
+        success: function (data) {
+            if (data.success) {
+                let scheduleJSON = null;
+                if (typeof data.data === "string") {
+                    scheduleJSON = JSON.parse(data.data);
+                } else {
+                    scheduleJSON = data.data;
+                }
 
-function loadAPSchedule(username) {
-	if (username == '') {
-		return;
-	}
-	$.ajax({
-		url: '/schedule/loadap',
-		data: { username: username },
-		success: function(data) {
-			if (data.success) {
-				$('#cal').fullCalendar('removeEvents');
-				for (var i=0; i< data.data.length; i++) {
-					data.data[i]['color'] = getRandomColorPair().color;
-					var courseCodeSplit = data.data[i]['title'].split('<br>')[0];
-					var locationSplit = courseCodeSplit.split(' at ');
-					data.data[i]['location'] = locationSplit[1];
-					data.data[i]['eventType'] = ANTPLANNER_EVENT_TYPE;
-					data.data[i]['title'] = locationSplit[0].replace('&amp;', '&');
-				}
-				$('#cal').fullCalendar('renderEvents',data.data);
-				$('#scheduleNameForPrint').html(username);
-				toastr.success(username, 'Schedule Loaded!');
-				switchToMainCalendar();
-				$('#unitCounter').text(0);
-			}
-			else {
-				toastr.error(username, 'Schedule Not Found');
-			}
-		}
-	});
+                $("#cal").fullCalendar("removeEvents");
+                $("#finals").fullCalendar("removeEvents");
+                let unitCounter = 0;
+                let datatable = $("#listing-datatable").DataTable();
+                datatable.rows().deselect();
+                for (let i = 0; i < scheduleJSON.length; i++) {
+                    // If a single course has different meeting times (ie. Tu 5:00- 7:50p and Th 5:00- 6:20p)
+                    if (scheduleJSON[i].eventType === COURSE_2_EVENT_TYPE) {
+                        for (let j in scheduleJSON[i].course.mtng) {
+                            datatable.row(`#${scheduleJSON[i].course.code}`).select();
+                            let curr_mtng = scheduleJSON[i].course.mtng[j];
+                            scheduleJSON[i].groupId = scheduleJSON[i].course.code;
+                            scheduleJSON[i].title = renderName(scheduleJSON[i].course.c_type, scheduleJSON[i].course.dept, scheduleJSON[i].course.num);
+                            scheduleJSON[i].start = curr_mtng.start;
+                            scheduleJSON[i].end = curr_mtng.end;
+                            scheduleJSON[i].dow = curr_mtng.days;
+                            scheduleJSON[i].daysOfTheWeek = curr_mtng.day;
+                        }
+                        unitCounter += parseInt(scheduleJSON[i].course.unit);
+                    } else if (scheduleJSON[i].eventType === CUSTOM_EVENT_TYPE) {
+                        // scheduleJSON[i].groupId = randomNum()
+                        scheduleJSON[i].daysOfTheWeek = scheduleJSON[i].dow;
+                    } else {
+                        // TODO: remove
+                        if (scheduleJSON[i].courseTimes) {
+                            for (let j = 0; j < scheduleJSON[i].courseTimes.length; j++) {
+                                scheduleJSON[i].start = scheduleJSON[i].courseTimes[j].start;
+                                scheduleJSON[i].end = scheduleJSON[i].courseTimes[j].end;
+                                scheduleJSON[i].dow = scheduleJSON[i].courseTimes[j].days;
+                                scheduleJSON[i].location = scheduleJSON[i].courseTimes[j].room;
+                            }
+                        }
+                        if (scheduleJSON[i].units) {
+                            unitCounter += parseInt(scheduleJSON[i].units);
+                        }
+                    }
+                }
+                $("#cal").fullCalendar("renderEvents", scheduleJSON);
+                $("#unitCounter").text(unitCounter);
+                toastr.success(username, "Schedule Loaded!");
+                localStorage.setItem("username", username);
+                addToRecentSchedules(username);
+                switchToMainCalendar();
+                switchToMobileMainCalendar();
+            }
+        },
+        error: function (data) {
+            toastr.error(username, "Schedule Not Found");
+        },
+    });
 }
 
 function switchToMainCalendar() {
-	if ($('#finals-btn').hasClass('active')) {
-		$('#finals').hide();
-		$('#cal').show();
-		$('#finals-btn').removeClass('active');
-		$('#cal').fullCalendar( 'rerenderEvents' );
-	}
+    if ($("#finals-btn").hasClass("active")) {
+        $("#finals").hide();
+        $("#cal").show();
+        $("#finals-btn").removeClass("active");
+        $("#cal").fullCalendar("rerenderEvents");
+    }
+}
+
+function switchToMobileListing() {
+    if (isMobile) {
+        $("#search-btn").click();
+    }
+}
+
+function switchToMobileMainCalendar() {
+    if (isMobile) {
+        $("#calendar-btn").click();
+    }
+}
+
+function setupCourseInfoListners() {
+    $(".course-info").click(async function () {
+        let self = this;
+        let key = encodeURIComponent(`${$(this).data("dept")} ${$(this).data("num")}`);
+        let data = null;
+        if (!sessionStorage.getItem("courseInfo")) {
+            sessionStorage.setItem("courseInfo", JSON.stringify({}));
+        }
+        let courseInfoCache = JSON.parse(sessionStorage.getItem("courseInfo"));
+        if (key in courseInfoCache) {
+            await sleep(1);
+            data = courseInfoCache[key];
+        } else {
+            data = await $.get(`/catalogue?q=${key}`);
+            courseInfoCache[key] = data;
+            sessionStorage.setItem("courseInfo", JSON.stringify(courseInfoCache));
+        }
+        $(self).popover({
+            html: true,
+            content: data,
+            trigger: "manual",
+            placement: "right",
+            container: ".dataTables_scrollBody",
+        });
+        $(self).popover("toggle");
+    });
+    // Fixes links in course info popover
+    $(".course-info").on("shown.bs.popover", function () {
+        $(".bubblelink").attr("href", `http://catalogue.uci.edu${$(".bubblelink").attr("href")}`);
+        $(".bubblelink").attr("target", "_blank");
+    });
+}
+
+function handleListing(data, courseCodes) {
+    $(".dataTables_scrollHead").css("visibility", "visible");
+    let datatable = $("#listing-datatable").DataTable();
+    if (data.data.length && !isMobile && !isiPad) {
+        let wtltSelector = "wtlt:name";
+        let norSelector = "nor:name";
+        let isWtltVisible = datatable.column(wtltSelector).visible();
+        let isNorVisible = datatable.column(norSelector).visible();
+        let addedCol = false;
+        if (data.data[0].courses[0].sections[0].wtlt && !isWtltVisible) datatable.column(wtltSelector).visible(true, false);
+        addedCol = true;
+        if (!data.data[0].courses[0].sections[0].wtlt && isWtltVisible) datatable.column(wtltSelector).visible(false, false);
+        if (data.data[0].courses[0].sections[0].nor && !isNorVisible) datatable.column(norSelector).visible(true, false);
+        addedCol = true;
+        if (!data.data[0].courses[0].sections[0].nor && isNorVisible) datatable.column(norSelector).visible(false, false);
+        if (addedCol) datatable.draw(false);
+    }
+
+    for (let i in courseCodes) {
+        datatable.row(`#${courseCodes[i]}`).select();
+    }
+
+    setupCourseInfoListners();
+
+    $("td.code-cell").click(function (event) {
+        event.stopPropagation();
+        var aux = document.createElement("input");
+        aux.setAttribute("value", $(this).text());
+        document.body.appendChild(aux);
+        aux.select();
+        document.execCommand("copy");
+        document.body.removeChild(aux);
+        toastr.success("Copied Course Code");
+    });
+
+    if (isMobile || isiPad) {
+        $("#listing-datatable").css("table-layout", "fixed");
+    }
+}
+
+function setupListing() {
+    $(".dataTables_scrollHead").css("visibility", "hidden");
+    $("#search").hide();
+    $("#soc").show();
+    if (isMobile || isiPad) {
+        $(".btn-colvis").click(function () {
+            $(".dt-button-collection").css("overflow", "auto");
+            $(".dt-button-collection").css("height", "400px");
+        });
+        $(".dataTables_filter input").css("width", "125px");
+    }
 }
 
 function daysOfTheWeekToStr(dow) {
-	var dowStr = [];
-	for (var i in dow) {
-		dowStr.push(WEEKDAY_TO_STRING[dow[i]]);
-	}
-	return dowStr;
+    var dowStr = [];
+    for (var i in dow) {
+        dowStr.push(WEEKDAY_TO_STRING[dow[i]]);
+    }
+    return dowStr;
 }
 
 function sleep(ms) {
-	return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function addToRecentSchedules(scheduleName) {
-	var recents = JSON.parse(localStorage.getItem("recentSchedules"));
-	indexOfScheduleName = recents.indexOf(scheduleName);
-	if (indexOfScheduleName === -1) {
-		recents.unshift(scheduleName);
-		if (recents.length > 5) {
-			recents.pop();
-		}
-	}
-	else {
-		recents.splice(indexOfScheduleName, 1);
-		recents.unshift(scheduleName);
-	}
-	localStorage.setItem("recentSchedules", JSON.stringify(recents));
+    var recents = JSON.parse(localStorage.getItem("recentSchedules"));
+    indexOfScheduleName = recents.indexOf(scheduleName);
+    if (indexOfScheduleName === -1) {
+        recents.unshift(scheduleName);
+        if (recents.length > 5) {
+            recents.pop();
+        }
+    } else {
+        recents.splice(indexOfScheduleName, 1);
+        recents.unshift(scheduleName);
+    }
+    localStorage.setItem("recentSchedules", JSON.stringify(recents));
 }
 
 // Creates html table from a string array
 function arrToTable(str) {
-	var recents = '<tr><td style="color:rgb(206, 212, 218)">Empty</tr></td>'
-	if (str !== '[]') {
-		recents = str.replace(/",/g,'</a></td></tr><tr><td><a class=\'recentSchedule\' href=\'#\'>')
-					.replace('["','<tr><td><a class=\'recentSchedule\' href=\'#\'>')
-					.replace('"]','</a></td></tr>')
-					.replace(/"/g,'');
-	}
-	return '<table style="width:100%">\
-				<tr style="border-bottom:solid 1px"><th>Recent Schedules</th><th><a id="clearRecents" href="#">Clear All<a></th></tr>\
-				'+recents+'\
-			</table>';
-}
-
-function swapToListing(data) {
-	$('#search').hide();
-	$("#loading").hide();
-	$('#soc').html(data);
-	$('#soc').show();
-}
-
-function setupListingListeners() {
-	var $listingContext = $('.course-list', $('#right').contents());
-	var $courseRow = $("tr[valign*='top']:not([bgcolor='#fff0ff'])", $listingContext);
-
-	$courseRow.hover(
-		function() {
-			$(this).css({'color': '#ff0000', 'cursor': 'pointer'});
-		},
-		function() {
-			$(this).css({'color': '#000000', 'cursor': 'default'});
-		}
-	);
-
-	$courseRow.on('click', function() {
-		var timeString = $(this).find('td').eq(LISTING_TIME_INDEX).html();
-		var roomString = $(this).find('td').eq(LISTING_ROOM_INDEX).html();
-		var courseTimes = CourseTimeStringParser(timeString, roomString)
-
-		// Ignore if course is "TBA"
-		if(courseTimes.length == 0) {
-			toastr.warning('Course is TBA');
-			return;
-		}
-
-		var courseCode = $(this).find('td').eq(LISTING_CODE_INDEX).text();
-
-		// Parses Websoc result to find course elements in the row
-		var courseName = $.trim( $(this).prevAll().find('.CourseTitle').last().html().split('<font')[0].replace(/&nbsp;/g, '').replace(/&amp;/g, '&') )
-		var fullCourseName = $(this).prevAll().find('.CourseTitle').last().find('b').html();
-		var classType = $(this).find('td').eq(LISTING_TYPE_INDEX).html();
-		var instructor = getInstructorArray($(this).find('td').eq(LISTING_INSTRUCTOR_INDEX).html());
-		var final = $(this).find('td').eq(LISTING_FINAL_INDEX).html().replace(/&nbsp;/g, '').trim();
-		var units = $(this).find('td').eq(LISTING_UNITS_INDEX).html();
-		var colorPair = getRandomColorPair();
-
-		// Ignore if course already added or if course final update
-		if(isCourseAdded(courseCode, final)) {
-			return;
-		}
-
-		// Increment unit counter
-		$('#unitCounter').text(parseInt($('#unitCounter').text())+parseInt(units));
-
-		// Iterate through course times (a course may have different meeting times)
-		var courseID = S4()
-		for(var i in courseTimes) {
-			var parsed = courseTimes[i];
-			$('#cal').fullCalendar("renderEvent",{
-				id:	courseID,
-				groupId: courseCode,
-				start: parsed.start,
-				end: parsed.end,
-				title: classType + ' ' + courseName,
-				dow: parsed.days,
-				color: colorPair.color,
-				daysOfTheWeek: parsed.days,
-				location: parsed.room,
-				fullName: fullCourseName,
-				instructor: instructor,
-				final: final,
-				units: units,
-				courseTimes: courseTimes,
-				eventType: COURSE_EVENT_TYPE
-			});
-		}
-		switchToMainCalendar();
-	});
-
-	// Stop propagation from reaching the parent (the click handler for the course row)
-	$(".course-list td a").click(function(e) {
-		e.stopPropagation();
-	});
-
-	$(".same-link").on("click", function(event) {				
-		event.preventDefault();
-		$.ajax({
-			url: $(this).attr("href"),
-			type: 'GET',
-			success: function(data) {
-				swapToListing(data);
-				cleanListing();
-				setupListingListeners();
-				mobileRescale();
-			},
-			error: function() {
-				toastr.error('Cannot load classes');
-			}
-		});
-	});
-
-	$('#back-btn').on('click', function() {
-		$('#soc').hide();
-		$('#search').show();
-	});
-}
-
-function cleanListing() {
-	if ($("#right").find('tr').length == 0) {
-		$('.course-list').text('No courses matched your search criteria for this term.');
-	}
-
-	$("#right").find("a").each(function() {
-		if ($(this).attr("href").indexOf("reg.uci.edu/perl/") !== -1) {
-			var query = $(this).attr("href").split("?")[1];
-			$(this).attr("href", "/websoc/listing?" + query);
-			$(this).removeAttr("target");
-			$(this).addClass("same-link");
-		}
-		// all other links open in a new tab
-		else {
-			$(this).attr("target", "_blank");
-		}
-	});
-
-	var textbooks_index;
-	var web_index;
-	var $tr = $('#right').find('tr');
-	$('#right').find('th').each(function() {
-		var $th = $(this);
-		if ($th.text() === "Textbooks") {
-			textbooks_index = ($th).index();
-			$tr.find('th:eq(' + textbooks_index + ')').remove();
-			$tr.find('td:eq(' + textbooks_index + ')').remove();
-		}
-		else if ($th.text() === "Web") {
-			web_index = ($th).index();
-			$tr.find('th:eq(' + web_index + ')').remove();
-			$tr.find('td:eq(' + web_index + ')').remove();
-		}
-		if (textbooks_index && web_index) {
-			return false;
-		}
-	});
-
-	$tr.each(function() {
-		// Reduces the column width after deleting the two columns
-		var td_close = $("td", this);
-		if (td_close.attr('colspan')) {
-		    td_close.attr('colspan', 14);
-		}
-		// Removes the indentions for the "same as class" and "enrollment" info
-		var td_0 = $("td:eq(0)", this);
-		if (td_0.html() == "&nbsp;") {
-			td_0.remove();
-			var td_0_new = $("td:eq(0)", this);
-		    if (td_0_new.html() == "&nbsp;") {
-		        td_0_new.remove();
-			}
-			var td_2 = $("td:eq(2)", this)
-		    if (td_2.html() == "&nbsp;" && $(this).attr('bgcolor') == '#fff0ff') {
-		        td_2.remove();
-		    }
-		}
-		
-		// Used to add registrar restrictions link for each row
-		// If only the header needs the link, use th instead of td
-		var td_13 = $("td:eq(12)", this)
-		if (td_13.html() != "&nbsp;") {
-			td_13.html("<a href='https://www.reg.uci.edu/enrollment/restrict_codes.html' target='_blank'>"+td_13.text()+"</a>")
-		}
-
-		// The 4th child is typically the instructor column
-		var element = $("td:eq(4)", this);
-		var elementText = element.text();
-
-		// Check to see if it's similar to an instructor's name:
-		//     LASTNAME, F.
-		//     SMITH, J.
-		if (elementText.indexOf(',') !== -1 && elementText.indexOf('.') !== -1) {
-			var instructorNames = element.html().split('<br>');
-			var instructorLinks = [];
-			for (var i = 0; i < instructorNames.length; i++) {
-				var instructorName = instructorNames[i].trim();
-				// Ignore STAFF instructors
-				if (instructorName == 'STAFF') {
-					instructorLinks.push('STAFF');
-					continue;
-				}
-
-				if (instructorName == '') {
-					continue;
-				}
-
-				// Build the link to RateMyProfessors
-				var instructorLastName = instructorName.split(',')[0];
-				if (instructorLastName.indexOf('-') !== -1) {
-					instructorLastName = instructorName.split('-')[0]
-				}
-				var link = "https://www.ratemyprofessors.com/search.jsp?queryoption=HEADER&queryBy=teacherName&schoolName=University+of+California+Irvine&schoolID=1074&query="+instructorLastName;
-				instructorLinks.push('<a class="instructor-link" href="'+link+'" target="_blank">'+instructorName+'</a>');
-			}
-			element.html(instructorLinks.join('<br />'));
-		}
-	});
+    var recents = '<tr><td style="color:rgb(206, 212, 218)">Empty</tr></td>';
+    if (str !== "[]") {
+        recents = str
+            .replace(/",/g, "</a></td></tr><tr><td><a class='recentSchedule' href='#'>")
+            .replace('["', "<tr><td><a class='recentSchedule' href='#'>")
+            .replace('"]', "</a></td></tr>")
+            .replace(/"/g, "");
+    }
+    return `<table class="w-100">
+				<tr style="border-bottom:solid 1px"><th>Recent Schedules</th><th><a id="clearRecents" href="#">Clear All<a></th></tr>
+				${recents}
+			</table>`;
 }
 
 function toggleOptions() {
-	var div = document.getElementById("moreOptions");
-	var button = document.getElementById("moreOptionsButton");
-	if (div.style.display === "none") {
-		div.style.display = "block";
-		button.innerText = "Show Less Options..."
-	} else {
-		div.style.display = "none";
-		button.innerText = "Show More Options..." 
-	}
+    var div = document.getElementById("moreOptions");
+    var button = document.getElementById("moreOptionsButton");
+    if (div.style.display === "none") {
+        div.style.display = "block";
+        button.innerText = "Show Less Options";
+    } else {
+        div.style.display = "none";
+        button.innerText = "Show More Options";
+    }
 }
 
-function mobileRescale() {
-	if(/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-		$('.course-list').css('font-size', '3vw');
-		$('.course-list').css('line-height', '3vw');
-	}
+function renderInstructor(instructors, withLink = true) {
+    var innerHtml = "";
+    for (var i in instructors) {
+        if (instructors[i] !== "STAFF" && withLink) {
+            innerHtml += `<div><a href="javascript:void(0)">${instructors[i]}</a></div>`;
+        } else {
+            innerHtml += `<div>${instructors[i]}</div>`;
+        }
+    }
+    return innerHtml;
 }
-  
-// JQuery listeners
-$(document).ready(function() {
-	// Creates a resizable panels using Split.Js
-	window.Split(['#left', '#right'], {
-		sizes: [45, 55],
-		gutterSize: 10,
-		minSize: 20,
-		elementStyle: function(dim, size, gutterSize){
-			return {
-				'width': 'calc(' + size + '% - ' + gutterSize*1.5 + 'px)',
-			};
-		}
-	});
-	// Adds the ellipsis icon within the gutter
-	$('.gutter').append('<i class="fas fa-ellipsis-v"></i>');
 
-	lscache.flushExpired();
+function renderLocation(locations, asString = false) {
+    var innerHtml = "";
+    var locationString = "";
+    for (var i in locations) {
+        if (locations[i].rm) {
+            if (locations[i].rm_l) {
+                innerHtml += `<div><a href="${locations[i].rm_l}" target="_blank">${locations[i].bldg} ${locations[i].rm}</a></div>`;
+            } else {
+                innerHtml += `<div>${locations[i].bldg} ${locations[i].rm}</div>`;
+            }
+            locationString += `${locations[i].bldg} ${locations[i].rm} `;
+        } else {
+            innerHtml += `<div>${locations[i].bldg}</div>`;
+            locationString += `${locations[i].bldg} `;
+        }
+    }
+    if (asString) {
+        return locationString;
+    }
+    return innerHtml;
+}
 
-	$("#search-form").submit(function( event ) {
-		$("#loading").show();
-		event.preventDefault();
-		var data = lscache.get($("#search-form").serialize());
-		if (data) {
-			// Don't need to call cleanListing() because the cached version is already cleaned
-			swapToListing(data);
-			setupListingListeners();
-			mobileRescale();
-		}
-		else {
-			$.ajax({
-				url: $('#search-form').attr('action'),
-				type: 'GET',
-				data: $("#search-form").serializeArray(),
-				success: function(data) {
-					swapToListing(data);
-					cleanListing();
-					setupListingListeners();
-					mobileRescale();
-					lscache.set($("#search-form").serialize(), $('#soc').html(), 30);
-				},
-				error: function() {
-					toastr.error('Cannot load classes');
-				}
-			});
-		}
-		lscache.flushExpired();
-	});
+function renderName(type, dept, num) {
+    return `${type} ${dept} ${num}`;
+}
 
-	if ($("#moreOptionsButton").checked) {
-		toggleOptions();
-	}
+function setupColorPicker(element, event, colorpickerId) {
+    element.on("inserted.bs.popover", function () {
+        $(`#colorpicker-${colorpickerId}`).spectrum({
+            color: event.color,
+            showPaletteOnly: true,
+            togglePaletteOnly: true,
+            togglePaletteMoreText: "more colors",
+            togglePaletteLessText: "less colors",
+            hideAfterPaletteSelect: true,
+            preferredFormat: "hex",
+            showInput: true,
+            palette: [colorPalette],
+            change: function (color) {
+                $(`#colorpicker-${colorpickerId}`).spectrum("destroy");
+                $(`#colorpicker-${colorpickerId}`).hide();
+                // Must remove and rerender the event manually since updateEvent is not working
+                $("#cal").fullCalendar("removeEvents", event._id);
+                if (event.eventType == COURSE_2_EVENT_TYPE) {
+                    for (var i in event.course.mtng) {
+                        event.start = event.course.mtng[i].start;
+                        event.end = event.course.mtng[i].end;
+                        event.dow = event.course.mtng[i].days;
+                        event.color = color.toHexString();
+                        $("#cal").fullCalendar("renderEvent", event);
+                    }
+                } else {
+                    event.start = event.start.format("HH:mm");
+                    event.end = event.end.format("HH:mm");
+                    event.dow = event.daysOfTheWeek;
+                    event.color = color.toHexString();
+                    $("#cal").fullCalendar("renderEvent", event);
+                }
+            },
+        });
+    });
+    // Must manually destroy colorpicker or else it never gets deleted.
+    // Also hides the colorpicker input element so it does not appear briefly
+    // after being destroyed.
+    element.on("hide.bs.popover", function () {
+        $(`#colorpicker-${colorpickerId}`).spectrum("destroy");
+        $(`#colorpicker-${colorpickerId}`).hide();
+    });
+}
 
-	$("#moreOptionsButton").on('click', function() {
-		toggleOptions();
-	})
-
-	// If on a mobile device, show fullscreen calendar
-	if(/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-		$('#resize-btn').addClass('active');
-
-		$('#right').hide();
-		$('#right').width($(document).width());
-		$('#right').css('margin-left', '0px');
-
-		$('#left').width($(document).width());
-		$('#cal').width($(document).width());
-		$('#finals').width($(document).width());
-
-		$('.gutter').hide();
-	}
-
-	//#region Button Creation
-	// Triggers before popover has been shown and hides the other toolbar popovers
-	$('.btn').on('show.bs.popover', function () {
-		$('.popover').each(function () {
-			$(this).popover('hide');
-		});
-	});
-
-	// Used to close popovers when clicking outside of popover or button
-	// Does not work when clicking in iframe
-	$('body').on('click', function (e) {
-		if (($(e.target).parents('.fc-event-container').length === 0) && 
-		$(e.target).parents('.popover').length === 0 &&
-		$(e.target).parents('.btn').length === 0 &&
-		!($(e.target).hasClass('btn'))) { 
-			$('.popover').each(function () {
-				$(this).popover('hide');
-			});
-		}
-	});
-
-	$('#whatsnew').popover({
-		html: true,
-		title: "What's New! 🎉",
-		content:'<ul style="list-style-type:disc;">\
-				<li>Click on a calendar event for more course info</li>\
-				<li>Change course event color</li>\
-				<li>RateMyProfessor links</li>\
-				<li>View your finals\' schedule</li>\
-				<li>View all your courses\' info using the List button</li>\
-				<li>Create a custom event</li>\
-				<li>Enrolled unit counter</li>\
-				<li>Import schedule from Antplanner</li> \
-				<li>Resizable panes</li>\
-				</ul>\
-				<a href="https://goo.gl/forms/YdeevICkr4Ei6HHg1" target="_blank">Bugs or Suggestions?</a>',
-		placement: 'bottom',
-		container: 'body',
-		boundary: 'window',
-	});
-
-	// Re-build popover on click so that contents update
-	$('#save-btn').click(function() {
-		if (!localStorage.getItem("recentSchedules"))
-			localStorage.setItem("recentSchedules", JSON.stringify([]));
-		$('#save-btn').popover({
-			trigger: 'manual',
-			html: true,
-			title: "Save Schedule",
-			content: function() {
-					return '<div class="input-group input-group-sm mb-3">\
-						<input id="save-input" value="'+(localStorage.getItem("username") ? localStorage.getItem("username") : '')+'" type="text" class="form-control save-input" placeholder="Schedule Name" aria-label="Schedule\'s save name" aria-describedby="basic-addon2">\
-						<div class="input-group-append">\
-							<button id="save-button" class="btn btn-outline-primary" type="button">Submit</button>\
-						</div>\
-					</div>\
-					<div>'+arrToTable(localStorage.getItem("recentSchedules"))+'</div>'
-			},
-			placement: 'bottom',
-			container: 'body',
-			boundary: 'window',
-		});
-		$('#save-btn').popover('toggle');
-	});
-
-	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
-	$('#save-btn').on('shown.bs.popover', function () {
-		// Workaround for popover disappearing on mobile devices
-		if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-			var defaultName = localStorage.getItem(username) ? localStorage.getItem(username) : '';
-			var username = prompt('Please enter your username', defaultName);
-			if (username)
-				saveSchedule(username);
-			$('#save-btn').popover('hide');
-		}
-		$('#save-input').focus();
-		$("#save-input").keypress(function(e){
-			if (!e) 
-				e = window.event;
-			var keyCode = e.keyCode || e.which;
-			if (keyCode == '13'){
-				saveSchedule($('#save-input').val());
-				$('#save-btn').popover('hide');
-			}
-		});
-		$('.recentSchedule').on('click', function() {
-			$('#save-input').val($(this).text());
-			$('#save-input').focus();
-		});
-		$('#clearRecents').click(function() {
-			localStorage.removeItem('recentSchedules');
-			localStorage.removeItem('username');
-			$('#save-btn').popover('hide');
-		});
-		$('#save-button').click(function() {
-			saveSchedule($('#save-input').val());
-			$('#save-btn').popover('hide');
-		});
-	});
-
-	// Re-build popover on click so that contents update
-	$('#load-btn').click(function() {
-		if (!localStorage.getItem("recentSchedules"))
-			localStorage.setItem("recentSchedules", JSON.stringify([]));
-		$('#load-btn').popover({
-			trigger: 'manual',
-			html: true,
-			title: "Load Schedule",
-			content: function() {
-					return '<div class="input-group input-group-sm mb-3">\
-						<input id="load-input" value="'+(localStorage.getItem("username") ? localStorage.getItem("username") : '')+'" type="text" class="form-control" placeholder="Schedule Name" aria-label="Schedule\'s load name" aria-describedby="basic-addon2">\
-						<div class="input-group-append">\
-							<button id="load-button" class="btn btn-outline-primary" type="button">Submit</button>\
-						</div>\
-					</div>\
-					<div>'+arrToTable(localStorage.getItem("recentSchedules"))+'</div>'
-			},
-			placement: 'bottom',
-			container: 'body',
-			boundary: 'window',
-		});
-		$('#load-btn').popover('toggle');
-	});
-
-	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
-	$('#load-btn').on('shown.bs.popover', function () {
-		// Workaround for popover disappearing on mobile devices
-		if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-			var defaultName = localStorage.getItem("username") ? localStorage.getItem("username") : '';
-			var username = prompt('Please enter your username', defaultName);
-			if (username)
-				loadSchedule(username);
-			$('#load-btn').popover('hide');
-		}
-		$('#load-input').focus();
-		$("#load-input").keypress(function(e){
-			if (!e) 
-				e = window.event;
-			var keyCode = e.keyCode || e.which;
-			if (keyCode == '13'){
-				loadSchedule($('#load-input').val());
-				$('#load-btn').popover('hide');
-			}
-		});
-		$('.recentSchedule').on('click', function() {
-			$('#load-input').val($(this).text());
-			$('#load-input').focus();
-		});
-		$('#clearRecents').click(function() {
-			localStorage.removeItem('recentSchedules');
-			localStorage.removeItem('username');
-			$('#load-btn').popover('hide');
-		});
-		$('#load-button').click(function() {
-			loadSchedule($('#load-input').val());
-			$('#load-btn').popover('hide');
-		});
-	});
-
-	$('#load-ap-btn').popover({
-		html: true,
-		title: "Import from Antplanner",
-		content:'<div class="input-group input-group-sm mb-3">\
-					<div style="padding-bottom: 8px">Note: Not all course info will be available in event popup.</div>\
-					<input id="load-ap-input" type="text" class="form-control" placeholder="Schedule Name" aria-label="Schedule\'s AP load name" aria-describedby="basic-addon2">\
-					<div class="input-group-append">\
-						<button id="load-ap-button" class="btn btn-outline-primary" type="button">Submit</button>\
-					</div>\
-				</div>',
-		placement: 'bottom',
-		container: 'body',
-		boundary: 'window',
-	});
-
-	// Triggers once popover is shown and awaits for the user to press the enter key or submit button
-	$('#load-ap-btn').on('shown.bs.popover', function () {
-		// Workaround for popover disappearing on mobile devices
-		if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-			var defaultName = localStorage.getItem("username") ? localStorage.getItem("username") : '';
-			var username = prompt('Please enter your Antplanner username', defaultName);
-			if (username)
-				loadAPSchedule(username);
-			$('#load-ap-btn').popover('hide');
-		}
-		$('#load-ap-input').focus();
-		$("#load-ap-input").keypress(function(e){
-			if (!e) 
-				e = window.event;
-			var keyCode = e.keyCode || e.which;
-			if (keyCode == '13'){
-				loadAPSchedule($('#load-ap-input').val());
-				$('#load-ap-btn').popover('hide');
-			}
-		});
-		$('#load-ap-button').click(function() {
-			loadAPSchedule($('#load-ap-input').val());
-			$('#load-ap-btn').popover('hide');
-		});
-	});
-
-	// Temporarily changes size of calendar for printing.
-	// This must be done with JS instead of just styling because
-	// fullCalendar must rescale all of the events for the bigger event sizes
-	$('#print-btn').click(function() {
-		if (navigator.userAgent.indexOf("Chrome") != -1) {
-			switchToMainCalendar();
-			var tempLeftSize = $("#left").outerWidth();
-			$("#right").hide();
-			// Not 100% or else it will not fit on letter paper
-			$("#left").outerWidth('99.5%');
-			$('#cal').css('width', '100%');
-			$('th, td, tr').css('border', '2px solid #bfbfbf');
-			$('.fc-minor').css('border-top', '3px dotted #bfbfbf')
-			$('#resize-btn').removeClass('active');
-			// Sets the name of the schedule as the header for the page
-			document.title = ($('#scheduleNameForPrint').html() ? $('#scheduleNameForPrint').html() : 'Zotcourse - Schedule Planner for UCI' );
-			// Sets the rows to have a larger height for printing
-			$('.fc-time-grid .fc-slats td').css('height', '46');
-			// This triggers fullCalendar to rescale
-			$('#cal').fullCalendar('option', 'height', $('#left').outerHeight() - $('#upper').outerHeight());
-			$('.popover').each(function () {
-				$(this).popover('hide');
-			});
-
-			window.print();
-			// Resets page back to original size
-			$("#right").show();
-			$('.gutter').show();
-			$("#left").outerWidth(tempLeftSize);
-			$('th, td, tr').css('border', '');
-			$('.fc-time-grid .fc-slats td').css({
-				'height': ($('#left').outerHeight() - $('#upper').outerHeight()) / 31,
-			});
-			document.title = 'Zotcourse - Schedule Planner for UCI';
-		}
-		else {
-			toastr.error('Printing is currently only supported in Chrome', 'Unsupported Browser');
-		}
-	});
-
-	$('#clear-cal-btn').on('click', function() {
-		$('.popover').each(function () {
-			$(this).popover('hide');
-		});
-		$('#cal').fullCalendar('removeEvents');
-		$('#finals').fullCalendar('removeEvents');
-		switchToMainCalendar();
-		$('#unitCounter').text(0);
-	});
-
-	$('#resize-btn').click(async function() {
-		$('.popover').each(function () {
-			$(this).popover('hide');
-		});
-		if ($(this).hasClass('active')) {
-			if(/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-				$('#finals').animate({width: 0}, 200, "swing");
-				$('#cal').animate({width: 0}, 200, "swing");
-				await sleep(200);
-				$('#left').width('0px');
-				$('#right').show();
-			}
-			else {
-				$('#finals').animate({width: '100%'}, 200, "swing");
-				$('#cal').animate({width: '100%'}, 200, "swing");
-				await sleep(200);
-				$('#soc').show();
-				$('.gutter').show();
-			}
-			$(this).removeClass('active');
-		}
-		else {
-			if(/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-				$('#right').hide();
-				$('#left').width($(document).width());				
-				$('#cal').animate({width: $(document).width()}, 200, "swing");
-				$('#finals').animate({width: $(document).width()}, 200, "swing");
-			}
-			else {
-				$('#soc').hide();
-				$('.gutter').hide();
-				$('#cal').animate({width: $(document).width()}, 200, "swing");
-				$('#finals').animate({width: $(document).width()}, 200, "swing");
-			}
-			$(this).addClass('active');
-		}
-	});
-
-	$('#finals-btn').click(function() {
-		$('.popover').each(function () {
-			$(this).popover('hide');
-		});
-		if ($(this).hasClass('active')) {
-			$('#finals').hide();
-			$('#cal').show();
-			$(this).removeClass('active');
-			$('#cal').fullCalendar('rerenderEvents');
-		}
-		else {
-			$('#finals').show();
-			$('#cal').hide();
-			$(this).addClass('active');
-			$('#finals').fullCalendar('removeEvents');
-			var calRawData  = $('#cal').fullCalendar('clientEvents');
-			var usedGroupIds = [];
-			var hasTBACourse = false;
-			for (var i in calRawData) {
-				// Checks if any course has TBA final so that user can update it
-				if (calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
-					$.trim(calRawData[i].final.replace(/&nbsp;/g, '')) == 'TBA') {
-					hasTBACourse = true;
-				}
-				// Checks to make sure that finals attribute is not empty, TBA, or from import
-				if (calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
-					$.trim(calRawData[i].final.replace(/&nbsp;/g, '')) != '' &&
-					$.trim(calRawData[i].final.replace(/&nbsp;/g, '')) != 'TBA' &&
-					$.trim(calRawData[i].final.replace(/&nbsp;/g, '')) != 'N/A (due to import)' &&
-					!(usedGroupIds.indexOf(calRawData[i].groupId) >= 0)) {
-					var finalParsed = FinalParsedCourseTime(calRawData[i].final);
-					$('#finals').fullCalendar("renderEvent",{
-						id:	calRawData[i].id,
-						groupId: calRawData[i].groupId,
-						start: finalParsed.beginHour + ':' + finalParsed.beginMin,
-						end: finalParsed.endHour + ':' + finalParsed.endMin,
-						// Title is parsed from after the type of class (ie. Lec, Lab, Dis)
-						title: calRawData[i].title.split(/\s(.+)/)[1],
-						dow: [finalParsed.weekDay],
-						color: calRawData[i].color,
-						fullName: calRawData[i].fullName,
-						instructor: calRawData[i].instructor,
-						date: finalParsed.date
-					});
-					usedGroupIds.push(calRawData[i].groupId);
-				}
-			}
-			if (hasTBACourse)
-				toastr.warning('One of your courses have TBA finals. Please use the List buttton to re-add and update the course.', 'TBA Finals');
-			$('#finals').fullCalendar('rerenderEvents');
-		}
-		$(window).trigger('resize');
-	});
-
-	$('#list-btn').click(function() {
-		$('.popover').each(function () {
-			$(this).popover('hide');
-		});
-		var courseCodes = '';
-		var calRawData  = $('#cal').fullCalendar('clientEvents');
-		var added = [];
-		for (var i in calRawData) {
-			// If valid eventType and not already added
-			if (calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
-			 	added.indexOf(calRawData[i].groupId) == -1) {
-				added.push(calRawData[i].groupId);
-			}
-		}
-		added.sort();
-		courseCodes = added.join(',');
-		if (courseCodes == '') {
-			toastr.warning('Must have at least 1 course added.', 'Cannot List Courses');
-		}
-		else {
-			$("#loading").show();
-			// 'data-term' attribute is rendered from index template and defaults to latest term
-			$.ajax({
-				url: '/websoc/listing?YearTerm='+$('#list-btn').attr('data-term')+'&\
-				Breadth=ANY&Dept=&CourseCodes='+courseCodes+'&CourseNum=&Division=ANY&\
-				InstrName=&CourseTitle=&ClassType=ALL&Units=&Days=&StartTime=&EndTime=&\
-				FullCourses=ANY&ShowComments=on&ShowFinals=on',
-				type: 'GET',
-				success: function(data) {
-					swapToListing(data);
-					cleanListing();
-					setupListingListeners();
-					mobileRescale();
-				},
-				error: function() {
-					toastr.error('Cannot load classes');
-				}
-			});
-		}
-	});
-
-	$('#export-btn').popover({
-		html: true,
-		title: "Export to iCal",
-		content:'<div class="input-group input-group-sm mb-3">\
-					<div style="padding-bottom: 8px">Downloads an .ics file which can import your courses into Google Calendar. \
-					<a target="_blank" href="https://support.google.com/calendar/answer/37118#import_to_gcal">Click here to learn how.</a></div>\
-					<div style="margin:auto;"><button id="export-button" class="btn btn-primary" type="button">Download</button></div>\
-				</div>',
-		placement: 'bottom',
-		container: 'body',
-		boundary: 'window',
-	});
-	$('#export-btn').on('shown.bs.popover', function () {
-		$('#export-button').click(function() {
-			$('.popover').each(function () {
-				$(this).popover('hide');
-			});
-			var calRawData  = $('#cal').fullCalendar('clientEvents');
-			// Year is extracted from most recent term in Schedule of Classes search
-			var year = parseInt($('#list-btn').attr('data-term').substring(0,4));
-			var firstMonday;
-			for (var i in calRawData) {
-				// Prevents courses with no final or imported from Antplanner from being parsed
-				if (calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
-					calRawData[i].final.replace(/&nbsp;/g, '').trim() != '' && 
-					calRawData[i].final.replace(/&nbsp;/g, '') != 'N/A (due to import)' &&
-					calRawData[i].final.replace(/&nbsp;/g, '').trim() != 'TBA') {
-					// At least one class with a final is necessary since the final is the
-					// only way to determine when the first week of class is
-					var finalParsed = FinalParsedCourseTime(calRawData[i].final);
-					firstMonday = new Date(year, MONTH_TO_INT[finalParsed.month], finalParsed.day, finalParsed.beginHour);
-					// Gets the Monday AFTER finals week is over
-					// If Sat,Sun,Mon (6,0,1) add 7 to get Monday AFTER finals week
-					var shift = (1 + 7 - firstMonday.getDay()) % 7;
-					if ([6,0,1].includes(firstMonday.getDay())) {
-						shift += 7;
-					}
-					firstMonday.setDate(firstMonday.getDate() + shift)
-					// Move backwards 10 weeks during quarter + 1 week of finals = 77 days
-					firstMonday.setDate(firstMonday.getDate()-77);
-					break;
-				}
-			}
-			if (firstMonday != null) {
-				var added = [];
-				var cal = ics();
-				for (i in calRawData) {
-					if (added.indexOf([calRawData[i].groupId, calRawData[i].daysOfTheWeek].toString()) == -1) {
-						var startDate = new Date(firstMonday);
-						var daysOfTheWeek = calRawData[i].daysOfTheWeek.sort();
-						// Add the number of days until first meeting starting from Monday (0)
-						// Only the first meeting of the week is needed since byday handles repeats
-						// daysOfTheWeek - 1 because Monday has an index of 1 instead if 0
-						startDate.setDate(startDate.getDate()+(daysOfTheWeek[0]-1));
-						var endDate = new Date(startDate);
-						startDate.setHours(calRawData[i].start.hours());
-						startDate.setMinutes(calRawData[i].start.minutes());
-						endDate.setHours(calRawData[i].end.hours());
-						endDate.setMinutes(calRawData[i].end.minutes());
-						var rrule = {
-							'freq': 'WEEKLY',
-							// Count is (# of weeks in quarter) * (# of times class occurs in a week)
-							'count': 10*calRawData[i].daysOfTheWeek.length,
-							'byday': daysOfTheWeekToStr(daysOfTheWeek)
-						};
-						// Use \\n instead of \n due to ics.js issue #26 
-						if (calRawData[i].eventType == CUSTOM_EVENT_TYPE) {
-							// No location or description for custom events
-							cal.addEvent(calRawData[i].title, '', '', startDate, endDate, rrule);
-						}
-						else {
-							var regex = /(\w|\s)+(?=<|$)/g;
-							var location = calRawData[i].location.match(regex) || [calRawData[i].location];
-							cal.addEvent(calRawData[i].title, 
-								'Course Title: '+calRawData[i].fullName+
-								'\\nInstructor: '+calRawData[i].instructor+
-								'\\nCode: '+calRawData[i].groupId+
-								'\\nFinal: '+(calRawData[i].final !== '' ? calRawData[i].final : 'See Lecture'),
-								location.toString(), startDate, endDate, rrule);
-						}
-						if (calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
-							calRawData[i].final.replace(/&nbsp;/g, '').trim() != '' && 
-							calRawData[i].final.replace(/&nbsp;/g, '') != 'N/A (due to import)' &&
-							calRawData[i].final.replace(/&nbsp;/g, '').trim() != 'TBA') {
-							var finalTime = FinalParsedCourseTime(calRawData[i].final);
-							var startTime = new Date(year, MONTH_TO_INT[finalTime.month], finalTime.day, finalTime.beginHour, finalTime.beginMin);
-							var endTime = new Date(year, MONTH_TO_INT[finalTime.month], finalTime.day, finalTime.endHour, finalTime.endMin);
-							// Title is parsed from after the type of class (ie. Lec, Lab, Dis)
-							cal.addEvent('Final '+calRawData[i].title.split(/\s(.+)/)[1], 
-								'Course Title: '+calRawData[i].fullName+
-								'\\nInstructor: '+calRawData[i].instructor+
-								'\\nCode: '+calRawData[i].groupId,
-								'Check portal.uci.edu', startTime, endTime);
-						}
-						added.push([calRawData[i].groupId, calRawData[i].daysOfTheWeek].toString());
-					}
-				}
-				cal.download();
-			}
-			else {
-				toastr.warning('Must have at least 1 course with a final added.', 'Cannot Export Courses');
-			}
-		});
-	});
-
-	$('#event-btn').popover({
-		html: true,
-		title: "Add a Custom Event",
-		content:'<div>\
-					<input id="event-name" type="text" placeholder="Event Name" class="form-control form-control-lg">\
-					<div style="display: flex; justify-content: space-between; width:100%">\
-					<select id="event-start" class="time custom-select">\
-					<option value="07:00">7:00am</option>\
-					<option value="07:30">7:30am</option>\
-					<option value="08:00">8:00am</option>\
-					<option value="08:30">8:30am</option>\
-					<option value="09:00">9:00am</option>\
-					<option value="09:30">9:30am</option>\
-					<option value="10:00">10:00am</option>\
-					<option value="10:30">10:30am</option>\
-					<option value="11:00">11:00am</option>\
-					<option value="11:30">11:30am</option>\
-					<option value="12:00" selected>12:00pm</option>\
-					<option value="12:30">12:30pm</option>\
-					<option value="13:00">1:00pm</option>\
-					<option value="13:30">1:30pm</option>\
-					<option value="14:00">2:00pm</option>\
-					<option value="14:30">2:30pm</option>\
-					<option value="15:00">3:00pm</option>\
-					<option value="15:30">3:30pm</option>\
-					<option value="16:00">4:00pm</option>\
-					<option value="16:30">4:30pm</option>\
-					<option value="17:00">5:00pm</option>\
-					<option value="17:30">5:30pm</option>\
-					<option value="18:00">6:00pm</option>\
-					<option value="18:30">6:30pm</option>\
-					<option value="19:00">7:00pm</option>\
-					<option value="19:30">7:30pm</option>\
-					<option value="20:00">8:00pm</option>\
-					<option value="20:30">8:30pm</option>\
-					<option value="21:00">9:00pm</option>\
-					<option value="21:30">9:30pm</option>\
-					</select>\
-					<span style="padding-top: 10px; margin-left:10px; margin-right:10px">to</span>\
-					<select id="event-end" class="time custom-select">\
-					<option value="07:30">7:30am</option>\
-					<option value="08:00">8:00am</option>\
-					<option value="08:30">8:30am</option>\
-					<option value="09:00">9:00am</option>\
-					<option value="09:30">9:30am</option>\
-					<option value="10:00">10:00am</option>\
-					<option value="10:30">10:30am</option>\
-					<option value="11:00">11:00am</option>\
-					<option value="11:30">11:30am</option>\
-					<option value="12:00">12:00pm</option>\
-					<option value="12:30">12:30pm</option>\
-					<option value="13:00" selected>1:00pm</option>\
-					<option value="13:30">1:30pm</option>\
-					<option value="14:00">2:00pm</option>\
-					<option value="14:30">2:30pm</option>\
-					<option value="15:00">3:00pm</option>\
-					<option value="15:30">3:30pm</option>\
-					<option value="16:00">4:00pm</option>\
-					<option value="16:30">4:30pm</option>\
-					<option value="17:00">5:00pm</option>\
-					<option value="17:30">5:30pm</option>\
-					<option value="18:00">6:00pm</option>\
-					<option value="18:30">6:30pm</option>\
-					<option value="19:00">7:00pm</option>\
-					<option value="19:30">7:30pm</option>\
-					<option value="20:00">8:00pm</option>\
-					<option value="20:30">8:30pm</option>\
-					<option value="21:00">9:00pm</option>\
-					<option value="21:30">9:30pm</option>\
-					<option value="22:00">10:00pm</option>\
-					</select>\
-					</div>\
-					<div style="display: flex; justify-content: space-between; width:100%; margin-top: 10px" class="weekDays-selector">\
-					<input type="checkbox" name="weekday-check" data="1" id="weekday-mon" class="weekday" />\
-					<label for="weekday-mon">M</label>\
-					<input type="checkbox" name="weekday-check" data="2" id="weekday-tue" class="weekday" />\
-					<label for="weekday-tue">T</label>\
-					<input type="checkbox" name="weekday-check" data="3" id="weekday-wed" class="weekday" />\
-					<label for="weekday-wed">W</label>\
-					<input type="checkbox" name="weekday-check" data="4" id="weekday-thu" class="weekday" />\
-					<label for="weekday-thu">T</label>\
-					<input type="checkbox" name="weekday-check" data="5" id="weekday-fri" class="weekday" />\
-					<label for="weekday-fri">F</label>\
-					</div>\
-					<div style="display: flex;  justify-content: center;"><button id="event-button" class="btn btn-primary" type="button">Add Event</button></div>\
-				</div>',
-		placement: 'bottom',
-		container: 'body',
-		boundary: 'window',
-	});
-	$('#event-btn').on('shown.bs.popover', function () {
-		$('#event-button').click(function() {
-			var days = $('input[name=weekday-check]:checked');
-			weekDays = []
-			for (var i = 0; i < days.length; i++) {
-				weekDays.push(parseInt($(days[i]).attr("data")))
-			}
-			if ($("#event-name").val().length <= 0 || $("#event-name").val().length > 25) {
-				toastr.warning('Name must be between 1 and 25 characters.', 'Event Name');
-			}
-			else if ($("#event-start").val() >= $("#event-end").val()) {
-				toastr.warning('Start time must come before end time.', 'Event Time');
-			}
-			else if (weekDays.length == 0) {
-				toastr.warning('Must have at least 1 weekday selected.', 'Event Weekday');
-			}
-			else {
-				var courseTime = [{
-					start: $("#event-start").val(),
-					end: $("#event-end").val(),
-					days: weekDays
-				}];
-				$('#cal').fullCalendar("renderEvent",{
-					id:	S4(),
-					groupId: S4(),
-					start: $("#event-start").val(),
-					end: $("#event-end").val(),
-					title: $("#event-name").val(),
-					dow: weekDays,
-					color: getRandomColorPair().color,
-					daysOfTheWeek: weekDays,
-					fullName: $("#event-name").val(),
-					eventType: CUSTOM_EVENT_TYPE,
-					courseTimes: courseTime
-				});
-				switchToMainCalendar();
-			}
-		});
-	});
-	//#endregion
-
-	// Whenever the left panel changes sizes, resizes the right panel.
-	// Also accounts for when the user zooms in/out
-	$(window).resize(function() {
-		// Resizes the gutter bar to match the height of the left panel
-		$('.gutter').height($('#left').height()+'px');
-		// Resizes the rows to fit on the screen
-		// 31 comes from the 30 table cells + 1 for table column headers
-		$('.fc-time-grid .fc-slats td').css({
-			'height': ($('body').outerHeight() - $('#upper').outerHeight()) / 31,
-		});
-		// Triggers fullCalendar to rescale
-		$('#cal').fullCalendar('option', 'height', $('#left').outerHeight());
-		$('#finals').fullCalendar('option', 'height', $('#left').outerHeight());
-		// Hides all open popovers to prevent them from drifting while resize is occuring
-		$('.popover').each(function () {
-			$(this).popover('hide');
-		});
-	});
-
-	//#region Calendar Creation
-	$('#cal').fullCalendar({
-		weekends: false,
-		header: false,
-		themeSystem: 'bootstrap4',
-		defaultView: 'agendaWeek',
-		allDaySlot: false,
-		slotEventOverlap: false,
-		minTime: '07:00:00',
-		maxTime: '22:00:00',
-		columnHeaderFormat: 'ddd',
-		height: $('#left').outerHeight(),
-		eventRender: function(event, element) {
-			var colorpickerId = S4();
-			// Hides all open popovers when adding a new event since it was causing
-			// currently opened popovers to freeze.
-			$('.popover').each(function () {
-				$(this).popover('hide');
-			});
-			if (event.eventType == CUSTOM_EVENT_TYPE) {
-				element.popover({
-					html:true,
-					title: (event.fullName) ? event.fullName : '',
-					content:'<table style="width:100%; margin-bottom:3%">\
-							<tr>\
-								<td>Color</td>\
-								<td></td>\
-								<td align="right"><input id="colorpicker-'+colorpickerId+'" type="text"/></td>\
-							</tr>\
-							</table>\
-							<button style="width:100%" class="btn btn-sm btn-outline-primary delete-event">Remove <i class="fas fa-trash-alt"></i></button>',
-					trigger:'focus',
-					placement:'right',
-					container:'body',
-				});
-			}
-			else {
-				element.popover({
-					html:true,
-					title: (event.fullName) ? event.fullName : '',
-					content:'<table style="width:100%; margin-bottom:3%;">\
+function renderCoursePopover(element, event, isFinal = false) {
+    let popoverTitle = "";
+    let popoverContent = "";
+    let colorpickerId = randomNum();
+    if (event.eventType == COURSE_2_EVENT_TYPE) {
+        popoverTitle = event.course.title;
+        popoverContent = `<table>
+							<tr class="border-bottom">
+								<td class="pr-2 pb-1">Name</td>
+								<td align="right">${renderName(event.course.c_type, event.course.dept, event.course.num)}</td>
+							</tr>
+							<tr class="border-bottom">
+								<td class="pr-2 pb-1">Code</td>
+								<td align="right">${event.course.code}</td>
+							</tr>`;
+        if (isFinal) {
+            popoverContent += `<tr class="border-bottom">
+									<td class="pr-2 pb-1">Time</td>
+									<td align="right">${event.course.final.f_time}</td>
+								</tr>
+								<tr>
+									<td class="pr-2 pb-1">Instructor</td>
+									<td align="right">${renderInstructor(event.course.instr, false)}</td>
+								</tr>
+								</table>`;
+        } else {
+            setupColorPicker(element, event, colorpickerId);
+            popoverContent += `<tr class="border-bottom">
+								<td class="pr-2 pb-1">Location</td>
+								<td align="right">${renderLocation(event.course.mtng)}</td>
+							</tr>
+							<tr class="border-bottom">
+								<td class="pr-2 pb-1">Instructor</td>
+								<td align="right">${renderInstructor(event.course.instr, false)}</td>
+							</tr>
+							<tr>
+								<td class="pr-2 pb-1">Color</td>
+								<td align="right"><input id="colorpicker-${colorpickerId}" type="text"/></td>
+							</tr>
+							<tr>
+								<td colspan="2"><button class="btn btn-sm btn-primary mt-1 w-100 delete-event">Remove <i class="fas fa-trash-alt"></i></button></td>
+							</tr>
+							</table>`;
+        }
+    } else if (event.eventType == CUSTOM_EVENT_TYPE) {
+        popoverTitle = event.title;
+        setupColorPicker(element, event, colorpickerId);
+        popoverContent = `<table>
+							<tr>
+								<td class="pr-1">Color</td>
+								<td align="right"><input id="colorpicker-${colorpickerId}" type="text"/></td>
+							</tr>
+							<tr>
+								<td colspan="2"><button class="btn btn-sm btn-primary w-100 delete-event">Remove <i class="fas fa-trash-alt"></i></button></td>
+							</tr>
+							</table>`;
+    } else {
+        // TODO: Remove
+        if (isFinal) {
+            popoverTitle = event.fullName ? event.fullName : "";
+            popoverContent =
+                '<table style="width:100%">\
 							<tr>\
 								<td>Name</td>\
 								<td></td>\
-								<td align="right">'+event.title+'</td>\
+								<td align="right">' +
+                event.title +
+                '</td>\
 							</tr>\
 							<tr>\
 								<td>Code</td>\
 								<td></td>\
-								<td align="right">'+event.groupId+'</td>\
+								<td align="right">' +
+                event.groupId +
+                '</td>\
 							</tr>\
 							<tr>\
-								<td>Location</td>\
+								<td>Date</td>\
 								<td></td>\
-								<td align="right">'+((event.location) ? event.location : '')+'</td>\
+								<td align="right">' +
+                event.date +
+                '</td>\
 							</tr>\
 							<tr>\
 								<td>Instructor</td>\
 								<td>&nbsp;&nbsp;</td>\
-								<td align="right">'+((event.instructor) ? createInstructorLinks(event.instructor) : 'N/A')+'</td>\
+								<td align="right">' +
+                (event.instructor ? event.instructor : "N/A") +
+                "</td>\
 							</tr>\
-							<tr>\
-								<td>Color</td>\
-								<td></td>\
-								<td align="right"><input id="colorpicker-'+colorpickerId+'" type="text"/></td>\
-							</tr>\
-							</table>\
-							<button style="width:100%" class="btn btn-sm btn-outline-primary delete-event">Remove <i class="fas fa-trash-alt"></i></button>',
-					trigger:'focus',
-					placement:'right',
-					container:'body',
-				});
-			}
-			element.on('inserted.bs.popover', function() {
-				$('#colorpicker-'+colorpickerId).spectrum({
-					color: event.color,
-					showPaletteOnly: true,
-					togglePaletteOnly: true,
-					togglePaletteMoreText: 'more',
-					togglePaletteLessText: 'less',
-					hideAfterPaletteSelect: true,
-					preferredFormat: "hex",
-					showInput: true,
-					palette: [["#C4A883", "#A7A77D", "#85AAA5", "#94A2BE", "#8997A5",
-								"#A992A9", "#A88383", "#E6804D", "#F2A640", "#E0C240",
-								"#BFBF4D", "#8CBF40", "#4CB052", "#65AD89", "#59BFB3",
-								"#668CD9", "#668CB3", "#8C66D9", "#B373B3", "#E67399",
-								"#D96666"]],
-					change: function(color) {
-						$('#colorpicker-'+colorpickerId).spectrum('destroy');
-						$('#colorpicker-'+colorpickerId).hide();
-						// Must remove and rerender the event manually since updateEvent is not working
-						$('#cal').fullCalendar('removeEvents', event._id);
-						for(var i in event.courseTimes) {
-							var parsed = event.courseTimes[i];
-							$('#cal').fullCalendar('renderEvent', {
-								_id: event._id,
-								id:	event.id,
-								groupId: event.groupId,
-								start: parsed.start,
-								end: parsed.end,
-								title: event.title,
-								dow: parsed.days,
-								color: color.toHexString(),
-								daysOfTheWeek: parsed.days,
-								location: parsed.room,
-								fullName: event.fullName,
-								instructor: event.instructor,
-								final: event.final,
-								units: event.units,
-								courseTimes: event.courseTimes,
-								eventType: event.eventType
-							});
-						}
-					}
-				});
-			});
-			// Must manually destroy colorpicker or else it never gets deleted.
-			// Also hides the colorpicker input element so it does not appear briefly
-			// after being destroyed.
-			element.on('hide.bs.popover', function() {
-				$('#colorpicker-'+colorpickerId).spectrum('destroy');
-				$('#colorpicker-'+colorpickerId).hide();
-			});
-			// Only allows for one popover to be open at a time
-			element.on('show.bs.popover', function() {
-				$('.popover').each(function () {
-					$(this).popover('hide');
-				});
-			});
-		},
-		eventClick: function(event) {
-			// Necessary to keep the $(this) of eventClick in $(".delete-event").click
-			var $this = $(this);
-			$this.popover('toggle');
-			$(".delete-event").click(function() {
-				$this.popover('dispose');
-				$('#cal').fullCalendar('removeEvents', event._id);
-				if (event.units && parseInt($('#unitCounter').text())-parseInt(event.units) >= 0) {
-					$('#unitCounter').text(parseInt($('#unitCounter').text())-parseInt(event.units));
-				}
-			});
-		}
-	});
-	$('#finals').fullCalendar({
-		header: false,
-		firstDay: 6,
-		themeSystem: 'bootstrap4',
-		defaultView: 'agendaWeek',
-		allDaySlot: false,
-		slotEventOverlap: false,
-		minTime: '07:00:00',
-		maxTime: '22:00:00',
-		columnHeaderFormat: 'ddd',
-		height: $('#left').outerHeight(),
-		eventRender: function(event, element) {
-			// Hides all open popovers when adding a new event since it was causing
-			// currently opened popovers to freeze.
-			$('.popover').each(function () {
-				$(this).popover('hide');
-			});
-			element.popover({
-				html:true,
-				title: (event.fullName) ? event.fullName : '',
-				content:'<table style="width:100%">\
-						<tr>\
-							<td>Name</td>\
-							<td></td>\
-							<td align="right">'+event.title+'</td>\
-						</tr>\
-						<tr>\
-							<td>Code</td>\
-							<td></td>\
-							<td align="right">'+event.groupId+'</td>\
-						</tr>\
-						<tr>\
-							<td>Date</td>\
-							<td></td>\
-							<td align="right">'+event.date+'</td>\
-						</tr>\
-						<tr>\
-							<td>Instructor</td>\
-							<td>&nbsp;&nbsp;</td>\
-							<td align="right">'+((event.instructor) ? createInstructorLinks(event.instructor) : 'N/A')+'</td>\
-						</tr>\
-						</table>',
-				trigger:'focus',
-				placement:'right',
-				container:'body',
-			});
+							</table>";
+        } else {
+            // TODO: Remove
+            popoverTitle = event.fullName ? event.fullName : "";
+            setupColorPicker(element, event, colorpickerId);
+            popoverContent =
+                '<table style="width:100%; margin-bottom:3%;">\
+								<tr>\
+									<td>Name</td>\
+									<td></td>\
+									<td align="right">' +
+                event.title +
+                '</td>\
+								</tr>\
+								<tr>\
+									<td>Code</td>\
+									<td></td>\
+									<td align="right">' +
+                event.groupId +
+                '</td>\
+								</tr>\
+								<tr>\
+									<td>Location</td>\
+									<td></td>\
+									<td align="right">' +
+                (event.location ? event.location : "") +
+                '</td>\
+								</tr>\
+								<tr>\
+									<td>Instructor</td>\
+									<td>&nbsp;&nbsp;</td>\
+									<td align="right">' +
+                (event.instructor ? event.instructor : "N/A") +
+                '</td>\
+								</tr>\
+								<tr>\
+									<td>Color</td>\
+									<td></td>\
+									<td align="right"><input id="colorpicker-' +
+                colorpickerId +
+                '" type="text"/></td>\
+								</tr>\
+								</table>\
+								<button style="width:100%" class="btn btn-sm btn-primary delete-event">Remove <i class="fas fa-trash-alt"></i></button>';
+        }
+    }
+    // Hides all open popovers when adding a new event since it was causing
+    // currently opened popovers to freeze.
+    $(".popover").each(function () {
+        $(this).popover("hide");
+    });
+    element.popover({
+        html: true,
+        title: popoverTitle,
+        content: popoverContent,
+        trigger: "focus",
+        placement: "right",
+        container: "body",
+    });
+    // Only allows for one popover to be open at a time
+    element.on("show.bs.popover", function () {
+        $(".popover").each(function () {
+            $(this).popover("hide");
+        });
+    });
+}
 
-			// Only allows for one popover to be open at a time
-			element.on('show.bs.popover', function() {
-				$('.popover').each(function () {
-					$(this).popover('hide');
-				});
-			});
-		},
-		eventClick: function() {
-			// Necessary to keep the $(this) of eventClick in $(".delete-event").click
-			var $this = $(this);
-			$this.popover('toggle');
-		}
-	});
-	//#endregion
+function setPopoverTrigger(popover) {
+    popover.on("mouseenter", function () {
+        var _this = this;
+        $(this).popover("show");
+        $(".popover").on("mouseleave", function () {
+            $(_this).popover("hide");
+        });
+    });
+    popover.on("mouseleave", function () {
+        var _this = this;
+        if (!$(".popover:hover").length) {
+            $(_this).popover("hide");
+        }
+    });
+}
 
-	// The left div height divided by the number of calendar rows
-	// 31 comes from the 30 table cells + 1 for table column headers
-	$('.fc-time-grid .fc-slats td').css({
-		'height': ($('#left').outerHeight()) / 31,
-	})
+// JQuery listeners
+$(document).ready(function () {
+    const defaultYearTerm = $("#year-term").val();
+    $("#department-select").select2({
+        theme: "bootstrap4",
+        sorter: function (data) {
+            let query = $(".select2-search__field").val().toLowerCase();
+            return data.sort(function (a, b) {
+                return a.text.replace(/[\W]/gi, "").toLowerCase().indexOf(query) - b.text.replace(/[\W]/gi, "").toLowerCase().indexOf(query);
+            });
+        },
+    });
+    // Manually reset select2 value
+    $("#reset-btn").click(function () {
+        $("#department-select").val(" ALL").trigger("change");
+    });
+    // Creates a resizable panels using Split.Js
+    window.Split(["#left", "#right"], {
+        sizes: [45, 55],
+        gutterSize: 10,
+        minSize: 20,
+        elementStyle: function (dim, size, gutterSize) {
+            return {
+                width: `calc(${size}% - ${gutterSize}px)`,
+            };
+        },
+        onDragEnd: async function (sizes) {
+            if (isiPad) {
+                await sleep(500);
+                $("#listing-datatable").DataTable().draw();
+                $("#listing-datatable").css("table-layout", "fixed");
+            } else {
+                $("#listing-datatable").DataTable().columns.adjust().draw();
+            }
+            setupCourseInfoListners();
+        },
+    });
+    // Adds the ellipsis icon within the gutter
+    $(".gutter").append(`<i class="fas fa-ellipsis-v"></i>`);
 
-	// Causes fullCalendar to resize after row height was adjusted.
-	$(window).trigger('resize');
+    var datatable = $("#listing-datatable").DataTable({
+        paging: false,
+        scrollResize: true,
+        scrollY: 100,
+        scrollX: true,
+        scrollCollapse: true,
+        autoWidth: false,
+        rowId: "code",
+        stateSave: true,
+        stateDuration: 0,
+        searchDelay: 500,
+        // Disable since can't search by group title unless invisible column is added (but hurts performance)
+        searching: false,
+        processing: true,
+        language: {
+            search: "",
+            searchPlaceholder: "Search...",
+            processing: '<div id="loading" class="lds-ring"><div></div><div></div><div></div><div></div></div>',
+            zeroRecords: "No courses matched your search criteria for this term.",
+        },
+        select: {
+            style: "multi",
+        },
+        preDrawCallback: function (settings) {
+            if (isMobile || isiPad) $("#listing-datatable").css("table-layout", "auto");
+        },
+        dom: "Bftr",
+        buttons: [
+            {
+                text: '<i class="fas fa-chevron-left"></i> Back',
+                action: function (e, dt, node, config) {
+                    $("#soc").hide();
+                    $("#search").show();
+                    dt.search("");
+                },
+                className: "btn btn-secondary",
+            },
+            {
+                extend: "colvis",
+                className: "btn btn-link btn-colvis",
+                text: "Hide columns",
+            },
+        ],
+        rowGroup: {
+            dataSrc: ["dept_n", "num"],
+            startClassName: "row-group",
+            startRender: function (rows, group, level) {
+                if (level == 0) return group;
+                else {
+                    let currRow = rows.data()[0];
+                    let title = `${currRow.dept} ${currRow.num} ${currRow.title} <i class="fas fa-info-circle course-info cursor-pointer" data-dept="${currRow.dept}" data-num="${currRow.num}"></i>`;
+                    let comment = "";
+                    if (currRow.comm) {
+                        comment = `<div class="m-1 p-1 comment">${currRow.comm}</div>`;
+                    }
+                    if (currRow.prereq) {
+                        comment = `<a href="${currRow.prereq}" class="ml-3" target="_blank">(Prereqs)</a>${comment}`;
+                    }
+                    return title + comment;
+                }
+            },
+            endRender: function (rows, group, level) {
+                if (level == 1) return " ";
+            },
+        },
+        ajax: {
+            url: `/search`,
+            dataSrc: function (data) {
+                let flatData = [];
+                for (let i in data.data) {
+                    let department = data.data[i];
+                    for (let j in department.courses) {
+                        let course = department.courses[j];
+                        for (let k in course.sections) {
+                            let section = course.sections[k];
+                            flatData.push({
+                                dept_n: department.dept_n,
+                                num: course.num,
+                                dept: department.dept,
+                                title: course.title,
+                                prereq: course.prereq,
+                                comm: course.comm,
+                                code: section.code,
+                                c_type: section.c_type,
+                                s_num: section.s_num,
+                                unit: section.unit,
+                                m_enrll: section.m_enrll,
+                                enrll: section.enrll,
+                                wtlt: section.wtlt,
+                                wt_cp: section.wt_cp,
+                                nor: section.nor,
+                                stat: section.stat,
+                                rstrcn: section.rstrcn,
+                                mtng: section.mtng,
+                                final: section.final,
+                                instr: section.instr,
+                            });
+                        }
+                    }
+                }
+                return flatData;
+            },
+            cache: true,
+            beforeSend: function () {
+                // Manually add the loading message.
+                $("#listing-datatable > tbody").html("<tr></tr>");
+            },
+        },
+        columns: [
+            {
+                title: "Code",
+                name: "code",
+                data: "code",
+                className: "code-cell",
+            },
+            {
+                title: "Type",
+                name: "type",
+                data: "c_type",
+            },
+            {
+                title: "Sec",
+                name: "sec",
+                data: "s_num",
+            },
+            {
+                title: "Units",
+                name: "unit",
+                data: "unit",
+            },
+            {
+                title: "Instructor",
+                name: "instr",
+                data: "instr",
+                defaultContent: "",
+                render: function (data, type, row, meta) {
+                    if (type === "display") {
+                        return renderInstructor(data.map((e) => e.name));
+                    }
+                    return data.map((e) => e.name).join(" ");
+                },
+                createdCell: function (cell, cellData, rowData, rowIndex, colIndex) {
+                    let i = 0;
+                    $(cell)
+                        .find("a")
+                        .each(function () {
+                            let popoverContent = "";
+                            let instructor = cellData[i];
+                            if (instructor.name === "STAFF") {
+                                i += 1;
+                                instructor = cellData[i];
+                            }
+                            let lastname = instructor.name.split(",")[0];
+                            if (instructor.rating) {
+                                popoverContent += `<div><a href="https://www.ratemyprofessors.com/ShowRatings.jsp?tid=${instructor.rating.id}" target="_blank">View on RMP</a></div>`;
+                            } else {
+                                popoverContent += `<div><a href="https://www.ratemyprofessors.com/search.jsp?queryoption=HEADER&queryBy=teacherName&schoolName=University+of+California+Irvine&schoolID=1074&query=${lastname}" target="_blank">Search on RMP</a></div>`;
+                            }
+                            let short_lastname = lastname.split(" ")[0].split("-")[0];
+                            popoverContent += `<div><a href="https://eaterevals.eee.uci.edu/browse/instructor#${short_lastname}" target="_blank">Search on EaterEvals</a></div>`;
+                            let popover = $(this).popover({
+                                html: true,
+                                container: ".dataTables_scrollBody",
+                                content: popoverContent,
+                                animation: false,
+                                trigger: "manual",
+                            });
+                            setPopoverTrigger(popover);
+                            i += 1;
+                        });
+                },
+            },
+            {
+                title: "Rating",
+                name: "rating",
+                data: "instr",
+                defaultContent: "",
+                render: function (data, type, row, meta) {
+                    if (type === "display") {
+                        if (data[0] && data[0].rating && data[0].rating.avg) {
+                            return `<a data-id="${randomNum()}" href="javascript:void(0)">${data[0].rating.avg.toFixed(2)}</a>`;
+                        }
+                        if (data[0] && data[0].name !== "STAFF") {
+                            return "N/A";
+                        }
+                    } else {
+                        if (data[0] && data[0].rating && data[0].rating.avg) {
+                            return data[0].rating.avg;
+                        }
+                        return 0;
+                    }
+                },
+                createdCell: function (cell, cellData, rowData, rowIndex, colIndex) {
+                    $(cell)
+                        .find("a")
+                        .each(function () {
+                            let popoverContent = `<div class="container p-0">
+												<h6>${cellData[0].name}</h6>
+												<div class="row no-gutters">
+												<div class="col-8">
+												<div><a href="https://www.ratemyprofessors.com/ShowRatings.jsp?tid=${cellData[0].rating.id}" target="_blank">View on RMP</a></div>
+												<div>Average: ${cellData[0].rating.avg.toFixed(2)}</div>
+												</div>
+												<div class="col-4" style="height:3rem; width:3rem"><canvas id="${$(this).attr("data-id")}-chart"></canvas></div>
+												</div>
+												<div>Number of Reviews: ${cellData[0].rating.cnt}</div>
+											 </div>`;
+                            let popover = $(this).popover({
+                                html: true,
+                                container: ".dataTables_scrollBody",
+                                content: popoverContent,
+                                trigger: "manual",
+                                sanitize: false,
+                                animation: false,
+                            });
+                            setPopoverTrigger(popover);
+                            popover.on("inserted.bs.popover", function () {
+                                let datasets = [];
+                                if (cellData[0].rating) {
+                                    let chartColor = "rgba(254, 107, 100, 1)";
+                                    // (blue)rgb(1,123,255), (yellow)rgb(255,193,7) (red)rgb(220,53,69) green rgb(40,167,68)
+                                    if (cellData[0].rating.avg >= 3) chartColor = "rgb(255,193,7,1)";
+                                    if (cellData[0].rating.avg >= 4) chartColor = "rgb(40,167,68,1)";
+                                    datasets.push({
+                                        label: "Instructor",
+                                        // borderColor: '#eff0f1',
+                                        backgroundColor: [chartColor, "rgba(255, 255, 255, 1)"],
+                                        data: [cellData[0].rating.avg.toFixed(2), 5 - cellData[0].rating.avg.toFixed(2)],
+                                    });
+                                }
+                                let barChartData = {
+                                    labels: [],
+                                    datasets: datasets,
+                                };
+                                new Chart(`${$(this).attr("data-id")}-chart`, {
+                                    type: "doughnut",
+                                    data: barChartData,
+                                    options: {
+                                        legend: {
+                                            display: false,
+                                        },
+                                        tooltips: {
+                                            enabled: false,
+                                        },
+                                        maintainAspectRatio: false,
+                                    },
+                                });
+                            });
+                        });
+                },
+            },
+            {
+                title: "GPA",
+                name: "gpa",
+                data: "instr",
+                defaultContent: "",
+                render: function (data, type, row, meta) {
+                    if (type === "display") {
+                        if (data[0] && data[0].grade && data[0].grade.gpa) {
+                            return `<a data-id="${randomNum()}" href="javascript:void(0)">${data[0].grade.gpa.toFixed(2)}</a>`;
+                        }
+                        if (data[0] && data[0].name !== "STAFF") {
+                            return "N/A";
+                        }
+                    } else {
+                        if (data[0] && data[0].grade && data[0].grade.gpa) {
+                            return data[0].grade.gpa;
+                        }
+                        return 0;
+                    }
+                },
+                createdCell: function (cell, cellData, rowData, rowIndex, colIndex) {
+                    $(cell)
+                        .find("a")
+                        .each(function () {
+                            let popoverContent = `<h6 class="center-text">Grade Distribution <i id="${$(this).attr("data-id")}-info" class="fas fa-question-circle"></i></h6>`;
+                            let popoverHeight = "320px";
+                            if (cellData[0] && cellData[0].grade && cellData[0].grade.rec_g) {
+                                popoverContent += `<div class="mb-1 center-text">(Most Recently Taught: ${cellData[0].grade.rec_q}, ${cellData[0].grade.rec_y})</div>`;
+                                popoverHeight = "340px";
+                            }
+                            popoverContent += `<canvas id="${$(this).attr("data-id")}-chart" width="400" height="400" ></canvas>`;
+                            let popover = $(this).popover({
+                                container: ".dataTables_scrollBody",
+                                html: true,
+                                content: popoverContent,
+                                trigger: "click",
+                                sanitize: false,
+                                animation: false,
+                            });
+                            setPopoverTrigger(popover);
+                            popover.on("show.bs.popover", function () {
+                                $($(this).data("bs.popover").getTipElement()).css("height", popoverHeight);
+                                $($(this).data("bs.popover").getTipElement()).css("min-width", "300px");
+                            });
+                            popover.on("inserted.bs.popover", function () {
+                                let infoPopover = $(`#${$(this).attr("data-id")}-info`).popover({
+                                    container: ".popover",
+                                    html: true,
+                                    content: $("#chart-info").html(),
+                                    trigger: "manual",
+                                    animation: false,
+                                });
+                                setPopoverTrigger(infoPopover);
+
+                                var labels = ["A", "B", "C", "D", "F"];
+                                var datasets = [];
+                                if (cellData[0] && cellData[0].grade && cellData[0].grade.instr_g) {
+                                    datasets.push({
+                                        label: "Instructor",
+                                        backgroundColor: "rgba(254, 107, 100, 1)",
+                                        data: cellData[0].grade.instr_g,
+                                    });
+                                    if (cellData[0].grade.course_g) {
+                                        datasets.push({
+                                            label: "Course",
+                                            backgroundColor: "rgba(119, 158, 203, 1)",
+                                            data: cellData[0].grade.course_g,
+                                        });
+                                        datasets.push({
+                                            label: "Recent",
+                                            backgroundColor: "rgba(119, 221, 119, 1)",
+                                            data: cellData[0].grade.rec_g,
+                                        });
+                                    }
+                                }
+                                var barChartData = {
+                                    labels: labels,
+                                    datasets: datasets,
+                                };
+                                new Chart(`${$(this).attr("data-id")}-chart`, {
+                                    type: "bar",
+                                    data: barChartData,
+                                    options: {},
+                                });
+                            });
+                        });
+                },
+            },
+            {
+                title: "Time",
+                name: "time",
+                data: "mtng",
+                render: function (data, type, row, meta) {
+                    if (type === "display") {
+                        let innerHtml = "";
+                        for (let i = 0; i < data.length; i++) {
+                            innerHtml += `<div>${data[i].f_time}</div>`;
+                        }
+                        return innerHtml;
+                    }
+                    return data.map((e) => e.f_time).join(" ");
+                },
+            },
+            {
+                title: "Place",
+                name: "place",
+                data: "mtng",
+                render: function (data, type, row, meta) {
+                    return renderLocation(data);
+                },
+            },
+            {
+                title: "Final",
+                name: "final",
+                data: "final",
+                render: function (data, type, row, meta) {
+                    if (data) {
+                        return data.f_time;
+                    }
+                    return data;
+                },
+            },
+            {
+                title: "Enr",
+                name: "enrll",
+                data: "enrll",
+                defaultContent: "...",
+                render: function (data, type, row, meta) {
+                    if (type === "display" && data) {
+                        return `${data}/${row.m_enrll}`;
+                    }
+                    return data;
+                },
+            },
+            {
+                title: "WL",
+                name: "wtlt",
+                data: "wtlt",
+                defaultContent: "...",
+                render: function (data, type, row, meta) {
+                    if (type === "display" && data && data != "n/a") {
+                        return `${data}/${row.wt_cp}`;
+                    }
+                    return data;
+                },
+            },
+            {
+                title: "Nor",
+                name: "nor",
+                data: "nor",
+                defaultContent: "...",
+            },
+            {
+                title: "Rstr",
+                name: "rstrcn",
+                data: "rstrcn",
+                render: function (data, type, row, meta) {
+                    if (type === "display" && data) {
+                        return `<a href="javascript:void(0)">${data}</a>`;
+                    }
+                    return data;
+                },
+                createdCell: function (cell, cellData, rowData, rowIndex, colIndex) {
+                    $(cell)
+                        .find("a")
+                        .each(function () {
+                            let popoverContent = '<a href="https://www.reg.uci.edu/enrollment/restrict_codes.html" target="_blank">Course Restriction Codes</a>';
+                            let innerHtml = $(this).text();
+                            for (let i = 0; i < innerHtml.length; i++) {
+                                if (restrictions[innerHtml[i]]) {
+                                    popoverContent += `<div><b>${innerHtml[i]}</b>: ${restrictions[innerHtml[i]]}</div>`;
+                                }
+                            }
+
+                            let popover = $(this).popover({
+                                html: true,
+                                container: ".dataTables_scrollBody",
+                                content: popoverContent,
+                                trigger: "manual",
+                                animation: false,
+                            });
+                            setPopoverTrigger(popover);
+                        });
+                },
+            },
+            {
+                title: "Status",
+                name: "stat",
+                data: "stat",
+                defaultContent: "...",
+                render: function (data, type, row, meta) {
+                    if (data === "OPEN") {
+                        if (type === "display") {
+                            return `<div class="text-success font-weight-bold">${data}</div>`;
+                        } else if (type === "sort") {
+                            return 0;
+                        }
+                    } else if (data === "Waitl") {
+                        if (type === "display") {
+                            return `<div class="text-danger">${data}</div>`;
+                        } else if (type === "sort") {
+                            return 1;
+                        }
+                    } else if (data === "NewOnly") {
+                        if (type === "display") {
+                            return `<div class="text-primary font-weight-bold">${data}</div>`;
+                        } else if (type === "sort") {
+                            return 2;
+                        }
+                    } else if (data === "FULL") {
+                        if (type === "sort") {
+                            return 3;
+                        }
+                    }
+                    return data;
+                },
+            },
+        ],
+    });
+
+    $("#search-form").submit(function (event) {
+        event.preventDefault();
+        let form = {};
+        $.each($(this).serializeArray(), function (_, kv) {
+            form[kv.name] = kv.value;
+        });
+        if (form.Breadth === "ANY" && form.InstrName === "" && form.CourseCodes === "" && form.Dept.trim() === "ALL") {
+            toastr.error("Please specify a Department, General Ed, Course Code, or Instructor");
+            return;
+        }
+        setupListing();
+        let courseCodes = $("#cal")
+            .fullCalendar("clientEvents")
+            .map(({ groupId }) => groupId);
+        datatable.ajax.url(`/search?${$(this).serialize()}`).load(function (data) {
+            handleListing(data, courseCodes);
+        });
+    });
+
+    $("#listing-datatable").on("column-visibility.dt", async function (e, settings, column, state) {
+        if (isMobile || isiPad) {
+            await sleep(50);
+            datatable.columns.adjust().draw();
+            $("#listing-datatable").css("table-layout", "fixed");
+        }
+    });
+
+    $("#list-btn").click(function () {
+        $(".popover").each(function () {
+            $(this).popover("hide");
+        });
+        var courseCodes = "";
+        var calRawData = $("#cal").fullCalendar("clientEvents");
+        var added = [];
+        for (var i in calRawData) {
+            // If valid eventType and not already added
+            if (calRawData[i].eventType != CUSTOM_EVENT_TYPE && added.indexOf(calRawData[i].groupId) == -1) {
+                added.push(calRawData[i].groupId);
+            }
+        }
+        courseCodes = added.join(",");
+        if (courseCodes == "") {
+            toastr.warning("Must have at least 1 course added.", "Cannot List Courses");
+        } else {
+            setupListing();
+            switchToMobileListing();
+            // 'data-term' attribute is rendered from index template and defaults to latest term
+            datatable.ajax.url(`/search?YearTerm=${defaultYearTerm}&CourseCodes=${courseCodes}`).load(function (data) {
+                handleListing(data, added);
+            });
+        }
+    });
+
+    $("#clear-cal-btn").on("click", function () {
+        $(".popover").each(function () {
+            $(this).popover("hide");
+        });
+        $("#cal").fullCalendar("removeEvents");
+        $("#finals").fullCalendar("removeEvents");
+        datatable.rows().deselect();
+        switchToMainCalendar();
+        $("#unitCounter").text(0);
+    });
+
+    // Prevent row selection when clicking on link
+    datatable.on("click", "a", function (e) {
+        e.stopPropagation();
+    });
+    datatable.on("deselect", function (e, dt, type, indexes) {
+        if (type === "row") {
+            var data = datatable.rows(indexes).data()[0];
+            if (data.unit && parseInt($("#unitCounter").text()) - parseInt(data.unit) >= 0) {
+                $("#unitCounter").text(parseInt($("#unitCounter").text()) - parseInt(data.unit));
+            }
+            var calRawData = $("#cal").fullCalendar("clientEvents");
+            for (var i in calRawData) {
+                if (calRawData[i].groupId === data.code) $("#cal").fullCalendar("removeEvents", calRawData[i]._id);
+            }
+        }
+    });
+    datatable.on("user-select", function (e, dt, type, cell, originalEvent) {
+        if (type === "row") {
+            switchToMainCalendar();
+            let rawData = datatable.rows(cell.index().row).data()[0];
+            let data = {
+                dept: rawData.dept,
+                code: rawData.code,
+                c_type: rawData.c_type,
+                num: rawData.num,
+                title: rawData.title,
+                unit: rawData.unit,
+                mtng: rawData.mtng,
+                final: rawData.final,
+                instr: rawData.instr.map((e) => e.name),
+            };
+            if (data.mtng[0].f_time === "TBA") {
+                e.preventDefault();
+                toastr.warning("Cannot add to schedule", "Course has TBA Time");
+                return;
+            }
+            // Since user-select is also called on deselect, must make sure not to re-add the same course
+            let calRawData = $("#cal").fullCalendar("clientEvents");
+            for (let i in calRawData) {
+                if (calRawData[i].groupId === data.code) return;
+            }
+            let randomColor = getRandomColor();
+            $("#unitCounter").text(parseInt($("#unitCounter").text()) + parseInt(data.unit));
+            for (let i in data.mtng) {
+                let curr_mtng = data.mtng[i];
+                $("#cal").fullCalendar("renderEvent", {
+                    groupId: data.code,
+                    start: curr_mtng.start,
+                    end: curr_mtng.end,
+                    dow: curr_mtng.days,
+                    daysOfTheWeek: curr_mtng.days,
+                    color: randomColor,
+                    title: renderName(data.c_type, data.dept, data.num),
+                    course: data,
+                    eventType: COURSE_2_EVENT_TYPE,
+                });
+            }
+        }
+    });
+
+    $("#moreOptionsButton").on("click", function () {
+        toggleOptions();
+    });
+
+    //#region Button Creation
+    // Triggers before popover has been shown and hides the other toolbar popovers
+    $(".btn").on("show.bs.popover", function () {
+        $(".popover").each(function () {
+            $(this).popover("hide");
+        });
+    });
+
+    // Used to close popovers when clicking outside of popover or button
+    // Does not work when clicking in iframe
+    $("body").on("click", function (e) {
+        if (
+            $(e.target).parents(".fc-event-container").length === 0 &&
+            $(e.target).parents(".popover").length === 0 &&
+            $(e.target).parents(".btn").length === 0 &&
+            !$(e.target).hasClass("btn") &&
+            !$(e.target).is("a")
+        ) {
+            $(".popover").each(function () {
+                $(this).popover("hide");
+            });
+        }
+    });
+
+    // Re-build popover on click so that contents update
+    $("#save-btn").click(function () {
+        if (!localStorage.getItem("recentSchedules")) localStorage.setItem("recentSchedules", JSON.stringify([]));
+        $("#save-btn").popover({
+            trigger: "manual",
+            html: true,
+            title: "Save Schedule",
+            content: function () {
+                return `<div class="input-group mb-3">
+								<input id="save-input" value="${localStorage.getItem("username") ? localStorage.getItem("username") : ""}" type="text" class="form-control save-input" placeholder="Schedule Name">
+								<div class="input-group-append">
+									<button id="save-button" class="btn btn-primary" type="button">Submit</button>
+								</div>
+							</div>
+							<div>${arrToTable(localStorage.getItem("recentSchedules"))}</div>`;
+            },
+            placement: "bottom",
+            container: "body",
+            boundary: "window",
+        });
+        $("#save-btn").popover("toggle");
+    });
+
+    // Triggers once popover is shown and awaits for the user to press the enter key or submit button
+    $("#save-btn").on("shown.bs.popover", function () {
+        $("#save-input").focus();
+        $("#save-input").keypress(function (e) {
+            if (!e) e = window.event;
+            var keyCode = e.keyCode || e.which;
+            if (keyCode == "13") {
+                saveSchedule($("#save-input").val());
+                $("#save-btn").popover("hide");
+            }
+        });
+        $(".recentSchedule").on("click", function () {
+            $("#save-input").val($(this).text());
+            $("#save-input").focus();
+        });
+        $("#clearRecents").click(function () {
+            localStorage.removeItem("recentSchedules");
+            localStorage.removeItem("username");
+            $("#save-btn").popover("hide");
+        });
+        $("#save-button").click(function () {
+            saveSchedule($("#save-input").val());
+            $("#save-btn").popover("hide");
+        });
+    });
+
+    // Re-build popover on click so that contents update
+    $("#load-btn").click(function () {
+        if (!localStorage.getItem("recentSchedules")) localStorage.setItem("recentSchedules", JSON.stringify([]));
+        $("#load-btn").popover({
+            trigger: "manual",
+            html: true,
+            title: "Load Schedule",
+            content: function () {
+                return `<div class="input-group mb-3">
+								<input id="load-input" value="${localStorage.getItem("username") ? localStorage.getItem("username") : ""}" type="text" class="form-control" placeholder="Schedule Name">
+								<div class="input-group-append">
+									<button id="load-button" class="btn btn-primary" type="button">Submit</button>
+								</div>
+							</div>
+							<div>${arrToTable(localStorage.getItem("recentSchedules"))}</div>`;
+            },
+            placement: "bottom",
+            container: "body",
+            boundary: "window",
+        });
+        $("#load-btn").popover("toggle");
+    });
+
+    // Triggers once popover is shown and awaits for the user to press the enter key or submit button
+    $("#load-btn").on("shown.bs.popover", function () {
+        $("#load-input").focus();
+        $("#load-input").keypress(function (e) {
+            if (!e) e = window.event;
+            var keyCode = e.keyCode || e.which;
+            if (keyCode == "13") {
+                loadSchedule($("#load-input").val());
+                $("#load-btn").popover("hide");
+            }
+        });
+        $(".recentSchedule").on("click", function () {
+            $("#load-input").val($(this).text());
+            $("#load-input").focus();
+        });
+        $("#clearRecents").click(function () {
+            localStorage.removeItem("recentSchedules");
+            localStorage.removeItem("username");
+            $("#load-btn").popover("hide");
+        });
+        $("#load-button").click(function () {
+            loadSchedule($("#load-input").val());
+            $("#load-btn").popover("hide");
+        });
+    });
+
+    // Temporarily changes size of calendar for printing.
+    // This must be done with JS instead of just styling because
+    // fullCalendar must rescale all of the events for the bigger event sizes
+    $("#print-btn").click(function () {
+        if (navigator.userAgent.indexOf("Chrome") === -1) {
+            toastr.error("Printing is currently only supported in Chrome", "Unsupported Browser");
+            return;
+        }
+        switchToMainCalendar();
+        var tempLeftSize = $("#left").outerWidth();
+        $("#right").hide();
+        // Not 100% or else it will not fit on letter paper
+        $("#left").outerWidth("100%");
+        $("#cal").css("width", "100%");
+        $("th, td, tr").css("border", "2px solid #bfbfbf");
+        $(".fc-minor").css("border-top", "3px dotted #bfbfbf");
+        // Sets the rows to have a larger height for printing
+        $(".fc-time-grid .fc-slats td").css("height", "46");
+        // This triggers fullCalendar to rescale
+        $("#cal").fullCalendar("option", "height", $("#left").outerHeight() - $("#upper").outerHeight());
+        $(".popover").each(function () {
+            $(this).popover("hide");
+        });
+
+        window.print();
+        // Resets page back to original size
+        $("th, td, tr").css("border", "");
+        $("#left").outerWidth(tempLeftSize);
+        $("#right").width($("#right").width() - 15);
+        $("#right").show();
+    });
+
+    $("#search-btn").click(async function () {
+        $(".popover").each(function () {
+            $(this).popover("hide");
+        });
+        $(this).addClass("active");
+        $("#calendar-btn").removeClass("active");
+        $("#finals").animate({ width: 0 }, 200, "swing");
+        $("#cal").animate({ width: 0 }, 200, "swing");
+        await sleep(200);
+        $("#left").width("0px");
+        $("#right").show();
+    });
+
+    $("#calendar-btn").click(function () {
+        $(".popover").each(function () {
+            $(this).popover("hide");
+        });
+        $(this).addClass("active");
+        $("#search-btn").removeClass("active");
+        $("#right").hide();
+        $("#left").width($(window).width());
+        $("#cal").animate({ width: $(window).width() }, 200, "swing");
+        $("#finals").animate({ width: $(window).width() }, 200, "swing");
+    });
+
+    $("#finals-btn").click(function () {
+        $(".popover").each(function () {
+            $(this).popover("hide");
+        });
+        switchToMobileMainCalendar();
+        if ($(this).hasClass("active")) {
+            $("#finals").hide();
+            $("#cal").show();
+            $(this).removeClass("active");
+            $("#cal").fullCalendar("rerenderEvents");
+        } else {
+            $("#finals").show();
+            $("#cal").hide();
+            $(this).addClass("active");
+            $("#finals").fullCalendar("removeEvents");
+            var calRawData = $("#cal").fullCalendar("clientEvents");
+            var usedGroupIds = [];
+            var hasTBACourse = false;
+            for (var i in calRawData) {
+                if (calRawData[i].eventType === COURSE_2_EVENT_TYPE) {
+                    if (calRawData[i].course.final && calRawData[i].course.final.date === "TBA") {
+                        hasTBACourse = true;
+                    } else if (calRawData[i].course.final && !(usedGroupIds.indexOf(calRawData[i].groupId) >= 0)) {
+                        $("#finals").fullCalendar("renderEvent", {
+                            groupId: calRawData[i].groupId,
+                            start: calRawData[i].course.final.start,
+                            end: calRawData[i].course.final.end,
+                            // Title is parsed from after the type of class (ie. Lec, Lab, Dis)
+                            title: calRawData[i].title.split(/\s(.+)/)[1],
+                            dow: [calRawData[i].course.final.day],
+                            color: calRawData[i].color,
+                            course: calRawData[i].course,
+                            eventType: COURSE_2_EVENT_TYPE,
+                        });
+                        usedGroupIds.push(calRawData[i].groupId);
+                    }
+                } else {
+                    // TODO: remove
+                    // Checks if any course has TBA final so that user can update it
+                    if (calRawData[i].eventType != CUSTOM_EVENT_TYPE && $.trim(calRawData[i].final.replace(/&nbsp;/g, "")) == "TBA") {
+                        hasTBACourse = true;
+                    }
+                    // Checks to make sure that finals attribute is not empty, TBA, or from import
+                    if (
+                        calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
+                        $.trim(calRawData[i].final.replace(/&nbsp;/g, "")) != "" &&
+                        $.trim(calRawData[i].final.replace(/&nbsp;/g, "")) != "TBA" &&
+                        $.trim(calRawData[i].final.replace(/&nbsp;/g, "")) != "N/A (due to import)" &&
+                        !(usedGroupIds.indexOf(calRawData[i].groupId) >= 0)
+                    ) {
+                        var finalParsed = FinalParsedCourseTime(calRawData[i].final);
+                        $("#finals").fullCalendar("renderEvent", {
+                            id: calRawData[i].id,
+                            groupId: calRawData[i].groupId,
+                            start: finalParsed.beginHour + ":" + finalParsed.beginMin,
+                            end: finalParsed.endHour + ":" + finalParsed.endMin,
+                            // Title is parsed from after the type of class (ie. Lec, Lab, Dis)
+                            title: calRawData[i].title.split(/\s(.+)/)[1],
+                            dow: [finalParsed.weekDay],
+                            color: calRawData[i].color,
+                            fullName: calRawData[i].fullName,
+                            instructor: calRawData[i].instructor,
+                            date: finalParsed.date,
+                        });
+                        usedGroupIds.push(calRawData[i].groupId);
+                    }
+                }
+            }
+            if (hasTBACourse) toastr.warning("One of your courses have TBA finals. Please use the List buttton to re-add and update the course.", "TBA Finals");
+            $("#finals").fullCalendar("rerenderEvents");
+        }
+        $(window).trigger("resize");
+    });
+
+    $("#export-btn").popover({
+        html: true,
+        title: "Export to iCal",
+        content: $("#export-btn-content").html(),
+        placement: "bottom",
+        container: "body",
+        boundary: "window",
+    });
+    $("#export-btn").on("shown.bs.popover", function () {
+        $("#export-button").click(function () {
+            $(".popover").each(function () {
+                $(this).popover("hide");
+            });
+            var calRawData = $("#cal").fullCalendar("clientEvents");
+            // Year is extracted from most recent term in Schedule of Classes search
+            var year = parseInt(defaultYearTerm.substring(0, 4));
+            var firstMonday = null;
+            for (var i in calRawData) {
+                let curr = calRawData[i];
+                // Prevents courses with no final or imported from Antplanner from being parsed
+                if (curr.eventType === COURSE_2_EVENT_TYPE && curr.course.final && curr.course.final.f_time !== "TBA") {
+                    let currFinal = curr.course.final;
+                    // At least one class with a final is necessary since the final is the
+                    // only way to determine when the first week of class is
+                    let startHour, startMin;
+                    [startHour, startMin] = currFinal.start.split(":");
+                    firstMonday = new Date(year, currFinal.month, currFinal.date, startHour, startMin);
+                    // Gets the Monday AFTER finals week is over
+                    // If Sat,Sun,Mon (6,0,1) add 7 to get Monday AFTER finals week
+                    var shift = (1 + 7 - firstMonday.getDay()) % 7;
+                    if ([6, 0, 1].includes(firstMonday.getDay())) {
+                        shift += 7;
+                    }
+                    firstMonday.setDate(firstMonday.getDate() + shift);
+                    // Move backwards 10 weeks during quarter + 1 week of finals = 77 days
+                    firstMonday.setDate(firstMonday.getDate() - 77);
+                    break;
+                }
+            }
+            if (firstMonday === null) {
+                toastr.warning("Must add at least 1 course with a final in order to generate calendar export.", "Cannot Export Courses");
+                return;
+            }
+            let added = [];
+            let cal = ics();
+            for (i in calRawData) {
+                let curr = calRawData[i];
+                if (curr.eventType !== COURSE_2_EVENT_TYPE && curr.eventType !== CUSTOM_EVENT_TYPE) {
+                    toastr.error("Please re-add your courses", "Unsupported Courses");
+                }
+                if (added.indexOf([curr.groupId, curr.daysOfTheWeek].toString()) == -1) {
+                    let startDate = new Date(firstMonday);
+                    // Add the number of days until first meeting starting from Monday (0)
+                    // Only the first meeting of the week is needed since byday handles repeats
+                    // daysOfTheWeek - 1 because Monday has an index of 1 instead if 0
+                    startDate.setDate(startDate.getDate() + (curr.daysOfTheWeek[0] - 1));
+                    let endDate = new Date(startDate);
+                    startDate.setHours(curr.start.hours());
+                    startDate.setMinutes(curr.start.minutes());
+                    endDate.setHours(curr.end.hours());
+                    endDate.setMinutes(curr.end.minutes());
+                    let rrule = {
+                        freq: "WEEKLY",
+                        // Count is (# of weeks in quarter) * (# of times class occurs in a week)
+                        count: 10 * curr.daysOfTheWeek.length,
+                        byday: daysOfTheWeekToStr(curr.daysOfTheWeek),
+                    };
+                    // Use \\n instead of \n due to ics.js issue #26
+                    if (curr.eventType == CUSTOM_EVENT_TYPE) {
+                        // No location or description for custom events
+                        cal.addEvent(curr.title, "", "", startDate, endDate, rrule);
+                    } else {
+                        let location = renderLocation(curr.course.mtng, (asString = true));
+                        cal.addEvent(
+                            curr.title,
+                            `Course Title: ${curr.course.dept} ${curr.course.num} ${curr.course.title}
+							\\nInstructor: ${curr.course.instr.map((e) => e.name).join(" ")}
+							\\nCode: ${curr.groupId}`,
+                            location,
+                            startDate,
+                            endDate,
+                            rrule
+                        );
+                    }
+                    if (curr.eventType === COURSE_2_EVENT_TYPE && curr.course.final && curr.course.final.f_time !== "TBA") {
+                        let currFinal = curr.course.final;
+                        let hour, min;
+                        [hour, min] = currFinal.start.split(":");
+                        let startTime = new Date(year, currFinal.month, currFinal.date, hour, min);
+                        [hour, min] = currFinal.end.split(":");
+                        let endTime = new Date(year, currFinal.month, currFinal.date, hour, min);
+                        // Title is parsed from after the type of class (ie. Lec, Lab, Dis)
+                        cal.addEvent(
+                            `Final ${curr.title.split(/\s(.+)/)[1]}`,
+                            `Course Title: ${curr.course.dept} ${curr.course.num} ${curr.course.title}
+							\\nInstructor: ${curr.course.instr.map((e) => e.name).join(" ")}
+							\\nCode: ${curr.groupId}`,
+                            "Check portal.uci.edu",
+                            startTime,
+                            endTime
+                        );
+                    }
+                    added.push([curr.groupId, curr.daysOfTheWeek].toString());
+                }
+            }
+            cal.download();
+        });
+    });
+
+    $("#event-btn").popover({
+        html: true,
+        title: "Add a Custom Event",
+        content: $("#event-btn-content").html(),
+        placement: "bottom",
+        container: "body",
+        boundary: "window",
+    });
+    $("#event-btn").on("shown.bs.popover", function () {
+        $("#event-button").click(function () {
+            var days = $("input[name=weekday-check]:checked");
+            weekDays = [];
+            for (var i = 0; i < days.length; i++) {
+                weekDays.push(parseInt($(days[i]).attr("data")));
+            }
+            if ($("#event-name").val().length <= 0 || $("#event-name").val().length > 25) {
+                toastr.warning("Name must be between 1 and 25 characters.", "Event Name");
+            } else if ($("#event-start").val() >= $("#event-end").val()) {
+                toastr.warning("Start time must come before end time.", "Event Time");
+            } else if (weekDays.length == 0) {
+                toastr.warning("Must have at least 1 weekday selected.", "Event Weekday");
+            } else {
+                $("#cal").fullCalendar("renderEvent", {
+                    groupId: randomNum(),
+                    start: $("#event-start").val(),
+                    end: $("#event-end").val(),
+                    title: $("#event-name").val(),
+                    dow: weekDays,
+                    color: getRandomColor(),
+                    daysOfTheWeek: weekDays,
+                    eventType: CUSTOM_EVENT_TYPE,
+                });
+                switchToMainCalendar();
+            }
+        });
+    });
+    //#endregion
+
+    if (isMobile) {
+        $("#mobile-btns").removeClass("d-none");
+        // $('body').css('position', 'fixed');
+        $("#right").hide();
+        $(".gutter").hide();
+        $("#print-btn").hide();
+        $("#export-btn").hide();
+        $("#clear-cal-btn").hide();
+        $("#event-btn").hide();
+    }
+    if (isiPad) {
+        $("#print-btn").hide();
+        $("#export-btn").hide();
+    }
+
+    // Whenever the left panel changes sizes, resizes the right panel.
+    // Also accounts for when the user zooms in/out
+    $(window).resize(function () {
+        $("#left").height(`calc(100% - ${$("#upper").outerHeight()}px)`);
+        $("#right").height(`calc(100% - ${$("#upper").outerHeight()}px)`);
+        $("#search").outerHeight(`${$("#right").height()}px`);
+        // Resizes the gutter bar to match the height of the left panel
+        $(".gutter").height(`${$("#left").height()}px`);
+        // Resizes the rows to fit on the screen
+        // 31 comes from the 30 table cells + 1 for table column headers
+        $(".fc-time-grid .fc-slats td").css({
+            height: ($("body").outerHeight() - $("#upper").outerHeight()) / 31,
+        });
+        // Triggers fullCalendar to rescale
+        $("#cal").fullCalendar("option", "height", $("#left").outerHeight());
+        $("#finals").fullCalendar("option", "height", $("#left").outerHeight());
+
+        // If on a mobile device, show fullscreen calendar
+        if (isMobile) {
+            if ($("#calendar-btn").hasClass("active")) {
+                $("#left").width($(window).width());
+                $("#cal").width($(window).width());
+                $("#finals").width($(window).width());
+            }
+            $("#right").width($(window).width());
+        }
+
+        // Prevent when on iPad since it hides load/save popovers when clicked
+        if (!isiPad) {
+            $(".popover").each(function () {
+                $(this).popover("hide");
+            });
+        }
+    });
+
+    //#region Calendar Creation
+    $("#cal").fullCalendar({
+        weekends: false,
+        header: false,
+        themeSystem: "bootstrap4",
+        defaultView: "agendaWeek",
+        allDaySlot: false,
+        slotEventOverlap: false,
+        minTime: "07:00:00",
+        maxTime: "22:00:00",
+        columnHeaderFormat: "ddd",
+        eventRender: function (event, element) {
+            renderCoursePopover(element, event);
+        },
+        eventClick: function (event) {
+            // Necessary to keep the $(this) of eventClick in $(".delete-event").click
+            let self = $(this);
+            self.popover("toggle");
+            $(".delete-event").click(function () {
+                self.popover("dispose");
+                $("#cal").fullCalendar("removeEvents", event._id);
+                datatable.row(`#${event.groupId}`).deselect();
+                if (event.units && parseInt($("#unitCounter").text()) - parseInt(event.units) >= 0) {
+                    $("#unitCounter").text(parseInt($("#unitCounter").text()) - parseInt(event.units));
+                }
+            });
+        },
+    });
+    $("#finals").fullCalendar({
+        header: false,
+        firstDay: 6,
+        themeSystem: "bootstrap4",
+        defaultView: "agendaWeek",
+        allDaySlot: false,
+        slotEventOverlap: false,
+        minTime: "07:00:00",
+        maxTime: "22:00:00",
+        columnHeaderFormat: "ddd",
+        eventRender: function (event, element) {
+            renderCoursePopover(element, event, true);
+        },
+        eventClick: function () {
+            $(this).popover("toggle");
+        },
+    });
+    //#endregion
+
+    // Causes fullCalendar to resize after row height was adjusted.
+    $(window).trigger("resize");
 });

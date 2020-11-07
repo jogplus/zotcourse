@@ -1,80 +1,108 @@
 <!DOCTYPE html>
 <head>
   <title>Zotcourse - Schedule Planner for UCI</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="description" content="Quickly plan and create your next quarter's schedule using Zotcourse by Tristan Jogminas."/>
-  <link rel="stylesheet" href="{{url_for('static', filename="css/fullcalendar.min.css")}}">
-  <link rel="stylesheet" href="{{url_for('static', filename="css/spectrum.min.css")}}">
-  <link rel="stylesheet" href="{{url_for('static', filename="css/toastr.min.css")}}">
-  <link rel="stylesheet" href="{{url_for('static', filename="css/main.min.css")}}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@3.9.0/dist/fullcalendar.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.css" integrity="sha512-KuSX+43gVS5MEIJD2ewtrFPOHqC1PJnL8o2f5ciggPC0JUZ8XV0QXlfArO1mSzKkVFdRjsBDfrTU96C5SuRfqQ==" crossorigin="anonymous" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css" integrity="sha512-6S2HWzVFxruDlZxI3sXOZZ4/eJ8AcxkQH1+JjSe/ONCEqR9L4Ysq5JdT5ipqtzU7WHalNwzwBv+iE51gNHJNqQ==" crossorigin="anonymous" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.4.0/dist/select2-bootstrap4.min.css">
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-  <link rel="icon" type="image/png" href="{{url_for('static', filename="favicon.png")}}">
+  <link rel="stylesheet" href="https://cdn.datatables.net/v/dt/dt-1.10.21/fh-3.1.7/rg-1.1.2/sl-1.3.1/datatables.min.css" crossorigin="anonymous"/>
+  <link rel="stylesheet" href="{{url_for('static', filename="css/main.min.css")}}">
+  <link rel="apple-touch-icon" sizes="57x57" href="{{url_for('static', filename="icons/apple-icon-57x57.png")}}">
+  <link rel="apple-touch-icon" sizes="60x60" href="{{url_for('static', filename="icons/apple-icon-60x60.png")}}">
+  <link rel="apple-touch-icon" sizes="72x72" href="{{url_for('static', filename="icons/apple-icon-72x72.png")}}">
+  <link rel="apple-touch-icon" sizes="76x76" href="{{url_for('static', filename="icons/apple-icon-76x76.png")}}">
+  <link rel="apple-touch-icon" sizes="114x114" href="{{url_for('static', filename="icons/apple-icon-114x114.png")}}">
+  <link rel="apple-touch-icon" sizes="120x120" href="{{url_for('static', filename="icons/apple-icon-120x120.png")}}">
+  <link rel="apple-touch-icon" sizes="144x144" href="{{url_for('static', filename="icons/apple-icon-144x144.png")}}">
+  <link rel="apple-touch-icon" sizes="152x152" href="{{url_for('static', filename="icons/apple-icon-152x152.png")}}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{url_for('static', filename="icons/apple-icon-180x180.png")}}">
+  <link rel="icon" type="image/png" sizes="192x192"  href="{{url_for('static', filename="icons/android-icon-192x192.png")}}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{url_for('static', filename="icons/favicon-32x32.png")}}">
+  <link rel="icon" type="image/png" sizes="96x96" href="{{url_for('static', filename="icons/favicon-96x96.png")}}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{url_for('static', filename="icons/favicon-16x16.png")}}">
+  <link rel="manifest" href="{{url_for('static', filename="icons/manifest.json")}}">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.5.9/split.min.js"></script>
-  <script src="{{url_for('static', filename="js/fullcalendar.min.js")}}"></script>
-  <script src="{{url_for('static', filename="js/spectrum.min.js")}}"></script>
-  <script src="{{url_for('static', filename="js/toastr.min.js")}}"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.5.9/split.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.datatables.net/v/dt/dt-1.10.21/b-1.6.3/b-colvis-1.6.3/fh-3.1.7/rg-1.1.2/sl-1.3.1/datatables.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.datatables.net/plug-ins/1.10.21/features/scrollResize/dataTables.scrollResize.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@3.9.0/dist/fullcalendar.min.js" integrity="sha256-QvhPq+evNjd8JyxSOU5KL3jPYTD7+gWVev1OH763SL0=" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.js" integrity="sha512-1aNp9qKP+hKU/VJwCtYqJP9tdZWbMDN5pEEXXoXT0pTAxZq1HHZhNBR/dtTNSrHO4U1FsFGGILbqG1O9nl8Mdg==" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js" integrity="sha512-lbwH47l/tPXJYG9AcFNoJaTMhGvYWhVM9YI43CT+uteTRRaiLCui8snIgyAN8XWgNjNhCqlAUdzZptso6OCoFQ==" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
   <script src="{{url_for('static', filename="js/ics.deps.min.js")}}"></script>
-  <script src="{{url_for('static', filename="js/lscache.min.js")}}"></script>
-  <script src="{{url_for('static', filename="js/zotcourse.min.js")}}"></script>
+  <script src="{{url_for('static', filename="js/zotcourse.min.js")}}?version=1.0.1"></script>
   <!-- Global site tag (gtag.js) - Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129912319-1"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129912319-1" crossorigin="anonymous"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'UA-129912319-1');
   </script>
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-PR3BF83');</script>
+    <!-- End Google Tag Manager -->
 </head>
 <body>
-  <div id="scheduleNameForPrint"></div>
-  <div id="upper">
-    <div id="main-nav">
-        <h5><a target="_blank" href="https://github.com/jogplus/zotcourse">Zotcourse</a> - Schedule Planner for UCI</h5>
-        <a id="name">by Tristan Jogminas</a>
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PR3BF83"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+  <div id="upper" class="border-bottom shadow-sm">
+    <div id="main-nav" class="mt-md-1 mb-xs-1 mr-2 float-left">
+        <h5 class="m-0"><a id="title-github-link" target="_blank" href="https://github.com/jogplus/zotcourse">Zotcourse</a> - Schedule Planner for UCI</h5>
     </div>
     <div id="cal-ctrl">
-      <div class="space1">&nbsp;</div>
-      <button id="whatsnew" class="btn btn-sm btn-outline-primary">
-        <i class="fas fa-info-circle"></i>
-      </button>
-      <button type="button" id="finals-btn" class="btn btn-sm btn-outline-primary">
+      <button type="button" id="finals-btn" class="btn btn-sm btn-outline-primary toolbar-btn" >
         Finals  <i class="fas fa-book"></i>
       </button>
-      <button type="button" id="list-btn" class="btn btn-sm btn-outline-primary" data-term="{{default_term | safe}}">
+      <button type="button" id="list-btn" class="btn btn-sm btn-outline-primary toolbar-btn" >
         List  <i class="fas fa-list"></i>
       </button>
-      <button type="button" id="event-btn" class="btn btn-sm btn-outline-primary">
+      <button type="button" id="event-btn" class="btn btn-sm btn-outline-primary btn-outline-primary toolbar-btn" >
         Event  <i class="fas fa-plus"></i>
       </button>
-      <button type="button" id="print-btn" class="btn btn-sm btn-outline-primary" >
+      <button type="button" id="print-btn" class="btn btn-sm btn-outline-primary toolbar-btn"  >
         Print  <i class="fas fa-print"></i>
       </button>
-      <button type="button" id="save-btn" class="btn btn-sm btn-outline-primary">
+      <button type="button" id="save-btn" class="btn btn-sm btn-outline-primary toolbar-btn" >
         Save  <i class="fas fa-save"></i>
       </button>
-      <button type="button" id="load-btn" class="btn btn-sm btn-outline-primary">
+      <button type="button" id="load-btn" class="btn btn-sm btn-outline-primary toolbar-btn" >
         Load  <i class="fas fa-download"></i>
       </button>
-      <button type="button" id="load-ap-btn" class="btn btn-sm btn-outline-primary">
-        Import  <i class="fas fa-truck-moving"></i>
-      </button>
-      <button type="button" id="export-btn" class="btn btn-sm btn-outline-primary">
+      <button type="button" id="export-btn" class="btn btn-sm btn-outline-primary toolbar-btn" >
         Export  <i class="fas fa-file-export"></i>
       </button>
-      <button type="button" id="clear-cal-btn" class="btn btn-sm btn-outline-primary">
+      <button type="button" id="clear-cal-btn" class="btn btn-sm btn-outline-primary toolbar-btn" >
         Clear  <i class="fas fa-ban"></i>
       </button>
-      <button type="button" id="resize-btn" class="btn btn-sm btn-outline-primary">
-        Size  <i class="fas fa-expand"></i>
+      <button type="button" id="unit-btn" class="btn btn-sm btn-link" disabled>
+        Units:  <b id="unitCounter">0</b>
       </button>
-      <button type="button" class="btn btn-sm btn-link" disabled>
-        Enrolled Units:  <b id="unitCounter">0</b>
-      </button>
+      <div id="mobile-btns" class="btn-group btn-group-toggle btn-group-flex d-none mt-1">
+        <button type="button" id="calendar-btn" class="btn btn-sm btn-outline-primary active">
+          Calendar  <i class="far fa-calendar-alt"></i>
+        </button>
+        <button type="button" id="search-btn" class="btn btn-sm btn-outline-primary">
+          Search  <i class="fas fa-search"></i>
+        </button>
+      </div>
     </div>
   </div>
   <div id="left">
@@ -82,199 +110,300 @@
     <div id="finals"></div>
   </div>
   <div id="right">
-    <div id="soc"></div>
-    <div id="search">
-      <h5 class="display-5" style="padding-bottom: 10px">Schedule of Classes</h1>
-        <form action="{{url_for('websoc_search')}}" id="search-form" method="GET">
-          <div class="input-group mb-3">
-            <div class="input-group-prepend">
-              <label class="input-group-text search-top">Term</label>
-            </div>
-            <select name="YearTerm" class="custom-select">
-              {{terms | safe}}
-            </select>
+    <div id="soc" class="pt-2">
+      <table id="listing-datatable"  class="table table-striped compact nowrap"></table>
+    </div>
+    <div id="search" class="flex-column">
+      <h5 class="pb-2">Schedule of Classes</h5>
+      <form id="search-form" method="GET">
+        <div class="input-group mb-3">
+          <div class="input-group-prepend">
+            <label class="input-group-text search-top">Term</label>
           </div>
-          <div class="input-group mb-3">
-            <div class="input-group-prepend">
-              <label class="input-group-text search-top">General Ed</label>
-            </div>
-            <select name="Breadth" class="custom-select">
-              {{general_eds | safe}}
-            </select>
+          <select id="year-term" name="YearTerm" class="custom-select">
+            {{terms | safe}}
+          </select>
+        </div>
+        <div class="input-group mb-3">
+          <div class="input-group-prepend">
+            <label class="input-group-text search-top">General Ed</label>
           </div>
+          <select name="Breadth" class="custom-select">
+            {{general_eds | safe}}
+          </select>
+        </div>
+        <div class="input-group mb-3">
+          <div class="input-group-prepend">
+            <label class="input-group-text search-top">Department</label>
+          </div>
+          <select id="department-select" name="Dept" class="custom-select">
+            {{departments | safe}}
+          </select>
+        </div>
+        <div class="form-row">
+            <div class="input-group col-sm-6 mb-3">
+              <div class="input-group-prepend">
+                <label class="input-group-text search-top">Course Code</label>
+              </div>
+              <input name="CourseCodes" class="form-control" placeholder="ex. 14200, 29000-29100">
+            </div>
+            <div class="input-group col-sm-6 mb-3">
+              <div class="input-group-prepend">
+                <label class="input-group-text">Course Number</label>
+              </div>
+              <input name="CourseNum" class="form-control" placeholder="ex. H2A, 5, 10-20">
+            </div>
+        </div>
+        <div id="moreOptions" style="display: none;">
           <div class="input-group mb-3">
             <div class="input-group-prepend">
-              <label class="input-group-text search-top">Department</label>
+              <label class="input-group-text">Title Contains</label>
             </div>
-            <select name="Dept" class="custom-select">
-              {{departments | safe}}
-            </select>
+            <input name="CourseTitle" class="form-control">
           </div>
           <div class="form-row">
-            <div class="col">
-              <div class="input-group mb-3">
-                <div class="input-group-prepend">
-                  <label class="input-group-text search-top">Course Code</label>
-                </div>
-                <input name="CourseCodes" class="form-control" placeholder="ex. 14200, 29000-29100">
+            <div class="input-group col-sm-6 mb-3">
+              <div class="input-group-prepend">
+                <label class="input-group-text">Instructor</label>
               </div>
+              <input name="InstrName" class="form-control">
+            </div>
+            <div class="input-group col-sm-6 mb-3">
+              <div class="input-group-prepend">
+                <label class="input-group-text">Course Level</label>
+              </div>
+              <select name="Division" class="custom-select">
+                <option value="ANY" selected="selected">Any course division</option>
+                <option value="0xx">Lower Division only</option>
+                <option value="1xx">Upper Division only</option>
+                <option value="2xx">Graduate/Professional only</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="input-group col-sm-6 mb-3">
+              <div class="input-group-prepend">
+                <label class="input-group-text">Course Type</label>
+              </div>
+              <select name="ClassType" class="custom-select">
+                <option value="ALL" selected="selected">All Course Types</option>
+                <option value="ACT">Activity</option>
+                <option value="COL">Colloquium</option>
+                <option value="DIS">Discussion</option>
+                <option value="FLD">Field Work</option>
+                <option value="LAB">Laboratory</option>
+                <option value="LEC">Lecture</option>
+                <option value="QIZ">Quiz</option>
+                <option value="RES">Research</option>
+                <option value="SEM">Seminar</option>
+                <option value="STU">Studio</option>
+                <option value="TAP">Tut Assist Prog</option>
+                <option value="TUT">Tutorial</option>
+              </select>
             </div>
             <div class="col">
               <div class="input-group mb-3">
                 <div class="input-group-prepend">
-                  <label class="input-group-text">Course Number</label>
+                  <label class="input-group-text">Units</label>
                 </div>
-                <input name="CourseNum" class="form-control" placeholder="ex. H2A, 5, 10-20">
+                <input name="Units" type="number" class="form-control">
               </div>
             </div>
           </div>
-          <div id="moreOptions" style="display: none;">
-            <hr/>
-            <div class="input-group mb-3">
+          <div class="form-row">
+            <div class="input-group col-sm-4 mb-3">
               <div class="input-group-prepend">
-                <label class="input-group-text">Title Contains</label>
+                <label class="input-group-text">Days</label>
               </div>
-              <input name="CourseTitle" class="form-control">
+              <input name="Days" class="form-control" placeholder="ex. MWF, TuTh, W">
             </div>
-            <div class="form-row">
-              <div class="col">
-                <div class="input-group mb-3">
-                  <div class="input-group-prepend">
-                    <label class="input-group-text">Instructor</label>
-                  </div>
-                  <input name="InstrName" class="form-control">
-                </div>
-              </div>
-              <div class="col">
-                <div class="input-group mb-3">
-                  <div class="input-group-prepend">
-                    <label class="input-group-text">Course Level</label>
-                  </div>
-                  <select name="Division" class="custom-select">
-                    <option value="ANY" selected="selected">Any course division</option>
-                    <option value="0xx">Lower Division only</option>
-                    <option value="1xx">Upper Division only</option>
-                    <option value="2xx">Graduate/Professional only</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="col">
-                <div class="input-group mb-3">
-                  <div class="input-group-prepend">
-                    <label class="input-group-text">Course Type</label>
-                  </div>
-                  <select name="ClassType" class="custom-select">
-                    <option value="ALL" selected="selected">All Course Types</option>
-                    <option value="ACT">Activity</option>
-                    <option value="COL">Colloquium</option>
-                    <option value="DIS">Discussion</option>
-                    <option value="FLD">Field Work</option>
-                    <option value="LAB">Laboratory</option>
-                    <option value="LEC">Lecture</option>
-                    <option value="QIZ">Quiz</option>
-                    <option value="RES">Research</option>
-                    <option value="SEM">Seminar</option>
-                    <option value="STU">Studio</option>
-                    <option value="TAP">Tut Assist Prog</option>
-                    <option value="TUT">Tutorial</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col">
-                <div class="input-group mb-3">
-                  <div class="input-group-prepend">
-                    <label class="input-group-text">Units</label>
-                  </div>
-                  <input name="Units" type="number" class="form-control">
-                </div>
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="col">
-                <div class="input-group mb-3">
-                  <div class="input-group-prepend">
-                    <label class="input-group-text">Days</label>
-                  </div>
-                  <input name="Days" class="form-control" placeholder="ex. MWF, TuTh, W">
-                </div>
-              </div>
-              <div class="col">
-                <div class="input-group mb-3">
-                  <div class="input-group-prepend">
-                    <label class="input-group-text">Starts After</label>
-                  </div>
-                  <select name="StartTime" class="custom-select">
-                    <option selected="selected" value="">&nbsp;</option>
-                    <option>7:00am</option>
-                    <option>8:00am</option>
-                    <option>9:00am</option>
-                    <option>10:00am</option>
-                    <option>11:00am</option>
-                    <option>12:00pm</option>
-                    <option>1:00pm</option>
-                    <option>2:00pm</option>
-                    <option>3:00pm</option>
-                    <option>4:00pm</option>
-                    <option>5:00pm</option>
-                    <option>6:00pm</option>
-                    <option>7:00pm</option>
-                    <option>8:00pm</option>
-                    <option>9:00pm</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col">
-                <div class="input-group mb-3">
-                  <div class="input-group-prepend">
-                    <label class="input-group-text">Ends Before</label>
-                  </div>
-                  <select name="EndTime" class="custom-select">
-                    <option selected="selected" value="">&nbsp;</option>
-                    <option>7:00am</option>
-                    <option>8:00am</option>
-                    <option>9:00am</option>
-                    <option>10:00am</option>
-                    <option>11:00am</option>
-                    <option>12:00pm</option>
-                    <option>1:00pm</option>
-                    <option>2:00pm</option>
-                    <option>3:00pm</option>
-                    <option>4:00pm</option>
-                    <option>5:00pm</option>
-                    <option>6:00pm</option>
-                    <option>7:00pm</option>
-                    <option>8:00pm</option>
-                    <option>9:00pm</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div class="input-group mb-3">
+            <div class="input-group col-sm-4 mb-3">
               <div class="input-group-prepend">
-                <label class="input-group-text">Courses Full Option</label>
+                <label class="input-group-text">Starts After</label>
               </div>
-              <select name="FullCourses" class="custom-select">
-                <option value="ANY" selected="selected">&nbsp;</option>
-                <option value="SkipFullWaitlist">Include full courses if space on waitlist</option>
-                <option value="SkipFull">Skip courses that are full</option>
-                <option value="FullOnly">Show only full or waitlisted courses</option>
-                <option value="OverEnrolled">Show only courses that are over-enrolled</option>
+              <select name="StartTime" class="custom-select">
+                <option selected="selected" value="">&nbsp;</option>
+                <option>7:00am</option>
+                <option>8:00am</option>
+                <option>9:00am</option>
+                <option>10:00am</option>
+                <option>11:00am</option>
+                <option>12:00pm</option>
+                <option>1:00pm</option>
+                <option>2:00pm</option>
+                <option>3:00pm</option>
+                <option>4:00pm</option>
+                <option>5:00pm</option>
+                <option>6:00pm</option>
+                <option>7:00pm</option>
+                <option>8:00pm</option>
+                <option>9:00pm</option>
+              </select>
+            </div>
+            <div class="input-group col-sm-4 mb-3">
+              <div class="input-group-prepend">
+                <label class="input-group-text">Ends Before</label>
+              </div>
+              <select name="EndTime" class="custom-select">
+                <option selected="selected" value="">&nbsp;</option>
+                <option>7:00am</option>
+                <option>8:00am</option>
+                <option>9:00am</option>
+                <option>10:00am</option>
+                <option>11:00am</option>
+                <option>12:00pm</option>
+                <option>1:00pm</option>
+                <option>2:00pm</option>
+                <option>3:00pm</option>
+                <option>4:00pm</option>
+                <option>5:00pm</option>
+                <option>6:00pm</option>
+                <option>7:00pm</option>
+                <option>8:00pm</option>
+                <option>9:00pm</option>
               </select>
             </div>
           </div>
           <div class="input-group mb-3">
-              <button type="submit" class="btn btn-primary">Submit Search</button>
-              <button type="reset" class="btn btn-link btn-sm" value="Reset">Reset</button>
-              <button type="button" id="moreOptionsButton" class="btn btn-link btn-sm" style="margin-left: auto;">Show More Options...</button>
+            <div class="input-group-prepend">
+              <label class="input-group-text">Courses Full Option</label>
+            </div>
+            <select name="FullCourses" class="custom-select">
+              <option value="ANY" selected="selected">&nbsp;</option>
+              <option value="SkipFullWaitlist">Include full courses if space on waitlist</option>
+              <option value="SkipFull">Skip courses that are full</option>
+              <option value="FullOnly">Show only full or waitlisted courses</option>
+              <option value="OverEnrolled">Show only courses that are over-enrolled</option>
+            </select>
           </div>
-          <div id="loading" class="lds-ring" style="display:none"><div></div><div></div><div></div><div></div></div>
-          <input type="checkbox" name="ShowComments" checked="checked" style="display: none">
-          <input type="checkbox" name="ShowFinals" checked="checked" style="display: none">
-          <input id="moreOptionsClosed" type="checkbox" checked="checked" style="display: none">
-        </form>
-      </body>
+        </div>
+        <div class="input-group mb-3">
+          <button type="submit" class="btn btn-primary">Submit Search</button>
+          <button type="reset" id="reset-btn" class="btn btn-link btn-sm" value="Reset">Reset</button>
+          <button type="button" id="moreOptionsButton" class="btn btn-link btn-sm ml-auto">Show More Options</button>
+        </div>
+        <div id="loading" class="lds-ring" style="display:none"><div></div><div></div><div></div><div></div></div>
+        <input id="moreOptionsClosed" type="checkbox" checked="checked" style="display: none">
+      </form>
+      <div class="mt-auto">
+        <div class="row">
+          <div class="col-sm-6 pt-3">
+            <h5>Getting Started </h5>
+            <ol class="mb-0 pl-4">
+              <li>Select a General Ed category or Department and click Submit Search.</li>
+              <li>Click on a row in the search results to add it to your schedule.</li>
+              <li>Remove a course by clicking on the row again or by clicking on the event in your calendar.</li>
+              <li>Save/Load your schedule by clicking the Save/Load button in the top toolbar. Make sure to keep your schedule name safe!</li>
+              <!-- <li>Use the List button to see information about all of your added classes.</li> -->
+            </ol>
+          </div>
+          <div class="col-sm-6 pt-4 mt-auto text-right">
+            <div><a id="github-link" target="_blank" href="https://github.com/jogplus/zotcourse">Check out this project on Github</a> <i class="fab fa-github"></i></div>
+            <div><a id="feedback-link" target="_blank" href="https://goo.gl/forms/YdeevICkr4Ei6HHg1">Bug or Suggestions?</a></div>
+            <div id="name" class="text-muted">Made By Tristan Jogminas</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+  <template id="event-btn-content">
+    <input id="event-name" type="text" placeholder="Event Name" class="form-control form-control-lg">
+    <div style="display: flex; justify-content: space-between; width:100%">
+    <select id="event-start" class="time custom-select">
+      <option value="07:00">7:00am</option>
+      <option value="07:30">7:30am</option>
+      <option value="08:00">8:00am</option>
+      <option value="08:30">8:30am</option>
+      <option value="09:00">9:00am</option>
+      <option value="09:30">9:30am</option>
+      <option value="10:00">10:00am</option>
+      <option value="10:30">10:30am</option>
+      <option value="11:00">11:00am</option>
+      <option value="11:30">11:30am</option>
+      <option value="12:00" selected>12:00pm</option>
+      <option value="12:30">12:30pm</option>
+      <option value="13:00">1:00pm</option>
+      <option value="13:30">1:30pm</option>
+      <option value="14:00">2:00pm</option>
+      <option value="14:30">2:30pm</option>
+      <option value="15:00">3:00pm</option>
+      <option value="15:30">3:30pm</option>
+      <option value="16:00">4:00pm</option>
+      <option value="16:30">4:30pm</option>
+      <option value="17:00">5:00pm</option>
+      <option value="17:30">5:30pm</option>
+      <option value="18:00">6:00pm</option>
+      <option value="18:30">6:30pm</option>
+      <option value="19:00">7:00pm</option>
+      <option value="19:30">7:30pm</option>
+      <option value="20:00">8:00pm</option>
+      <option value="20:30">8:30pm</option>
+      <option value="21:00">9:00pm</option>
+      <option value="21:30">9:30pm</option>
+    </select>
+    <span style="padding-top: 10px; margin-left:10px; margin-right:10px">to</span>
+    <select id="event-end" class="time custom-select">
+      <option value="07:30">7:30am</option>
+      <option value="08:00">8:00am</option>
+      <option value="08:30">8:30am</option>
+      <option value="09:00">9:00am</option>
+      <option value="09:30">9:30am</option>
+      <option value="10:00">10:00am</option>
+      <option value="10:30">10:30am</option>
+      <option value="11:00">11:00am</option>
+      <option value="11:30">11:30am</option>
+      <option value="12:00">12:00pm</option>
+      <option value="12:30">12:30pm</option>
+      <option value="13:00" selected>1:00pm</option>
+      <option value="13:30">1:30pm</option>
+      <option value="14:00">2:00pm</option>
+      <option value="14:30">2:30pm</option>
+      <option value="15:00">3:00pm</option>
+      <option value="15:30">3:30pm</option>
+      <option value="16:00">4:00pm</option>
+      <option value="16:30">4:30pm</option>
+      <option value="17:00">5:00pm</option>
+      <option value="17:30">5:30pm</option>
+      <option value="18:00">6:00pm</option>
+      <option value="18:30">6:30pm</option>
+      <option value="19:00">7:00pm</option>
+      <option value="19:30">7:30pm</option>
+      <option value="20:00">8:00pm</option>
+      <option value="20:30">8:30pm</option>
+      <option value="21:00">9:00pm</option>
+      <option value="21:30">9:30pm</option>
+      <option value="22:00">10:00pm</option>
+    </select>
+    </div>
+    <div style="display: flex; justify-content: space-between; width:100%; margin-top: 10px" class="weekDays-selector">
+    <input type="checkbox" name="weekday-check" data="1" id="weekday-mon" class="weekday" />
+    <label for="weekday-mon">M</label>
+    <input type="checkbox" name="weekday-check" data="2" id="weekday-tue" class="weekday" />
+    <label for="weekday-tue">T</label>
+    <input type="checkbox" name="weekday-check" data="3" id="weekday-wed" class="weekday" />
+    <label for="weekday-wed">W</label>
+    <input type="checkbox" name="weekday-check" data="4" id="weekday-thu" class="weekday" />
+    <label for="weekday-thu">T</label>
+    <input type="checkbox" name="weekday-check" data="5" id="weekday-fri" class="weekday" />
+    <label for="weekday-fri">F</label>
+    </div>
+    <div style="display: flex;  justify-content: center;"><button id="event-button" class="btn btn-primary" type="button">Add Event</button></div>
+  </template>
+  <template id="export-btn-content">
+    <div class="input-group mb-3">
+      <div style="padding-bottom: 8px">Downloads an .ics file which can import your courses into Google Calendar.
+      <a target="_blank" href="https://support.google.com/calendar/answer/37118#import_to_gcal">Click here to learn how.</a></div>
+      <div style="margin:auto;"><button id="export-button" class="btn btn-primary" type="button">Download</button></div>
+    </div>
+  </template>
+  <template id="chart-info">
+    <div>
+      <h6 class="center-text">Guide</h6>
+      <div><b><u>Instructor</u></b>: Average grade distribution over all courses with this instructor.</div>
+      <div><b><u>Course</u></b>: Average grade distribution over all courses with this instructor and course.</div>
+      <div><b><u>Recent</u></b>: Most recent grade distribution from this instructor and course.</div>
+      <br>
+      <div><em>Grade Data Last Updated: Spring 2020</em></div>
+    </div>
+  </template>
 </body>

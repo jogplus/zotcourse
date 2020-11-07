@@ -2,31 +2,40 @@
 
 by Tristan Jogminas
 
-This was forked from [Antplanner2](https://github.com/gumho/antplanner2) by Ryan Hsu
+Quickly plan and create your next quarter's schedule using Zotcourse!
 
-Unfortunetly it seems that Antplanner2 is no longer being maintained so I have decided to maintain it here.
-Please feel free to make a PR and contribute!
+Home Page            |  Listing Page
+:-------------------------:|:-------------------------:
+![Home Screenshot](https://i.imgur.com/vbosvLz.png) |  ![Listing Screenshot](https://i.imgur.com/l5SUQys.png)
 
-![Zotcourse Screenshot](https://i.imgur.com/JNpvHQX.jpg)
+## Features
 
-## Benefits over Antplanner
+* ### Powerful Search Results
+    * Integrated instructor's RMP rating
+    * Integrated instructor's grade distributions
+        * Average grade distribution over all courses with this instructor
+        * Average grade distribution over all courses with this instructor and course (if instructor has taught this course before)
+        * Most recent grade distribution from this instructor and course (if instructor has taught this course before)
+    * Sort search results by any column
+        * Can also sort by two columns (ie. Clicking Status first and then Rating finds the highest rating for courses that are still open)
+    * Direct links to the instructor's RMP page
+    * Direct links to the instructor's EaterEvals
+    * View all your added courses' info using the List button
+    * Integrated course description, prerequisites, and restrictions
+    * Hide/show columns (Useful on mobile to reduce horizontal scrolling)
+    * Click course code to quickly copy to clipboard
+    * Live enrollment information
+* ### Customizable Calendar
+    * Click on an event for additional course information
+    * Quickly view your finals calendar
+    * Load and backup different versions of your schedule
+    * Create custom calendar events
+    * Change course event color
+    * Keeps track of how many units you have added
+    * Resize size the size of your calendar and search results
+    * Export your calendar to .ics for easy import into Google Calendar
+    * Easily print your calendar
 
-<ul>
-<li>Resizable panes.</li>
-<li>Calendar adjusts to screen size.</li>
-<li>Import schedule from Antplanner.</li> 
-<li>Popover for event with additional course information.</li>
-<li>Change course event color.</li>
-<li>RateMyProfessor links in calendar event and Websoc results.</li>
-<li>Cleaner field inputs when saving/loading schedule.</li>
-<li>Toastr notifications after saving/loading schedule.</li>
-<li>Better print formatting. (Calendar fits entirely on one page!)</li>
-<li>View your finals' schedule</li>
-<li>Create a custom event</li>
-<li>View all your courses' info using the List button</li>
-<li>Enrolled unit counter</li>
-<li>Complete redesign of search</li>
-</ul>
 
 ## How to run locally for testing
 
@@ -39,24 +48,22 @@ Please feel free to make a PR and contribute!
     ```
     $ pip3 install -r requirements.txt
     ```
+3. [Setup a GCP service account that has access to Datastore.](https://cloud.google.com/docs/authentication/getting-started)
 3. While still in the root of the zotcourse folder run the following to start the server locally:
     ```
     $ export FLASK_APP=main.py
+    $ export GOOGLE_APPLICATION_CREDENTIALS={your GCP service account key json}
     $ flask run
     ```
-4. If debugging using VS Code:
-    * Copy `launch.json` into your `.vscode` folder
-    * Fill in `env_variables`
 5. If deploying to App Engine on GCP:
     * Create a new Google Cloud Platform project and App Engine application using the GCP Console
     * Download and install the [Cloud SDK](https://cloud.google.com/appengine/docs/standard/python/download) (Make sure it is added to your PATH)
     * Rename `sample.app.yaml` to `app.yaml`
-    * Fill in `env_variables`
 6. If you are looking to see how this project works, the main files of interest are:
     ```
     zotcourse/static/js/zotcourse.js
-    zotcourse/controller.py
-    zotcourse/websoc.py
+    zotcourse/views.py
+    zotcourse/course.py
     ```
 
 ## License

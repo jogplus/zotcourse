@@ -1,8 +1,12 @@
 .DS_Store
 *.pyc
-env/
+env*/
 .vscode/
-env3/
 app.yaml
-zotcourse*.json
+*.json
+!manifest.json
+config.py
+*.csv
+*.pickle
+.vscode
 __pycache__
