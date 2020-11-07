@@ -686,6 +686,29 @@ $(document).ready(function () {
                 return a.text.replace(/[\W]/gi, "").toLowerCase().indexOf(query) - b.text.replace(/[\W]/gi, "").toLowerCase().indexOf(query);
             });
         },
+        matcher: function (params, data) {
+            // If there are no search terms, return all of the data
+            if ($.trim(params.term) === "") {
+                return data;
+            }
+            let entry = data.text.toLowerCase().replace(/[\W]/gi, "");
+            let search = params.term.toLowerCase().replace(/[\W]/gi, "");
+            let splitData = data.text.toLowerCase().split(/[\W]/);
+            let startingLetters = "";
+            for (i = 0; i < splitData.length; i++) {
+                if (splitData[i].length > 0) {
+                    startingLetters += splitData[i][0];
+                }
+            }
+            if (startingLetters.indexOf(search) > -1) {
+                return data;
+            }
+            if (entry.indexOf(search) > -1) {
+                return data;
+            }
+            // Return `null` if the term should not be displayed
+            return null;
+        },
     });
     // Manually reset select2 value
     $("#reset-btn").click(function () {
