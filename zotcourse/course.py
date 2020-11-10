@@ -1,5 +1,6 @@
 from lxml import etree
 import time
+import re
 from zotcourse import util, grade, rating
 from zotcourse.models import (
     Final,
@@ -16,6 +17,7 @@ from bs4 import BeautifulSoup
 
 class CourseData:
     def __init__(self):
+        self.time_reg = re.compile(r"(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})(p|pm)?")
         caches = util.datastore_get("Cache", "caches")
         if caches:
             caches = Caches.parse_raw(caches["data"])
@@ -38,23 +40,13 @@ class CourseData:
             util.datastore_set("Cache", "caches", caches.json())
 
     def parse_time(self, raw_time, is_final=False):
-        split_time = raw_time.split("-")
-        split_start_time = split_time[0].strip().split(":")
-        split_end_time = split_time[1].strip().split(":")
-
-        start_hour = int(split_start_time[0])
-        start_min = int(split_start_time[1])
-        end_hour = int(split_end_time[0])
-        is_pm = False
-        if "p" in split_end_time[1]:
-            is_pm = True
-            if is_final:
-                split_end_time[1] = split_end_time[1].replace("pm", "")
-            else:
-                split_end_time[1] = split_end_time[1].replace("p", "")
-        if is_final:
-            split_end_time[1] = split_end_time[1].replace("am", "")
-        end_min = int(split_end_time[1])
+        time_match = self.time_reg.search(raw_time)
+        start_hour = int(time_match.group(1))
+        start_min = int(time_match.group(2))
+        end_hour = int(time_match.group(3))
+        end_min = int(time_match.group(4))
+        period = time_match.group(5)
+        is_pm = True if period else False
 
         noon = 12
         max_time = 5
