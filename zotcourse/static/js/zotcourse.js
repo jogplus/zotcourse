@@ -6,6 +6,7 @@ const CUSTOM_EVENT_TYPE = 1;
 const ANTPLANNER_EVENT_TYPE = 2;
 const COURSE_2_EVENT_TYPE = 3;
 const isMobile = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+const isAndroid = /Android/i.test(navigator.userAgent);
 const isiPad = navigator.userAgent.match(/Mac/) && navigator.maxTouchPoints && navigator.maxTouchPoints > 2;
 const restrictions = {
     A: "Prerequisite required",
@@ -1782,8 +1783,8 @@ $(document).ready(function () {
             $("#right").width($(window).width());
         }
 
-        // Prevent when on iPad since it hides load/save popovers when clicked
-        if (!isiPad) {
+        // Prevent when on iPad and Android since they hide load/save popovers when clicked
+        if (!isiPad && !isAndroid) {
             $(".popover").each(function () {
                 $(this).popover("hide");
             });
