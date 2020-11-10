@@ -279,7 +279,7 @@ function switchToMobileMainCalendar() {
     }
 }
 
-function setupCourseInfoListners() {
+function setupCourseInfoListeners() {
     $(".course-info").click(async function () {
         let self = this;
         let key = encodeURIComponent(`${$(this).data("dept")} ${$(this).data("num")}`);
@@ -333,8 +333,6 @@ function handleListing(data, courseCodes) {
     for (let i in courseCodes) {
         datatable.row(`#${courseCodes[i]}`).select();
     }
-
-    setupCourseInfoListners();
 
     $("td.code-cell").click(function (event) {
         event.stopPropagation();
@@ -732,7 +730,6 @@ $(document).ready(function () {
             } else {
                 $("#listing-datatable").DataTable().columns.adjust().draw();
             }
-            setupCourseInfoListners();
         },
     });
     // Adds the ellipsis icon within the gutter
@@ -782,10 +779,11 @@ $(document).ready(function () {
             },
         ],
         rowGroup: {
-            dataSrc: ["dept_n", "num"],
+            dataSrc: ["dept_n", "num", "title"],
             startClassName: "row-group",
             startRender: function (rows, group, level) {
                 if (level == 0) return group;
+                else if (level == 1) return;
                 else {
                     let currRow = rows.data()[0];
                     let title = `${currRow.dept} ${currRow.num} ${currRow.title} <i class="fas fa-info-circle course-info cursor-pointer" data-dept="${currRow.dept}" data-num="${currRow.num}"></i>`;
@@ -800,7 +798,7 @@ $(document).ready(function () {
                 }
             },
             endRender: function (rows, group, level) {
-                if (level == 1) return " ";
+                if (level == 2) return " ";
             },
         },
         ajax: {
@@ -1332,6 +1330,11 @@ $(document).ready(function () {
             }
         }
     });
+
+    // After draw is complete, setup listeners
+    datatable.on( 'draw', function () {
+        setupCourseInfoListeners();
+    } );
 
     $("#moreOptionsButton").on("click", function () {
         toggleOptions();

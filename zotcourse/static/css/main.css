@@ -604,11 +604,11 @@ table.dataTable tr:nth-child(odd) td:nth-child(odd):not(.dataTables_empty) {
 	background-color: #EEEEEE !important;
   }
   
-  tr.dtrg-level-1 td {
+  tr.dtrg-level-2 td {
 	background-color: #fff0ff !important;
   }
   
-  tr.dtrg-end.dtrg-level-1 td {
+  tr.dtrg-end.dtrg-level-2 td {
 	background-color: navy !important;
 	height: 4px !important;
 	padding: 0px !important;
