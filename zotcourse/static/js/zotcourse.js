@@ -1812,9 +1812,11 @@ $(document).ready(function () {
             $(".delete-event").click(function () {
                 self.popover("dispose");
                 $("#cal").fullCalendar("removeEvents", event._id);
-                datatable.row(`#${event.groupId}`).deselect();
-                if (event.units && parseInt($("#unitCounter").text()) - parseInt(event.units) >= 0) {
-                    $("#unitCounter").text(parseInt($("#unitCounter").text()) - parseInt(event.units));
+                let row = datatable.row(`#${event.groupId}`);
+                if (row.data()) {
+                  row.deselect();
+                } else if (event.course.unit && parseInt($("#unitCounter").text()) - parseInt(event.course.unit) >= 0) {
+                    $("#unitCounter").text(parseInt($("#unitCounter").text()) - parseInt(event.course.unit));
                 }
             });
         },
