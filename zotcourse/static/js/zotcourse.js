@@ -1814,8 +1814,9 @@ $(document).ready(function () {
                 $("#cal").fullCalendar("removeEvents", event._id);
                 let row = datatable.row(`#${event.groupId}`);
                 if (row.data()) {
-                  row.deselect();
-                } else if (event.course.unit && parseInt($("#unitCounter").text()) - parseInt(event.course.unit) >= 0) {
+                    row.deselect();
+                } 
+                if (event.course.unit && parseInt($("#unitCounter").text()) - parseInt(event.course.unit) >= 0) {
                     $("#unitCounter").text(parseInt($("#unitCounter").text()) - parseInt(event.course.unit));
                 }
             });
