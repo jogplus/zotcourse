@@ -1333,9 +1333,9 @@ $(document).ready(function () {
     });
 
     // After draw is complete, setup listeners
-    datatable.on( 'draw', function () {
+    datatable.on("draw", function () {
         setupCourseInfoListeners();
-    } );
+    });
 
     $("#moreOptionsButton").on("click", function () {
         toggleOptions();
@@ -1815,8 +1815,7 @@ $(document).ready(function () {
                 let row = datatable.row(`#${event.groupId}`);
                 if (row.data()) {
                     row.deselect();
-                } 
-                if (event.course.unit && parseInt($("#unitCounter").text()) - parseInt(event.course.unit) >= 0) {
+                } else if (event.course.unit && parseInt($("#unitCounter").text()) - parseInt(event.course.unit) >= 0) {
                     $("#unitCounter").text(parseInt($("#unitCounter").text()) - parseInt(event.course.unit));
                 }
             });
