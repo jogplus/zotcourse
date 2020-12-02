@@ -10,6 +10,7 @@ from zotcourse import course, enrollment, models, util
 from zotcourse.config import Config as config
 
 local_search_cache = dict()
+local_catalogue_cache = dict()
 form_info_cache = None
 app = flask.Flask(__name__)
 
@@ -57,40 +58,50 @@ def load_schedule():
 @app.route("/search")
 def search():
     global local_search_cache
-    search_key = str(flask.request.query_string, "utf-8")
-    if not search_key:
-        return util.create_compressed_response(models.DataWrapper(data=[]).json())
-    if search_key in local_search_cache:
-        enrollment_data = enrollment.get_enrollment_info(
-            flask.request.args.to_dict(), local_search_cache[search_key]
-        )
-        return util.create_compressed_response(enrollment_data.json())
+    try:
+        search_key = str(flask.request.query_string, "utf-8")
+        if not search_key:
+            return util.create_compressed_response(models.DataWrapper(data=[]).json())
+        if search_key in local_search_cache:
+            enrollment_data = enrollment.get_enrollment_info(
+                flask.request.args.to_dict(), local_search_cache[search_key]
+            )
+            return util.create_compressed_response(enrollment_data.json())
 
-    datastore_cache = util.datastore_get(
-        "Listing_b", search_key, time=config.LISTING_EXPIRE_TIME
-    )
-    if datastore_cache:
-        print("USING SAVED")
-        saved_listing = models.DataWrapper.parse_raw(datastore_cache.get("data"))
-        local_search_cache[search_key] = saved_listing
-        enrollment_data = enrollment.get_enrollment_info(
-            flask.request.args.to_dict(), saved_listing
+        datastore_cache = util.datastore_get(
+            "Listing_b", search_key, time=config.LISTING_EXPIRE_TIME
         )
-        return util.create_compressed_response(enrollment_data.json())
+        if datastore_cache:
+            print("USING SAVED")
+            saved_listing = models.DataWrapper.parse_raw(datastore_cache.get("data"))
+            local_search_cache[search_key] = saved_listing
+            enrollment_data = enrollment.get_enrollment_info(
+                flask.request.args.to_dict(), saved_listing
+            )
+            return util.create_compressed_response(enrollment_data.json())
 
-    course_data = course.CourseData()
-    data = course_data.get_all_courses(flask.request.args.to_dict())
-    local_search_cache[search_key] = data
-    util.datastore_set("Listing_b", search_key, data.json())
-    return util.create_compressed_response(data.json())
+        course_data = course.CourseData()
+        data = course_data.get_all_courses(flask.request.args.to_dict())
+        local_search_cache[search_key] = data
+        util.datastore_set("Listing_b", search_key, data.json())
+        return util.create_compressed_response(data.json())
+    except util.WebsocRateLimitError:
+        return flask.jsonify(success=False, error="Websoc Rate Limit Error"), 429
 
 
 @app.route("/catalogue")
 def catalogue():
     query = flask.request.args.get("q")
-    params = {"page": "getcourse.rjs", "code": query.upper()}
-    data = requests.get(
-        "http://catalogue.uci.edu/ribbit/index.cgi", params=params
-    ).content
-    tree = etree.XML(data)
-    return util.create_compressed_response(tree.find("course").text.replace("\n", ""))
+    if query not in local_catalogue_cache:
+        params = {"page": "getcourse.rjs", "code": query.upper()}
+        data = requests.get(
+            "http://catalogue.uci.edu/ribbit/index.cgi", params=params
+        ).content
+        course_info = etree.XML(data).find("course")
+        local_catalogue_cache[query] = course_info
+    else:
+        course_info = local_catalogue_cache[query]
+    if course_info is not None:
+        return util.create_compressed_response(course_info.text.replace("\n", ""))
+    else:
+        return flask.jsonify(success=False, error="Catalogue not found"), 404

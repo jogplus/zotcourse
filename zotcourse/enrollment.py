@@ -1,4 +1,5 @@
 import zotcourse.util as util
+import time
 from lxml import etree
 
 
@@ -19,9 +20,13 @@ def update_enrollment_info(req_args, saved_listing):
 
 def get_enrollment_info(req_args, saved_listing):
     if req_args.get("CourseCodes"):
+        first_chunk = True
         for code_chunk in util.split_codes(req_args):
+            if not first_chunk:
+                time.sleep(2)
             req_args["CourseCodes"] = code_chunk
             update_enrollment_info(req_args, saved_listing)
+            first_chunk = False
     else:
         update_enrollment_info(req_args, saved_listing)
     return saved_listing

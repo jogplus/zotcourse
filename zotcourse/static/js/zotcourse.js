@@ -1,4 +1,7 @@
 let catalogue_cache = {};
+let last_search_request_type = -1;
+const FORM_REQUEST_TYPE = 0;
+const LIST_REQUEST_TYPE = 1;
 
 const WEEKDAY_TO_STRING = { 1: "MO", 2: "TU", 3: "WE", 4: "TH", 5: "FR" };
 const COURSE_EVENT_TYPE = 0;
@@ -284,27 +287,38 @@ function setupCourseInfoListeners() {
     $(".course-info").click(async function () {
         let self = this;
         let key = encodeURIComponent(`${$(this).data("dept")} ${$(this).data("num")}`);
-        let data = null;
         if (!sessionStorage.getItem("courseInfo")) {
             sessionStorage.setItem("courseInfo", JSON.stringify({}));
         }
         let courseInfoCache = JSON.parse(sessionStorage.getItem("courseInfo"));
         if (key in courseInfoCache) {
             await sleep(1);
-            data = courseInfoCache[key];
+            $(self).popover({
+                html: true,
+                content: courseInfoCache[key],
+                trigger: "manual",
+                placement: "right",
+                container: ".dataTables_scrollBody",
+            });
+            $(self).popover("toggle");
         } else {
-            data = await $.get(`/catalogue?q=${key}`);
-            courseInfoCache[key] = data;
-            sessionStorage.setItem("courseInfo", JSON.stringify(courseInfoCache));
+            $.get(`/catalogue?q=${key}`).done(function(result) {
+                courseInfoCache[key] = result;
+                sessionStorage.setItem("courseInfo", JSON.stringify(courseInfoCache));
+            }).fail(function() {
+                courseInfoCache[key] = "Course information not found.";
+                sessionStorage.setItem("courseInfo", JSON.stringify(courseInfoCache));
+            }).always(function() {
+                $(self).popover({
+                    html: true,
+                    content: courseInfoCache[key],
+                    trigger: "manual",
+                    placement: "right",
+                    container: ".dataTables_scrollBody",
+                });
+                $(self).popover("toggle");
+            });
         }
-        $(self).popover({
-            html: true,
-            content: data,
-            trigger: "manual",
-            placement: "right",
-            container: ".dataTables_scrollBody",
-        });
-        $(self).popover("toggle");
     });
     // Fixes links in course info popover
     $(".course-info").on("shown.bs.popover", function () {
@@ -352,6 +366,8 @@ function handleListing(data, courseCodes) {
 }
 
 function setupListing() {
+    // Always reset order back to default
+    $("#listing-datatable").DataTable().order([0, 'asc']);
     $(".dataTables_scrollHead").css("visibility", "hidden");
     $("#search").hide();
     $("#soc").show();
@@ -1118,6 +1134,8 @@ $(document).ready(function () {
                 render: function (data, type, row, meta) {
                     if (type === "display" && data) {
                         return `${data}/${row.m_enrll}`;
+                    } else if (type === "sort" && data) {
+                        return data/row.m_enrll;
                     }
                     return data;
                 },
@@ -1130,6 +1148,8 @@ $(document).ready(function () {
                 render: function (data, type, row, meta) {
                     if (type === "display" && data && data != "n/a") {
                         return `${data}/${row.wt_cp}`;
+                    } else if (type === "sort" && data && data != "n/a") {
+                        return data/row.wt_cp;
                     }
                     return data;
                 },
@@ -1207,6 +1227,23 @@ $(document).ready(function () {
             },
         ],
     });
+    $.fn.dataTable.ext.errMode = 'none';
+    $('#listing-datatable')
+    .on( 'error.dt', function ( e, settings, techNote, message ) {
+        if (techNote == 7) {
+            let wait_time = 5000;
+            toastr.warning('Request blocked by UCI', 'Retrying...', { timeOut: wait_time })
+            if (last_search_request_type == FORM_REQUEST_TYPE) {
+                sleep(wait_time).then(() => {  $("#search-form").submit(); });
+            }
+            else if (last_search_request_type == LIST_REQUEST_TYPE) {
+                sleep(wait_time).then(() => {  $("#list-btn").click(); });
+            }
+        }
+        else {
+            console.error( 'An error has been reported by DataTables: ', message );
+        }
+    } );
 
     $("#search-form").submit(function (event) {
         event.preventDefault();
@@ -1222,6 +1259,7 @@ $(document).ready(function () {
         let courseCodes = $("#cal")
             .fullCalendar("clientEvents")
             .map(({ groupId }) => groupId);
+        last_search_request_type = FORM_REQUEST_TYPE;
         datatable.ajax.url(`/search?${$(this).serialize()}`).load(function (data) {
             handleListing(data, courseCodes);
         });
@@ -1255,6 +1293,7 @@ $(document).ready(function () {
             setupListing();
             switchToMobileListing();
             // 'data-term' attribute is rendered from index template and defaults to latest term
+            last_search_request_type = LIST_REQUEST_TYPE;
             datatable.ajax.url(`/search?YearTerm=${defaultYearTerm}&CourseCodes=${courseCodes}`).load(function (data) {
                 handleListing(data, added);
             });

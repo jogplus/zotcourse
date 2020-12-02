@@ -2,12 +2,17 @@ import requests
 import gzip
 import flask
 import string
+import random
 from zotcourse.config import Config as config
 from google.cloud import datastore
 from datetime import datetime, timedelta, timezone
 
 
 datastore_client = datastore.Client()
+
+
+class WebsocRateLimitError(Exception):
+    pass
 
 
 def clean_name(name):
@@ -28,7 +33,9 @@ def flatten(saved_listing):
 
 
 def get_websoc_request(req_args=None, full_request=False):
-    headers = {"User-Agent": "Mozilla/5.0"}
+    headers = {
+        "User-Agent": f"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.{random.randrange(99)} (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36"
+    }
     params = dict()
     if req_args:
         params["YearTerm"] = req_args.get("YearTerm")
@@ -50,12 +57,18 @@ def get_websoc_request(req_args=None, full_request=False):
         params["ShowFinals"] = "on"
         params["ShowComments"] = "on"
 
-    return requests.get(config.WEBSOC_BASE_URL, params=params, headers=headers).content
+    result = requests.get(config.WEBSOC_BASE_URL, params=params, headers=headers)
+    if not result.content:
+        raise WebsocRateLimitError
+    return result.content
 
 
 def split_codes(req_args):
-    codes = req_args.get("CourseCodes").split(',')
-    return [','.join(codes[i:i + config.COURSE_CODE_LIMIT]) for i in range(0, len(codes), config.COURSE_CODE_LIMIT)]
+    codes = req_args.get("CourseCodes").split(",")
+    return [
+        ",".join(codes[i : i + config.COURSE_CODE_LIMIT])
+        for i in range(0, len(codes), config.COURSE_CODE_LIMIT)
+    ]
 
 
 def datastore_get(kind, key, time=config.IGNORE_TIME):
