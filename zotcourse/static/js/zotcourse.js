@@ -59,6 +59,10 @@ function randomNum() {
     return Math.floor(Math.random() * 90000) + 10000;
 }
 
+function randomRange(min, max) {
+    return Math.random() * (max - min) + min;
+}
+
 // TODO: Remove
 function FinalParsedCourseTime(timeString) {
     var MAX_DURATION = 5;
@@ -226,7 +230,7 @@ function loadSchedule(username) {
                             scheduleJSON[i].start = curr_mtng.start;
                             scheduleJSON[i].end = curr_mtng.end;
                             scheduleJSON[i].dow = curr_mtng.days;
-                            scheduleJSON[i].daysOfTheWeek = curr_mtng.day;
+                            scheduleJSON[i].daysOfTheWeek = curr_mtng.days;
                         }
                         unitCounter += parseInt(scheduleJSON[i].course.unit);
                     } else if (scheduleJSON[i].eventType === CUSTOM_EVENT_TYPE) {
@@ -1231,7 +1235,7 @@ $(document).ready(function () {
     $('#listing-datatable')
     .on( 'error.dt', function ( e, settings, techNote, message ) {
         if (techNote == 7) {
-            let wait_time = 5000;
+            let wait_time = randomRange(2000, 5000);
             toastr.warning('Request blocked by UCI', 'Retrying...', { timeOut: wait_time })
             if (last_search_request_type == FORM_REQUEST_TYPE) {
                 sleep(wait_time).then(() => {  $("#search-form").submit(); });
@@ -1708,9 +1712,7 @@ $(document).ready(function () {
                         let location = renderLocation(curr.course.mtng, (asString = true));
                         cal.addEvent(
                             curr.title,
-                            `Course Title: ${curr.course.dept} ${curr.course.num} ${curr.course.title}
-							\\nInstructor: ${curr.course.instr.map((e) => e.name).join(" ")}
-							\\nCode: ${curr.groupId}`,
+                            `Course Title: ${curr.course.dept} ${curr.course.num} ${curr.course.title}\\nInstructor: ${curr.course.instr.join(" ")}\\nCode: ${curr.groupId}`,
                             location,
                             startDate,
                             endDate,
@@ -1727,9 +1729,7 @@ $(document).ready(function () {
                         // Title is parsed from after the type of class (ie. Lec, Lab, Dis)
                         cal.addEvent(
                             `Final ${curr.title.split(/\s(.+)/)[1]}`,
-                            `Course Title: ${curr.course.dept} ${curr.course.num} ${curr.course.title}
-							\\nInstructor: ${curr.course.instr.map((e) => e.name).join(" ")}
-							\\nCode: ${curr.groupId}`,
+                            `Course Title: ${curr.course.dept} ${curr.course.num} ${curr.course.title}\\nInstructor: ${curr.course.instr.join(" ")}\\nCode: ${curr.groupId}`,
                             "Check portal.uci.edu",
                             startTime,
                             endTime
