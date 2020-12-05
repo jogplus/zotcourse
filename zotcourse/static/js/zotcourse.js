@@ -1416,13 +1416,14 @@ $(document).ready(function () {
             html: true,
             title: "Save Schedule",
             content: function () {
-                return `<div class="input-group mb-3">
-								<input id="save-input" value="${localStorage.getItem("username") ? localStorage.getItem("username") : ""}" type="text" class="form-control save-input" placeholder="Schedule Name">
-								<div class="input-group-append">
-									<button id="save-button" class="btn btn-primary" type="button">Submit</button>
-								</div>
-							</div>
-							<div>${arrToTable(localStorage.getItem("recentSchedules"))}</div>`;
+                return `<div class="text-danger mb-2">Anyone can modify your schedule if they use the same name. Keep your schedule name unique and secret!</div>
+                        <div class="input-group mb-2">
+                            <input id="save-input" value="${localStorage.getItem("username") ? localStorage.getItem("username") : ""}" type="text" class="form-control save-input" placeholder="Schedule Name">
+                            <div class="input-group-append">
+                                <button id="save-button" class="btn btn-primary" type="button">Submit</button>
+                            </div>
+                        </div>
+                        <div>${arrToTable(localStorage.getItem("recentSchedules"))}</div>`;
             },
             placement: "bottom",
             container: "body",
@@ -1465,7 +1466,7 @@ $(document).ready(function () {
             html: true,
             title: "Load Schedule",
             content: function () {
-                return `<div class="input-group mb-3">
+                return `<div class="input-group mb-2">
 								<input id="load-input" value="${localStorage.getItem("username") ? localStorage.getItem("username") : ""}" type="text" class="form-control" placeholder="Schedule Name">
 								<div class="input-group-append">
 									<button id="load-button" class="btn btn-primary" type="button">Submit</button>
