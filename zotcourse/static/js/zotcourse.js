@@ -234,7 +234,7 @@ function loadSchedule(username) {
                         }
                         unitCounter += parseInt(scheduleJSON[i].course.unit);
                     } else if (scheduleJSON[i].eventType === CUSTOM_EVENT_TYPE) {
-                        // scheduleJSON[i].groupId = randomNum()
+                        scheduleJSON[i].groupId = randomNum();
                         scheduleJSON[i].daysOfTheWeek = scheduleJSON[i].dow;
                     } else {
                         // TODO: remove
