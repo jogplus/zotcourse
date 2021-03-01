@@ -46,11 +46,13 @@ def get_search_form():
     parsed_html = BeautifulSoup(request_content, "lxml")
     # Remove default selected quarter
     selected_quarter = parsed_html.find("select", {"name": "YearTerm"}).find_all(attrs={"selected": "selected"})[0]
-    if selected_quarter:
-        del selected_quarter.attrs["selected"]
     # Parses for term info
     raw_terms = parsed_html.find("select", {"name": "YearTerm"}).find_all("option")
-    raw_terms[0].attrs["selected"] = "selected"
+    # Pick the first quarter if it's not Summer, otherwise use default selection
+    if "Summer" not in raw_terms[0].text:
+        if selected_quarter:
+            del selected_quarter.attrs["selected"]
+        raw_terms[0].attrs["selected"] = "selected"
     clean_terms = [line["value"] for line in raw_terms]
     terms = [str(line).replace("\xa0", "") for line in raw_terms]
     # Parses for GE info
@@ -67,7 +69,7 @@ def get_search_form():
         general_eds=general_eds,
         clean_general_eds=clean_general_eds,
         departments=departments,
-        clean_departments=clean_departments
+        clean_departments=clean_departments,
     )
 
 
