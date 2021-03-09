@@ -1,30 +1,10 @@
-/* html { 
-	height: 100%; 
-} */
-
 html, body {
 	height: 100%;
-	/* font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
-	margin: 0;
-	color: #333;
-	padding: 0; */
 }
-
-/* a {
-	color: #007bff;
-} */
-
-/* th {
-	font-weight: normal;
-} */
 
 .fc-day-header {
 	font-weight: normal;
 }
-
-/* ul {
-	padding-inline-start: 20px;
-} */
 
 #left {
 	height: 100%;
@@ -35,49 +15,29 @@ html, body {
 #right {
 	width: 55%;
 	height: 100%;
-	/* height: calc(100% - 42px); */
 	float: left;
-	/* background-color: #f9fbfd; */
 	background-color: #F9F9F9;
-	/* overflow: hidden; */
-	/* overflow: auto; */
-	/* overflow-x: hidden; */
-	/* -webkit-overflow-scrolling: touch; */
 }
 
 #cal {
-	/* height: 100%; */
-	/* position: relative; */
 	overflow: hidden;
 }
 
 #soc {
 	height: 100%;
-	/* width: 100%; */
 	display: none;
 	overflow: hidden;
-	/* overflow-x: hidden; */
 }
 
 #upper {
 	overflow: auto;
 	padding: 5px;
 	position: relative;
-	/* background-color: #F9F9F9; */
 }
 
 #upper h1 {
 	line-height: 20px;
 }
-
-/* #upper #main-nav {
-	float: left;
-	margin-right: 10px;
-}
-
-#main-nav h5{
-	margin-bottom: 0px;
-} */
 
 #scheduleNameForPrint {
 	display : none;
@@ -93,11 +53,6 @@ html, body {
 	border-bottom-left-radius: 0; 
 }
 
-/* #name {
-	font-size: .7em;
-	display: none;
-} */
-
 #finals {
 	display: none;
 	position: relative;
@@ -112,7 +67,7 @@ html, body {
 	cursor: pointer;
 }
 
-td.code-cell:hover{
+div.code-cell:hover{
 	color: #0056b3;
     text-decoration: underline;
 }
@@ -182,17 +137,6 @@ td.code-cell:hover{
   background-color:inherit !important;
 }
 
-/* .space1
-{
-	display: inline-block;
-	width: 1%;
-}
-
-.space2
-{
-	height: 2.25em;
-} */
-
 .popover {
 	max-width: 20em !important;
 }
@@ -208,10 +152,6 @@ td.code-cell:hover{
 .gutter.gutter-horizontal {
 	cursor: ew-resize;
 }
-
-/* .split, .gutter.gutter-horizontal {
-    float: left;
-} */
 
 .fa-ellipsis-v {
 	color: #fff;
@@ -323,9 +263,7 @@ td.code-cell:hover{
 
 .dataTables_filter input {
 	border: 1px solid #ced4da;
-	/* border-radius: 5px; */
 	margin-right: 5px;
-
 	padding: .25rem .5rem;
     font-size: 1rem;
     line-height: 1.5;
@@ -335,8 +273,6 @@ td.code-cell:hover{
 .toolbar-btn {
 	border-color: transparent;
 	background-color: white !important;
-	/* box-shadow: 0 0 1rem rgba(0,0,0,.3)!important; */
-	/* border: 1px solid #dee2e6!important; */
 }
 
 .toolbar-btn:hover {
@@ -499,7 +435,7 @@ td.code-cell:hover{
 }
 
 .fc-title{
-	font-size: .85rem;
+	font-size: .80rem;
 	line-height: 1.0;
 }
 
@@ -511,46 +447,11 @@ td.code-cell:hover{
 	font-size: .85rem;
 }
 
-/* .col {
-	flex-basis: 0;
-	min-width: 20rem;
-}
-
-.dept-title {
-	background: #eee;
-	font-weight: bold;
-}
-.course-list {
-	font-size: .7vw;
-	line-height: 1vw;
-} */
-
-/* Makes table stretch to fill the iframe */
-/* .course-list > table {
-	width: 100%;
-} */
-
-/* .college-title, .college-comment, .dept-comment, .ccode-range-comment,
-#contact-footer, .title-bar, #reg-nav-bar, #contact-date, #RegBannerMain,
-#reg-banner-container, .white-bar, .white-bar-thick {
-	display: none;
-} */
-
 #search {
 	padding: 20px;
 	overflow-x: hidden;
 	display: flex;
-	/* background-color: #f9fbfd; */
 }
-/* .listing-row {
-	position: fixed;
-}
-
-.listing-btn {
-	position: fixed;
-	z-index:1;
-	padding-right: 10px;
-} */
 
 .select2 {
 	color: #495057
@@ -570,7 +471,6 @@ td.code-cell:hover{
 	border-radius: inherit;
 	box-shadow: 0 0rem 1rem rgba(0, 0, 0, .33);
 	z-index: -1;
-	/* transition: box-shadow 0.5s; */
 }
 .button-shadow:hover::before {
 	box-shadow: 0 0rem 1rem rgba(0, 0, 0, .33);
@@ -601,7 +501,9 @@ table.dataTable tr:nth-child(odd) td:nth-child(odd):not(.dataTables_empty) {
   }
   
   tr.dtrg-level-0 td {
-	background-color: #EEEEEE !important;
+	color: white;
+	background-color: navy !important;
+	border: 0px;
   }
   
   tr.dtrg-level-2 td {

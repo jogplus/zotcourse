@@ -28,7 +28,7 @@ class CourseData:
             self.rating_data = rating.RatingData()
 
     def save_caches(self):
-        if self.grade_data.cache_updated or self.rating_data.cache_updated:
+        if (self.grade_data.cache_updated or self.rating_data.cache_updated) and self.rating_data.ratings:
             print(
                 f"SAVING grade:{self.grade_data.cache_updated},"
                 f"rating:{self.rating_data.cache_updated}"
@@ -230,6 +230,8 @@ class CourseData:
             f"setup:{self.setup_time},"
             f"parse:{self.parse_timed},"
             f"rating:{self.rating_time},"
-            f"grades:{self.grades_time}"
+            f"grades:{self.grades_time},"
+            f"prof_grades:{self.grade_data.prof_time},"
+            f"recent_grades:{self.grade_data.recent_time},"
         )
         return DataWrapper(data=courses)

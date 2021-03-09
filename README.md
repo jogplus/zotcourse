@@ -44,9 +44,14 @@ Home Page            |  Listing Page
     $ python3 -m venv env
     $ source env/bin/activate
     ```
-2. Navigate to the root of the zotcourse folder, and run the following:
+2. Navigate to the root of the zotcourse folder, and install the project dependencies:
     ```
+    $ cd zotcourse
     $ pip3 install -r requirements.txt
+    ```
+3. Create a duplicate of the sample config and fill in the values:
+    ```
+    $ cp config.sample.py config.py
     ```
 3. [Setup a GCP service account that has access to Datastore.](https://cloud.google.com/docs/authentication/getting-started)
 3. While still in the root of the zotcourse folder run the following to start the server locally:
@@ -59,6 +64,7 @@ Home Page            |  Listing Page
     * Create a new Google Cloud Platform project and App Engine application using the GCP Console
     * Download and install the [Cloud SDK](https://cloud.google.com/appengine/docs/standard/python/download) (Make sure it is added to your PATH)
     * Rename `sample.app.yaml` to `app.yaml`
+    * Deploy Cloud Functions under `/cloud_functions` and set them to run automatically using Cloud Scheduler
 6. If you are looking to see how this project works, the main files of interest are:
     ```
     zotcourse/static/js/zotcourse.js

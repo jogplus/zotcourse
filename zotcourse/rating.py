@@ -1,5 +1,5 @@
 from zotcourse import util
-from fuzzywuzzy import process, fuzz
+from rapidfuzz import process, fuzz
 
 
 class RatingData:
@@ -10,7 +10,7 @@ class RatingData:
     def get_rating(self, raw_name):
         name = util.clean_name(raw_name)
         rating = self.ratings.get(name)
-        if rating is None:
+        if rating is None and self.ratings:
             match = process.extractOne(
                 name,
                 set(self.ratings.keys()),

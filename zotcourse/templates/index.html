@@ -41,7 +41,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js" integrity="sha512-lbwH47l/tPXJYG9AcFNoJaTMhGvYWhVM9YI43CT+uteTRRaiLCui8snIgyAN8XWgNjNhCqlAUdzZptso6OCoFQ==" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
   <script src="{{url_for('static', filename="js/ics.deps.min.js")}}"></script>
-  <script src="{{url_for('static', filename="js/zotcourse.min.js")}}?version=1.0.10"></script>
+  <script src="{{url_for('static', filename="js/zotcourse.min.js")}}?version=1.1.1"></script>
   <!-- Global site tag (gtag.js) - Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129912319-1" crossorigin="anonymous"></script>
   <script>
@@ -50,19 +50,8 @@
     gtag('js', new Date());
     gtag('config', 'UA-129912319-1');
   </script>
-  <!-- Google Tag Manager -->
-  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-PR3BF83');</script>
-    <!-- End Google Tag Manager -->
 </head>
 <body>
-  <!-- Google Tag Manager (noscript) -->
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PR3BF83"
-  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-  <!-- End Google Tag Manager (noscript) -->
   <div id="upper" class="border-bottom shadow-sm">
     <div id="main-nav" class="mt-md-1 mb-xs-1 mr-2 float-left">
         <h5 class="m-0"><a id="title-github-link" target="_blank" href="https://github.com/jogplus/zotcourse">Zotcourse</a> - Schedule Planner for UCI</h5>
@@ -288,18 +277,19 @@
       <div class="mt-auto">
         <div class="row">
           <div class="col-sm-6 pt-3">
-            <h5>Getting Started </h5>
+            <h5>Getting Started</h5>
             <ol class="mb-0 pl-4">
               <li>Select a General Ed category or Department and click Submit Search.</li>
               <li>Click on a row in the search results to add it to your schedule.</li>
               <li>Remove a course by clicking on the row again or by clicking on the event in your calendar.</li>
-              <li>Save/Load your schedule by clicking the Save/Load button in the top toolbar. Make sure to keep your schedule name safe!</li>
-              <!-- <li>Use the List button to see information about all of your added classes.</li> -->
+              <li>Save/Load your schedule by clicking either button in the top toolbar.</li>
+              <li>Use the List button to list your added courses.</li>
             </ol>
           </div>
           <div class="col-sm-6 pt-4 mt-auto text-right">
             <div><a id="github-link" target="_blank" href="https://github.com/jogplus/zotcourse">Check out this project on Github</a> <i class="fab fa-github"></i></div>
-            <div><a id="feedback-link" target="_blank" href="https://goo.gl/forms/YdeevICkr4Ei6HHg1">Bug or Suggestions?</a></div>
+            <div><a id="donate-link" target="_blank" href="https://www.paypal.com/biz/fund?id=2L62NKBA2YP64">Donate to keep Zotcourse running</a> <i class="fa fa-heart"></i></div>
+            <div><a id="feedback-link" target="_blank" href="https://goo.gl/forms/YdeevICkr4Ei6HHg1">Bug or Suggestions?</a> <i class="fa fa-bug"></i></div>
             <div id="name" class="text-muted">Made By Tristan Jogminas</div>
           </div>
         </div>
@@ -403,7 +393,7 @@
       <div><b><u>Course</u></b>: Average grade distribution over all courses with this instructor and course.</div>
       <div><b><u>Recent</u></b>: Most recent grade distribution from this instructor and course.</div>
       <br>
-      <div><em>Grade Data Last Updated: Spring 2020</em></div>
+      <div><em>Grade Data Last Updated: Fall 2020</em></div>
     </div>
   </template>
 </body>

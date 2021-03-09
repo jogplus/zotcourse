@@ -1,5 +1,6 @@
 let catalogue_cache = {};
 let last_search_request_type = -1;
+let fail_count = 0;
 const FORM_REQUEST_TYPE = 0;
 const LIST_REQUEST_TYPE = 1;
 
@@ -63,72 +64,31 @@ function randomRange(min, max) {
     return Math.random() * (max - min) + min;
 }
 
-// TODO: Remove
-function FinalParsedCourseTime(timeString) {
-    var MAX_DURATION = 5;
-    var daySplit = timeString.split(",");
-    var timeSplit = daySplit[2].split("-");
-
-    var date = $.trim(daySplit[1]);
-    var month = date.split(" ")[0];
-    var day = parseInt(date.split(" ")[1]);
-    var beginTime = $.trim(timeSplit[0]); // ex. "6:00"
-    var endTime = $.trim(timeSplit[1]); // "6:50p"
-
-    var beginHour = parseInt(beginTime.split(":")[0]);
-    var beginMin = parseInt(beginTime.split(":")[1]);
-
-    var endHour = parseInt(endTime.split(":")[0]);
-    var endMin = parseInt(endTime.split(":")[1].replace("pm", ""));
-    var isPm = endTime.indexOf("pm") != -1;
-
-    var weekDay = -1;
-    if (timeString.indexOf("Sun") != -1) {
-        weekDay = 0;
-    }
-    if (timeString.indexOf("Mon") != -1) {
-        weekDay = 1;
-    }
-    if (timeString.indexOf("Tue") != -1) {
-        weekDay = 2;
-    }
-    if (timeString.indexOf("Wed") != -1) {
-        weekDay = 3;
-    }
-    if (timeString.indexOf("Thu") != -1) {
-        weekDay = 4;
-    }
-    if (timeString.indexOf("Fri") != -1) {
-        weekDay = 5;
-    }
-    if (timeString.indexOf("Sat") != -1) {
-        weekDay = 6;
-    }
-
-    if (isPm) {
-        var military = endHour == 12 ? 12 : endHour + 12;
-        if (military - beginHour > MAX_DURATION) {
-            beginHour += 12;
-        }
-        if (endHour != 12) {
-            endHour += 12;
-        }
-    }
-
-    return {
-        beginHour: beginHour,
-        beginMin: beginMin,
-        endHour: endHour,
-        endMin: endMin,
-        weekDay: weekDay,
-        month: month,
-        day: day,
-        date: date,
-    };
-}
-
 function getRandomColor() {
     return colorPalette[Math.floor(Math.random() * colorPalette.length)];
+}
+
+function setUnitCounter(value) {
+    let newValue = parseInt(value);
+    if (!Number.isNaN(newValue) && !value.toString().includes("-")) {
+        $("#unitCounter").text(newValue);
+    }
+}
+
+function incrementUnitCounter(value) {
+    let currentUnitCounter = parseInt($("#unitCounter").text());
+    let incrementValue = parseInt(value);
+    if (!Number.isNaN(incrementValue) && !value.toString().includes("-")) {
+        $("#unitCounter").text(currentUnitCounter+incrementValue);
+    }
+}
+
+function decrementUnitCounter(value) {
+    let currentUnitCounter = parseInt($("#unitCounter").text());
+    let decrementValue = parseInt(value);
+    if (!Number.isNaN(decrementValue) && (currentUnitCounter-decrementValue >= 0) && !value.toString().includes("-")) {
+        $("#unitCounter").text(currentUnitCounter-decrementValue);
+    }
 }
 
 function saveSchedule(username) {
@@ -232,27 +192,13 @@ function loadSchedule(username) {
                             scheduleJSON[i].dow = curr_mtng.days;
                             scheduleJSON[i].daysOfTheWeek = curr_mtng.days;
                         }
-                        unitCounter += parseInt(scheduleJSON[i].course.unit);
+                        incrementUnitCounter(scheduleJSON[i].course.unit);
                     } else if (scheduleJSON[i].eventType === CUSTOM_EVENT_TYPE) {
                         scheduleJSON[i].groupId = randomNum();
                         scheduleJSON[i].daysOfTheWeek = scheduleJSON[i].dow;
-                    } else {
-                        // TODO: remove
-                        if (scheduleJSON[i].courseTimes) {
-                            for (let j = 0; j < scheduleJSON[i].courseTimes.length; j++) {
-                                scheduleJSON[i].start = scheduleJSON[i].courseTimes[j].start;
-                                scheduleJSON[i].end = scheduleJSON[i].courseTimes[j].end;
-                                scheduleJSON[i].dow = scheduleJSON[i].courseTimes[j].days;
-                                scheduleJSON[i].location = scheduleJSON[i].courseTimes[j].room;
-                            }
-                        }
-                        if (scheduleJSON[i].units) {
-                            unitCounter += parseInt(scheduleJSON[i].units);
-                        }
                     }
                 }
                 $("#cal").fullCalendar("renderEvents", scheduleJSON);
-                $("#unitCounter").text(unitCounter);
                 toastr.success(username, "Schedule Loaded!");
                 localStorage.setItem("username", username);
                 addToRecentSchedules(username);
@@ -353,7 +299,7 @@ function handleListing(data, courseCodes) {
         datatable.row(`#${courseCodes[i]}`).select();
     }
 
-    $("td.code-cell").click(function (event) {
+    $("div.code-cell").click(function (event) {
         event.stopPropagation();
         var aux = document.createElement("input");
         aux.setAttribute("value", $(this).text());
@@ -577,85 +523,6 @@ function renderCoursePopover(element, event, isFinal = false) {
 								<td colspan="2"><button class="btn btn-sm btn-primary w-100 delete-event">Remove <i class="fas fa-trash-alt"></i></button></td>
 							</tr>
 							</table>`;
-    } else {
-        // TODO: Remove
-        if (isFinal) {
-            popoverTitle = event.fullName ? event.fullName : "";
-            popoverContent =
-                '<table style="width:100%">\
-							<tr>\
-								<td>Name</td>\
-								<td></td>\
-								<td align="right">' +
-                event.title +
-                '</td>\
-							</tr>\
-							<tr>\
-								<td>Code</td>\
-								<td></td>\
-								<td align="right">' +
-                event.groupId +
-                '</td>\
-							</tr>\
-							<tr>\
-								<td>Date</td>\
-								<td></td>\
-								<td align="right">' +
-                event.date +
-                '</td>\
-							</tr>\
-							<tr>\
-								<td>Instructor</td>\
-								<td>&nbsp;&nbsp;</td>\
-								<td align="right">' +
-                (event.instructor ? event.instructor : "N/A") +
-                "</td>\
-							</tr>\
-							</table>";
-        } else {
-            // TODO: Remove
-            popoverTitle = event.fullName ? event.fullName : "";
-            setupColorPicker(element, event, colorpickerId);
-            popoverContent =
-                '<table style="width:100%; margin-bottom:3%;">\
-								<tr>\
-									<td>Name</td>\
-									<td></td>\
-									<td align="right">' +
-                event.title +
-                '</td>\
-								</tr>\
-								<tr>\
-									<td>Code</td>\
-									<td></td>\
-									<td align="right">' +
-                event.groupId +
-                '</td>\
-								</tr>\
-								<tr>\
-									<td>Location</td>\
-									<td></td>\
-									<td align="right">' +
-                (event.location ? event.location : "") +
-                '</td>\
-								</tr>\
-								<tr>\
-									<td>Instructor</td>\
-									<td>&nbsp;&nbsp;</td>\
-									<td align="right">' +
-                (event.instructor ? event.instructor : "N/A") +
-                '</td>\
-								</tr>\
-								<tr>\
-									<td>Color</td>\
-									<td></td>\
-									<td align="right"><input id="colorpicker-' +
-                colorpickerId +
-                '" type="text"/></td>\
-								</tr>\
-								</table>\
-								<button style="width:100%" class="btn btn-sm btn-primary delete-event">Remove <i class="fas fa-trash-alt"></i></button>';
-        }
     }
     // Hides all open popovers when adding a new event since it was causing
     // currently opened popovers to freeze.
@@ -870,7 +737,12 @@ $(document).ready(function () {
                 title: "Code",
                 name: "code",
                 data: "code",
-                className: "code-cell",
+                render: function (data, type, row, meta) {
+                    if (type === "display") {
+                        return `<div class='code-cell'>${data}</div>`;
+                    }
+                    return data;
+                }
             },
             {
                 title: "Type",
@@ -1035,7 +907,7 @@ $(document).ready(function () {
                             let popoverContent = `<h6 class="center-text">Grade Distribution <i id="${$(this).attr("data-id")}-info" class="fas fa-question-circle"></i></h6>`;
                             let popoverHeight = "320px";
                             if (cellData[0] && cellData[0].grade && cellData[0].grade.rec_g) {
-                                popoverContent += `<div class="mb-1 center-text">(Most Recently Taught: ${cellData[0].grade.rec_q}, ${cellData[0].grade.rec_y})</div>`;
+                                popoverContent += `<div class="mb-1 center-text">(Last Taught: ${cellData[0].grade.rec_q}, ${cellData[0].grade.rec_y})</div>`;
                                 popoverHeight = "340px";
                             }
                             popoverContent += `<canvas id="${$(this).attr("data-id")}-chart" width="400" height="400" ></canvas>`;
@@ -1235,6 +1107,14 @@ $(document).ready(function () {
     $('#listing-datatable')
     .on( 'error.dt', function ( e, settings, techNote, message ) {
         if (techNote == 7) {
+            if (fail_count >= 2) {
+                toastr.error('All requests blocked by UCI', 'Please try again later');
+                fail_count = 0;
+                $("#soc").hide();
+                $("#search").show();
+                return;
+            }
+            fail_count += 1;
             let wait_time = randomRange(2000, 5000);
             toastr.warning('Request blocked by UCI', 'Retrying...', { timeOut: wait_time })
             if (last_search_request_type == FORM_REQUEST_TYPE) {
@@ -1247,7 +1127,7 @@ $(document).ready(function () {
         else {
             console.error( 'An error has been reported by DataTables: ', message );
         }
-    } );
+    } ).DataTable();
 
     $("#search-form").submit(function (event) {
         event.preventDefault();
@@ -1267,6 +1147,9 @@ $(document).ready(function () {
         datatable.ajax.url(`/search?${$(this).serialize()}`).load(function (data) {
             handleListing(data, courseCodes);
         });
+        if (form.Breadth !== "ANY") {
+            toastr.warning("Results don't include Dis, Lab, etc.", "Check for any Co-Courses");
+        }
     });
 
     $("#listing-datatable").on("column-visibility.dt", async function (e, settings, column, state) {
@@ -1312,7 +1195,7 @@ $(document).ready(function () {
         $("#finals").fullCalendar("removeEvents");
         datatable.rows().deselect();
         switchToMainCalendar();
-        $("#unitCounter").text(0);
+        setUnitCounter(0);
     });
 
     // Prevent row selection when clicking on link
@@ -1322,9 +1205,7 @@ $(document).ready(function () {
     datatable.on("deselect", function (e, dt, type, indexes) {
         if (type === "row") {
             var data = datatable.rows(indexes).data()[0];
-            if (data.unit && parseInt($("#unitCounter").text()) - parseInt(data.unit) >= 0) {
-                $("#unitCounter").text(parseInt($("#unitCounter").text()) - parseInt(data.unit));
-            }
+            decrementUnitCounter(data.unit);
             var calRawData = $("#cal").fullCalendar("clientEvents");
             for (var i in calRawData) {
                 if (calRawData[i].groupId === data.code) $("#cal").fullCalendar("removeEvents", calRawData[i]._id);
@@ -1346,18 +1227,19 @@ $(document).ready(function () {
                 final: rawData.final,
                 instr: rawData.instr.map((e) => e.name),
             };
-            if (data.mtng[0].f_time === "TBA") {
-                e.preventDefault();
-                toastr.warning("Cannot add to schedule", "Course has TBA Time");
-                return;
-            }
             // Since user-select is also called on deselect, must make sure not to re-add the same course
             let calRawData = $("#cal").fullCalendar("clientEvents");
             for (let i in calRawData) {
                 if (calRawData[i].groupId === data.code) return;
             }
+            incrementUnitCounter(data.unit);
+            if (data.mtng[0].f_time === "TBA") {
+                toastr.success("Click the List button to view the course", "Added TBA Course to List");
+                data.mtng[0].start = "0:00";
+                data.mtng[0].end = "0:00";
+                data.mtng[0].days = [1];
+            }
             let randomColor = getRandomColor();
-            $("#unitCounter").text(parseInt($("#unitCounter").text()) + parseInt(data.unit));
             for (let i in data.mtng) {
                 let curr_mtng = data.mtng[i];
                 $("#cal").fullCalendar("renderEvent", {
@@ -1584,9 +1466,10 @@ $(document).ready(function () {
             var hasTBACourse = false;
             for (var i in calRawData) {
                 if (calRawData[i].eventType === COURSE_2_EVENT_TYPE) {
-                    if (calRawData[i].course.final && calRawData[i].course.final.date === "TBA") {
+                    if (calRawData[i].course.final && calRawData[i].course.final.f_time === "TBA") {
                         hasTBACourse = true;
-                    } else if (calRawData[i].course.final && !(usedGroupIds.indexOf(calRawData[i].groupId) >= 0)) {
+                    }
+                    if (calRawData[i].course.final && !(usedGroupIds.indexOf(calRawData[i].groupId) >= 0)) {
                         $("#finals").fullCalendar("renderEvent", {
                             groupId: calRawData[i].groupId,
                             start: calRawData[i].course.final.start,
@@ -1600,39 +1483,9 @@ $(document).ready(function () {
                         });
                         usedGroupIds.push(calRawData[i].groupId);
                     }
-                } else {
-                    // TODO: remove
-                    // Checks if any course has TBA final so that user can update it
-                    if (calRawData[i].eventType != CUSTOM_EVENT_TYPE && $.trim(calRawData[i].final.replace(/&nbsp;/g, "")) == "TBA") {
-                        hasTBACourse = true;
-                    }
-                    // Checks to make sure that finals attribute is not empty, TBA, or from import
-                    if (
-                        calRawData[i].eventType != CUSTOM_EVENT_TYPE &&
-                        $.trim(calRawData[i].final.replace(/&nbsp;/g, "")) != "" &&
-                        $.trim(calRawData[i].final.replace(/&nbsp;/g, "")) != "TBA" &&
-                        $.trim(calRawData[i].final.replace(/&nbsp;/g, "")) != "N/A (due to import)" &&
-                        !(usedGroupIds.indexOf(calRawData[i].groupId) >= 0)
-                    ) {
-                        var finalParsed = FinalParsedCourseTime(calRawData[i].final);
-                        $("#finals").fullCalendar("renderEvent", {
-                            id: calRawData[i].id,
-                            groupId: calRawData[i].groupId,
-                            start: finalParsed.beginHour + ":" + finalParsed.beginMin,
-                            end: finalParsed.endHour + ":" + finalParsed.endMin,
-                            // Title is parsed from after the type of class (ie. Lec, Lab, Dis)
-                            title: calRawData[i].title.split(/\s(.+)/)[1],
-                            dow: [finalParsed.weekDay],
-                            color: calRawData[i].color,
-                            fullName: calRawData[i].fullName,
-                            instructor: calRawData[i].instructor,
-                            date: finalParsed.date,
-                        });
-                        usedGroupIds.push(calRawData[i].groupId);
-                    }
                 }
             }
-            if (hasTBACourse) toastr.warning("One of your courses have TBA finals. Please use the List buttton to re-add and update the course.", "TBA Finals");
+            if (hasTBACourse) toastr.warning("Use the List buttton to remove and re-add the course.", "Course has a TBA Final");
             $("#finals").fullCalendar("rerenderEvents");
         }
         $(window).trigger("resize");
@@ -1678,7 +1531,7 @@ $(document).ready(function () {
                 }
             }
             if (firstMonday === null) {
-                toastr.warning("Must add at least 1 course with a final in order to generate calendar export.", "Cannot Export Courses");
+                toastr.error("Must add at least 1 course with a final in order to generate calendar export.", "Cannot Export Courses");
                 return;
             }
             let added = [];
@@ -1687,6 +1540,10 @@ $(document).ready(function () {
                 let curr = calRawData[i];
                 if (curr.eventType !== COURSE_2_EVENT_TYPE && curr.eventType !== CUSTOM_EVENT_TYPE) {
                     toastr.error("Please re-add your courses", "Unsupported Courses");
+                }
+                // Skip over TBA courses
+                if (curr.start.hours() == 0) {
+                    continue;
                 }
                 if (added.indexOf([curr.groupId, curr.daysOfTheWeek].toString()) == -1) {
                     let startDate = new Date(firstMonday);
@@ -1855,8 +1712,8 @@ $(document).ready(function () {
                 let row = datatable.row(`#${event.groupId}`);
                 if (row.data()) {
                     row.deselect();
-                } else if (event.course.unit && parseInt($("#unitCounter").text()) - parseInt(event.course.unit) >= 0) {
-                    $("#unitCounter").text(parseInt($("#unitCounter").text()) - parseInt(event.course.unit));
+                } else if (event.course.unit) {
+                    decrementUnitCounter(event.course.unit);
                 }
             });
         },

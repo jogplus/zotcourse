@@ -86,6 +86,15 @@ def search():
         util.datastore_set("Listing_b", search_key, data.json())
         return util.create_compressed_response(data.json())
     except util.WebsocRateLimitError:
+        # Try again with cached results
+        datastore_cache = util.datastore_get(
+            "Listing_b", search_key, time=config.IGNORE_TIME
+        )
+        if datastore_cache:
+            print("BLOCKED, USING SAVED")
+            saved_listing = models.DataWrapper.parse_raw(datastore_cache.get("data"))
+            local_search_cache[search_key] = saved_listing
+            return util.create_compressed_response(saved_listing.json())
         return flask.jsonify(success=False, error="Websoc Rate Limit Error"), 429
 
 

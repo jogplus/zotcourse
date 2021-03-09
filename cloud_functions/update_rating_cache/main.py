@@ -8,7 +8,7 @@ It is triggered by a Cloud Scheduler.
 import config
 from google.cloud import datastore
 from datetime import datetime, timedelta, timezone
-from models import Caches
+from models import Caches, GradeCache
 
 IGNORE_TIME = -1
 
@@ -53,7 +53,7 @@ def update_rating_cache(request):
     # Check to make sure not overwriting with bad data
     if len(ratings) > 100:
         new_caches = Caches(
-            grade_cache=caches.grade_cache,
+            grade_cache=GradeCache(),
             rating_cache=ratings,
         )
         datastore_set("Cache", "caches", new_caches.json())

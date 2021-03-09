@@ -1,6 +1,6 @@
 import pandas
 import time
-from fuzzywuzzy import fuzz, process
+from rapidfuzz import fuzz, process
 from zotcourse.models import Grade, CourseGradeDist, GradeDist, GradeCache
 from zotcourse.config import Config as config
 from zotcourse import util
@@ -17,6 +17,8 @@ class GradeData:
         self.cache_updated = False
 
         self.original_df = pandas.read_csv(f"{config.GRADES_FILE_NAME}.csv")
+        self.original_df["quarter"] = self.original_df["quarter"].map(self.quarter_mapping)
+        self.original_df["instructor"] = self.original_df["instructor"].str.upper()
         self.original_df.set_index("dept")
         self.dept_df = None
         self.dept_instructors = None
@@ -42,7 +44,7 @@ class GradeData:
             )
             start = time.time()
             recent_course_grade_dist = self._get_recent_grade_dist(course_num)
-            self.recent_time = time.time() - start
+            self.recent_time += time.time() - start
             if recent_course_grade_dist:
                 grade.course_g = recent_course_grade_dist.course_dist.grade_percents
                 grade.gpa = recent_course_grade_dist.course_dist.gpa
@@ -99,7 +101,6 @@ class GradeData:
         course_grade_dist = self._get_grade_dist()
         if course_grade_dist is None:
             return None
-        self.df["quarter"] = self.df["quarter"].map(self.quarter_mapping)
         self.df = self.df.sort_values(by=["year", "quarter"], ascending=False).iloc[0]
         return CourseGradeDist(
             course_dist=course_grade_dist,
