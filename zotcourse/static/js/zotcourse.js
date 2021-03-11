@@ -179,6 +179,7 @@ function loadSchedule(username) {
                 let unitCounter = 0;
                 let datatable = $("#listing-datatable").DataTable();
                 datatable.rows().deselect();
+                setUnitCounter(0);
                 for (let i = 0; i < scheduleJSON.length; i++) {
                     // If a single course has different meeting times (ie. Tu 5:00- 7:50p and Th 5:00- 6:20p)
                     if (scheduleJSON[i].eventType === COURSE_2_EVENT_TYPE) {
@@ -1535,7 +1536,7 @@ $(document).ready(function () {
                 return;
             }
             let added = [];
-            let cal = ics();
+            let cal = ics(Date.now());
             for (i in calRawData) {
                 let curr = calRawData[i];
                 if (curr.eventType !== COURSE_2_EVENT_TYPE && curr.eventType !== CUSTOM_EVENT_TYPE) {
