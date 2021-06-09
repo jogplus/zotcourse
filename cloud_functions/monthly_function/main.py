@@ -1,7 +1,7 @@
-"""Zotcourse Update Rating Cache
+"""Zotcourse Update Rating Cache And Clear Old Datastore
 
 The following function is used as a GCP Cloud Function to update the
-ratings that are saved in the cache.
+ratings that are saved in the cache. It is run once every month using Python 3.7.
 
 It is triggered by a Cloud Scheduler.
 """
@@ -44,7 +44,25 @@ def datastore_get(kind, key, time=IGNORE_TIME):
     return result
 
 
-def update_rating_cache(request):
+def clear_datastore_entries(kind, days):
+    datastore_client = datastore.Client()
+    query = datastore_client.query(kind=kind)
+    deletion_time_thresh = datetime.now(timezone.utc) - timedelta(days=days)
+    query.add_filter('modified_at', '<', deletion_time_thresh.isoformat())
+    query.keys_only()
+
+    while True:
+        chunk = query.fetch(limit=500)
+        key_chunk = [entry.key for entry in chunk]
+        if (len(key_chunk) == 0):
+            break
+        datastore_client.delete_multi(key_chunk)
+
+
+def run_function(request):
+    clear_datastore_entries("Listing", 31)
+    clear_datastore_entries("Schedule", 730)
+
     caches = datastore_get("Cache", "caches")
     caches = Caches.parse_raw(caches["data"])
 

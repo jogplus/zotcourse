@@ -1,7 +1,7 @@
 """Zotcourse Update Form Cache
 
 The following function is used as a GCP Cloud Function to update the
-Websoc form that is saved in the cache.
+Websoc form that is saved in the cache. It is run several times everyday using Python 3.7.
 
 It is triggered by a Cloud Scheduler.
 """
@@ -88,6 +88,6 @@ def datastore_set(kind, key, data):
         datastore_client.put(entity)
 
 
-def update_form_cache(request):
+def run_function(request):
     form_info = get_search_form()
     datastore_set("Form", "form", form_info.json())

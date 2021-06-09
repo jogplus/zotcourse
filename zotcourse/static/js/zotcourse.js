@@ -911,6 +911,10 @@ $(document).ready(function () {
                                 popoverContent += `<div class="mb-1 center-text">(Last Taught: ${cellData[0].grade.rec_q}, ${cellData[0].grade.rec_y})</div>`;
                                 popoverHeight = "340px";
                             }
+                            else {
+                                popoverContent += `<div class="mb-1 center-text">(Instructor hasn't taught course recently)</div>`;
+                                popoverHeight = "340px";
+                            }
                             popoverContent += `<canvas id="${$(this).attr("data-id")}-chart" width="400" height="400" ></canvas>`;
                             let popover = $(this).popover({
                                 container: ".dataTables_scrollBody",

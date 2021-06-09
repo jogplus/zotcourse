@@ -1,3 +1,0 @@
-# Function dependencies, for example:
-# package>=version
-google-cloud-datastore==1.9.0

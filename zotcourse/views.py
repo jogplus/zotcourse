@@ -11,21 +11,21 @@ from zotcourse.config import Config as config
 
 local_search_cache = dict()
 local_catalogue_cache = dict()
-form_info_cache = None
+local_form_cache = None
 app = flask.Flask(__name__)
 
 
 @app.route("/")
 def index():
-    global form_info_cache
-    if not form_info_cache:
+    global local_form_cache
+    if not local_form_cache:
         form_info = util.datastore_get("Form", "form", config.IGNORE_TIME)
-        form_info_cache = models.SearchForm.parse_raw(form_info.get("data"))
+        local_form_cache = models.SearchForm.parse_raw(form_info.get("data"))
     return flask.render_template(
         "index.html",
-        terms=form_info_cache.terms,
-        general_eds=form_info_cache.general_eds,
-        departments=form_info_cache.departments,
+        terms=local_form_cache.terms,
+        general_eds=local_form_cache.general_eds,
+        departments=local_form_cache.departments,
     )
 
 
@@ -69,7 +69,7 @@ def search():
             return util.create_compressed_response(enrollment_data.json())
 
         datastore_cache = util.datastore_get(
-            "Listing_b", search_key, time=config.LISTING_EXPIRE_TIME
+            "Listing", search_key, time=config.LISTING_EXPIRE_TIME
         )
         if datastore_cache:
             print("USING SAVED")
@@ -83,12 +83,12 @@ def search():
         course_data = course.CourseData()
         data = course_data.get_all_courses(flask.request.args.to_dict())
         local_search_cache[search_key] = data
-        util.datastore_set("Listing_b", search_key, data.json())
+        util.datastore_set("Listing", search_key, data.json())
         return util.create_compressed_response(data.json())
     except util.WebsocRateLimitError:
         # Try again with cached results
         datastore_cache = util.datastore_get(
-            "Listing_b", search_key, time=config.IGNORE_TIME
+            "Listing", search_key, time=config.IGNORE_TIME
         )
         if datastore_cache:
             print("BLOCKED, USING SAVED")
