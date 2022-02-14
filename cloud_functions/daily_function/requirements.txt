@@ -2,4 +2,4 @@ google-cloud-datastore==1.9.0
 requests==2.22.0
 pydantic==1.6.2
 beautifulsoup4==4.8.0
-lxml==4.6.3
+lxml==4.6.5
