@@ -15,7 +15,7 @@ idna==2.10
 itsdangerous==1.1.0
 Jinja2==2.11.3
 libcst==0.3.17
-lxml==4.6.5
+lxml==4.9.1
 MarkupSafe==1.1.1
 mypy-extensions==0.4.3
 numpy==1.21.0
