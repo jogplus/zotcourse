@@ -38,4 +38,4 @@ soupsieve==2.2
 typing-extensions==3.7.4.3
 typing-inspect==0.6.0
 urllib3==1.26.5
-Werkzeug==1.0.1
+Werkzeug==2.2.3
