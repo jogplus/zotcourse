@@ -3,7 +3,7 @@ cachetools==4.2.1
 certifi==2022.12.7
 chardet==4.0.0
 click==7.1.2
-Flask==1.1.2
+Flask==2.3.2
 google-api-core==1.26.1
 google-auth==1.27.1
 google-cloud-core==1.6.0
